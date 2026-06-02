@@ -1084,52 +1084,202 @@
         </div>
       </div>
 
-      <!-- PASO 3: DATOS TÉCNICOS -->
+      <!-- PASO 3: CONFIGURACIÓN TÉCNICA -->
       <div id="nc-step-3" style="display:none">
 
-        <!-- Firebase ID con guía -->
-        <div class="form-group">
-          <label class="form-label">Firebase Project ID
-            <button onclick="toggleGuia('guia-firebase')" style="margin-left:6px;font-size:10px;background:var(--bg3);border:1px solid var(--border);color:var(--accent);padding:2px 7px;border-radius:4px;cursor:pointer">¿Cómo lo obtengo?</button>
-          </label>
-          <input type="text" id="nc-firebase" placeholder="etrazia-cliente1">
-          <div id="guia-firebase" style="display:none;margin-top:8px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:12px;line-height:1.7;color:var(--text1)">
-            <strong style="color:var(--text0)">Pasos para obtener el Firebase Project ID:</strong><br>
-            1. Ve a <a href="https://console.firebase.google.com" target="_blank" style="color:var(--accent)">console.firebase.google.com</a><br>
-            2. Selecciona el proyecto del cliente<br>
-            3. Haz clic en el ⚙️ engranaje → <em>Configuración del proyecto</em><br>
-            4. En la sección <em>"Tu proyecto"</em>, copia el <strong style="color:var(--text0)">ID del proyecto</strong><br>
-            <span style="color:var(--accent)">Ej: etrazia-lafech, etrazia-cliente2</span>
+        <div style="background:var(--accent-glow);border:1px solid rgba(232,137,42,0.2);border-radius:var(--radius-sm);padding:11px 13px;font-size:12px;color:var(--text1);margin-bottom:20px">
+          🔧 <strong style="color:var(--text0)">Sección técnica — solo Talo.</strong> Completa los 3 bloques en orden. Puedes guardar sin estos datos y completarlos después.
+        </div>
+
+        <!-- ══ BLOQUE 1: NAMECHEAP DNS ══ -->
+        <div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;margin-bottom:16px">
+          <div style="background:var(--bg2);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleGuia('bloque-namecheap')">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="background:var(--accent);color:#0a0c10;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</span>
+              <span style="font-size:13px;font-weight:600">Configurar subdominio en Namecheap</span>
+            </div>
+            <span style="font-size:10px;color:var(--accent);font-family:var(--font-mono)">VER GUÍA ▾</span>
+          </div>
+          <div id="bloque-namecheap" style="padding:16px">
+            <!-- Campo subdominio -->
+            <div class="form-group">
+              <label class="form-label">Subdominio del cliente</label>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="text" id="nc-subdominio" placeholder="lafech" oninput="ncGenerarDNS()" style="flex:1">
+                <span style="font-size:13px;color:var(--text1);white-space:nowrap">.etraziapp.com</span>
+              </div>
+              <div style="font-size:11px;color:var(--text1);margin-top:4px">Solo el prefijo. Ej: <span style="color:var(--accent)">lafech</span> → lafech.etraziapp.com</div>
+            </div>
+
+            <!-- DNS auto-generado -->
+            <div id="nc-dns-box" style="display:none">
+              <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text1);margin-bottom:8px">Registro DNS generado automáticamente</div>
+              <div style="background:var(--bg0);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:8px">
+                <table style="width:100%;font-family:var(--font-mono);font-size:12px">
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:8px 12px;color:var(--text1);width:30%">Tipo</td>
+                    <td style="padding:8px 12px;color:var(--text0)">CNAME</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:8px 12px;color:var(--text1)">Host</td>
+                    <td style="padding:8px 12px;color:var(--accent);font-weight:600" id="dns-host">—</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:8px 12px;color:var(--text1)">Value</td>
+                    <td style="padding:8px 12px;color:var(--text0)">italoamayamoreno-lgtm.github.io</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 12px;color:var(--text1)">TTL</td>
+                    <td style="padding:8px 12px;color:var(--text0)">Automatic</td>
+                  </tr>
+                </table>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="ncCopiarDNS()" id="btn-copiar-dns" style="margin-bottom:14px">📋 Copiar datos DNS</button>
+            </div>
+
+            <!-- Guía paso a paso Namecheap -->
+            <div style="font-size:12px;color:var(--text1);line-height:1.8">
+              <strong style="color:var(--text0);font-size:13px">Pasos en Namecheap:</strong>
+              <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">1</span>
+                  <div>Ve a <a href="https://ap.www.namecheap.com/domains/list/" target="_blank" style="color:var(--accent)">namecheap.com → Domain List</a> e inicia sesión con tu cuenta de Etrazia.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">2</span>
+                  <div>Busca el dominio <strong style="color:var(--text0)">etraziapp.com</strong> en la lista y haz clic en el botón <strong style="color:var(--text0)">"Manage"</strong> a la derecha.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">3</span>
+                  <div>En la pantalla del dominio, haz clic en la pestaña <strong style="color:var(--text0)">"Advanced DNS"</strong> (está en la barra superior junto a Details, Sharing, etc.).</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">4</span>
+                  <div>Baja hasta la sección <strong style="color:var(--text0)">"Host Records"</strong> y haz clic en <strong style="color:var(--text0)">"Add New Record"</strong>.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">5</span>
+                  <div>Aparece una fila nueva. En el primer campo (Type) selecciona <strong style="color:var(--text0)">CNAME Record</strong>. Luego pega los valores del cuadro de arriba en los campos Host y Value.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">6</span>
+                  <div>Haz clic en el ✓ (checkmark verde) al final de la fila para guardar. Verás el registro en la lista.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--green-bg);border:1px solid var(--green);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px;color:var(--green)">✓</span>
+                  <div style="color:var(--green)">Espera <strong>~30 minutos</strong>. El subdominio estará activo y podrás acceder en <span id="dns-preview-url" style="font-family:var(--font-mono)">nombrecliente.etraziapp.com</span></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- URL con guía -->
-        <div class="form-group">
-          <label class="form-label">URL del Panel (subdominio Etrazia)
-            <button onclick="toggleGuia('guia-url')" style="margin-left:6px;font-size:10px;background:var(--bg3);border:1px solid var(--border);color:var(--accent);padding:2px 7px;border-radius:4px;cursor:pointer">¿Cómo lo obtengo?</button>
-          </label>
-          <input type="text" id="nc-url" placeholder="lafech.etraziapp.com" oninput="ncPreviewUrl()">
-          <div id="nc-url-preview" style="font-size:11px;color:var(--text1);margin-top:4px"></div>
-          <div id="guia-url" style="display:none;margin-top:8px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:12px;line-height:1.7;color:var(--text1)">
-            <strong style="color:var(--text0)">La URL del cliente sigue este formato:</strong><br>
-            <span style="color:var(--accent)">nombrecliente.etraziapp.com</span><br><br>
-            <strong style="color:var(--text0)">Pasos para activarla:</strong><br>
-            1. Ve a <a href="https://namecheap.com" target="_blank" style="color:var(--accent)">namecheap.com</a> → Domain List → etraziapp.com → Manage<br>
-            2. Pestaña <em>Advanced DNS</em> → Add New Record<br>
-            3. Tipo: <strong style="color:var(--text0)">CNAME</strong> · Host: <strong style="color:var(--text0)">nombrecliente</strong> · Value: <strong style="color:var(--text0)">italoamayamoreno-lgtm.github.io</strong><br>
-            4. Guardar y esperar ~30 minutos
+        <!-- ══ BLOQUE 2: FIREBASE ══ -->
+        <div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;margin-bottom:16px">
+          <div style="background:var(--bg2);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleGuia('bloque-firebase')">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="background:var(--blue);color:#0a0c10;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</span>
+              <span style="font-size:13px;font-weight:600">Crear y configurar Firebase del cliente</span>
+            </div>
+            <span style="font-size:10px;color:var(--accent);font-family:var(--font-mono)">VER GUÍA ▾</span>
+          </div>
+          <div id="bloque-firebase" style="padding:16px;display:none">
+            <div class="form-group">
+              <label class="form-label">Firebase Project ID del cliente</label>
+              <input type="text" id="nc-firebase" placeholder="etrazia-lafech">
+              <div style="font-size:11px;color:var(--text1);margin-top:4px">Ej: <span style="color:var(--accent)">etrazia-lafech</span>, <span style="color:var(--accent)">etrazia-boutique</span></div>
+            </div>
+            <div style="font-size:12px;color:var(--text1);line-height:1.8">
+              <strong style="color:var(--text0);font-size:13px">Pasos para crear el Firebase del cliente:</strong>
+              <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">1</span>
+                  <div>Ve a <a href="https://console.firebase.google.com" target="_blank" style="color:var(--accent)">console.firebase.google.com</a> e inicia sesión con tu cuenta Google.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">2</span>
+                  <div>Haz clic en <strong style="color:var(--text0)">"Agregar proyecto"</strong> (el botón con el ícono +). Escribe el nombre del proyecto: <strong style="color:var(--accent)">etrazia-nombrecliente</strong>. Acepta los términos y crea el proyecto.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">3</span>
+                  <div>Una vez creado, ve al ⚙️ engranaje → <strong style="color:var(--text0)">"Configuración del proyecto"</strong>. Baja a <em>"Tus apps"</em>, haz clic en el ícono <strong style="color:var(--text0)">&lt;/&gt;</strong> para agregar una app web. Nómbrala igual que el proyecto.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">4</span>
+                  <div>Copia el objeto <strong style="color:var(--text0)">firebaseConfig</strong> que aparece — lo necesitarás al personalizar el código del cliente.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">5</span>
+                  <div>Activa <strong style="color:var(--text0)">Authentication</strong>: menú izquierdo → Build → Authentication → Comenzar → Correo/Contraseña → Activar → Guardar.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">6</span>
+                  <div>Activa <strong style="color:var(--text0)">Firestore</strong>: menú izquierdo → Build → Firestore Database → Crear base de datos → Modo producción → us-central1 → Listo.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">7</span>
+                  <div>En Firestore → pestaña <strong style="color:var(--text0)">Reglas</strong>: pega las security rules del template de Etrazia y haz clic en <strong style="color:var(--text0)">"Publicar"</strong>.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">8</span>
+                  <div>El <strong style="color:var(--text0)">Project ID</strong> lo encuentras en ⚙️ → Configuración del proyecto → sección "Tu proyecto". Cópialo y pégalo en el campo de arriba.</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- GitHub Repo -->
-        <div class="form-group">
-          <label class="form-label">Repositorio GitHub</label>
-          <input type="text" id="nc-repo" placeholder="etrazia-lafech">
-          <div style="font-size:11px;color:var(--text1);margin-top:4px">Solo el nombre del repo, sin la URL completa. Ej: <span style="color:var(--accent)">etrazia-lafech</span></div>
+        <!-- ══ BLOQUE 3: GITHUB PAGES ══ -->
+        <div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;margin-bottom:16px">
+          <div style="background:var(--bg2);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleGuia('bloque-github')">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="background:var(--green);color:#0a0c10;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</span>
+              <span style="font-size:13px;font-weight:600">Crear repo y activar GitHub Pages</span>
+            </div>
+            <span style="font-size:10px;color:var(--accent);font-family:var(--font-mono)">VER GUÍA ▾</span>
+          </div>
+          <div id="bloque-github" style="padding:16px;display:none">
+            <div class="form-group">
+              <label class="form-label">Nombre del repositorio GitHub</label>
+              <input type="text" id="nc-repo" placeholder="etrazia-lafech">
+              <div style="font-size:11px;color:var(--text1);margin-top:4px">Ej: <span style="color:var(--accent)">etrazia-lafech</span>. Sin espacios ni mayúsculas.</div>
+            </div>
+            <div style="font-size:12px;color:var(--text1);line-height:1.8">
+              <strong style="color:var(--text0);font-size:13px">Pasos para publicar el panel del cliente:</strong>
+              <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">1</span>
+                  <div>Ve a <a href="https://github.com/new" target="_blank" style="color:var(--accent)">github.com/new</a>. Nombre del repo: <strong style="color:var(--accent)">etrazia-nombrecliente</strong>. Visibilidad: <strong style="color:var(--text0)">Public</strong>. NO marques README. Clic en <strong style="color:var(--text0)">"Create repository"</strong>.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">2</span>
+                  <div>Descarga el template base del cliente desde Claude. Personaliza el <strong style="color:var(--text0)">firebaseConfig</strong>, logo, colores y nombre del negocio en el archivo HTML.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">3</span>
+                  <div>En el repo recién creado, haz clic en <strong style="color:var(--text0)">"Add file" → "Upload files"</strong>. Sube el HTML del cliente y renómbralo <strong style="color:var(--text0)">index.html</strong>. Escribe un mensaje de commit y guarda.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">4</span>
+                  <div>Ve a <strong style="color:var(--text0)">Settings</strong> del repo (engranaje ⚙️) → menú izquierdo <strong style="color:var(--text0)">"Pages"</strong> → Source: <strong style="color:var(--text0)">Deploy from a branch</strong> → Branch: <strong style="color:var(--text0)">main / (root)</strong> → <strong style="color:var(--text0)">Save</strong>.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">5</span>
+                  <div>Espera ~2 minutos. El panel del cliente estará disponible en <strong style="color:var(--accent)">italoamayamoreno-lgtm.github.io/etrazia-nombrecliente</strong> — y si ya configuraste el DNS, también en <strong style="color:var(--accent)">nombrecliente.etraziapp.com</strong>.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--green-bg);border:1px solid var(--green);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px;color:var(--green)">✓</span>
+                  <div style="color:var(--green)">Copia el nombre del repo (<strong>sin la URL</strong>) y pégalo en el campo de arriba. Ej: <span style="font-family:var(--font-mono)">etrazia-lafech</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div style="background:var(--accent-glow);border:1px solid rgba(232,137,42,0.2);border-radius:var(--radius-sm);padding:12px;font-size:12px;color:var(--text1);margin-bottom:16px">
-          💡 <strong style="color:var(--text0)">¿No tienes estos datos aún?</strong> Puedes guardar el cliente ahora y completar los datos técnicos después editando el registro.
+        <!-- URL final auto-completada -->
+        <div class="form-group">
+          <label class="form-label">URL del Panel <span style="color:var(--text2);font-weight:400">(auto-completada)</span></label>
+          <input type="text" id="nc-url" placeholder="Se completa al ingresar el subdominio en el bloque 1" readonly style="color:var(--text1);cursor:default;background:var(--bg2)">
         </div>
 
         <div style="display:flex;justify-content:space-between;margin-top:8px">
@@ -1823,11 +1973,34 @@ window.ncGoStep = function(step) {
   if (step === 2) { ncRenderAppsChecks(); ncCalcularCobro(); }
 };
 
-window.ncPreviewUrl = function() {
-  const val = document.getElementById('nc-url').value.trim();
-  const preview = document.getElementById('nc-url-preview');
-  if (!preview) return;
-  preview.textContent = val ? `→ https://${val}` : '';
+window.ncPreviewUrl = function() {}; // legacy
+
+window.ncGenerarDNS = function() {
+  const sub = document.getElementById('nc-subdominio')?.value.trim().toLowerCase();
+  const dnsBox = document.getElementById('nc-dns-box');
+  const dnsHost = document.getElementById('dns-host');
+  const urlField = document.getElementById('nc-url');
+  const dnsPreview = document.getElementById('dns-preview-url');
+  if (!sub) {
+    if (dnsBox) dnsBox.style.display = 'none';
+    if (urlField) urlField.value = '';
+    if (dnsPreview) dnsPreview.textContent = 'nombrecliente.etraziapp.com';
+    return;
+  }
+  if (dnsHost) dnsHost.textContent = sub;
+  if (dnsBox) dnsBox.style.display = 'block';
+  if (urlField) urlField.value = `${sub}.etraziapp.com`;
+  if (dnsPreview) dnsPreview.textContent = `${sub}.etraziapp.com`;
+};
+
+window.ncCopiarDNS = function() {
+  const sub = document.getElementById('nc-subdominio')?.value.trim().toLowerCase();
+  if (!sub) return;
+  const texto = `Tipo: CNAME\nHost: ${sub}\nValue: italoamayamoreno-lgtm.github.io\nTTL: Automatic`;
+  navigator.clipboard.writeText(texto).then(() => {
+    const btn = document.getElementById('btn-copiar-dns');
+    if (btn) { btn.textContent = '✓ Copiado'; setTimeout(() => { if(btn) btn.textContent = '📋 Copiar todo'; }, 2000); }
+  }).catch(() => showToast('No se pudo copiar. Cópialo manualmente.', 'error'));
 };
 
 window.toggleGuia = function(id) {
@@ -1876,6 +2049,7 @@ window.guardarCliente = async function() {
     estado:        document.getElementById('nc-estado').value,
     fechaInicio:   document.getElementById('nc-fecha-inicio').value,
     firebaseId:    document.getElementById('nc-firebase').value.trim(),
+    subdominio:    document.getElementById('nc-subdominio')?.value.trim().toLowerCase() || '',
     url:           document.getElementById('nc-url').value.trim(),
     repo:          document.getElementById('nc-repo').value.trim(),
     notas:         document.getElementById('nc-notas').value.trim(),
