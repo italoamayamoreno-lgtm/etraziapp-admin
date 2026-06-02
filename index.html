@@ -953,60 +953,191 @@
 
 <!-- Modal: Nuevo Cliente -->
 <div class="modal-overlay" id="modal-nuevo-cliente">
-  <div class="modal">
+  <div class="modal" style="width:560px">
     <div class="modal-header">
       <div class="modal-title">Nuevo Cliente (Tenant)</div>
       <button class="modal-close" onclick="closeModal('modal-nuevo-cliente')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Nombre del Negocio</label>
-          <input type="text" id="nc-nombre" placeholder="Ej: LaFech Joyería">
+
+      <!-- PASO INDICADOR -->
+      <div style="display:flex;gap:0;margin-bottom:24px;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border)">
+        <div class="nc-step active" id="step-tab-1" style="flex:1;padding:8px;text-align:center;font-size:11px;font-family:var(--font-mono);background:var(--accent-dim);color:var(--accent);cursor:pointer" onclick="ncGoStep(1)">1 · NEGOCIO</div>
+        <div class="nc-step" id="step-tab-2" style="flex:1;padding:8px;text-align:center;font-size:11px;font-family:var(--font-mono);color:var(--text2);cursor:pointer;border-left:1px solid var(--border)" onclick="ncGoStep(2)">2 · APPS Y PAGO</div>
+        <div class="nc-step" id="step-tab-3" style="flex:1;padding:8px;text-align:center;font-size:11px;font-family:var(--font-mono);color:var(--text2);cursor:pointer;border-left:1px solid var(--border)" onclick="ncGoStep(3)">3 · TÉCNICO</div>
+      </div>
+
+      <!-- PASO 1: DATOS DEL NEGOCIO -->
+      <div id="nc-step-1">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Nombre del Negocio *</label>
+            <input type="text" id="nc-nombre" placeholder="Ej: LaFech Joyería">
+          </div>
+          <div class="form-group">
+            <label class="form-label">RUC</label>
+            <input type="text" id="nc-ruc" placeholder="20XXXXXXXXX" maxlength="11">
+          </div>
         </div>
         <div class="form-group">
-          <label class="form-label">RUC</label>
-          <input type="text" id="nc-ruc" placeholder="20XXXXXXXXX" maxlength="11">
+          <label class="form-label">Email de Acceso (Login Key) *</label>
+          <input type="email" id="nc-email" placeholder="cliente@negocio.com">
+          <div style="font-size:11px;color:var(--text1);margin-top:4px">⚠ Este email será el usuario con el que el cliente inicia sesión en su panel.</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">País</label>
+            <select id="nc-pais" onchange="ncUpdateMoneda()">
+              <option value="PE">🇵🇪 Perú</option>
+              <option value="MX">🇲🇽 México</option>
+              <option value="CO">🇨🇴 Colombia</option>
+              <option value="AR">🇦🇷 Argentina</option>
+              <option value="CL">🇨🇱 Chile</option>
+              <option value="US">🇺🇸 Estados Unidos</option>
+              <option value="ES">🇪🇸 España</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Moneda de Cobro</label>
+            <select id="nc-moneda">
+              <option value="PEN">PEN — Soles</option>
+              <option value="USD">USD — Dólares</option>
+              <option value="MXN">MXN — Pesos MX</option>
+              <option value="COP">COP — Pesos CO</option>
+              <option value="ARS">ARS — Pesos AR</option>
+              <option value="CLP">CLP — Pesos CL</option>
+              <option value="EUR">EUR — Euros</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Estado inicial</label>
+            <select id="nc-estado">
+              <option value="trial">Trial (en configuración)</option>
+              <option value="activo">Activo</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha de inicio</label>
+            <input type="date" id="nc-fecha-inicio">
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:8px">
+          <button class="btn btn-primary" onclick="ncGoStep(2)">Siguiente →</button>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Email de Acceso (Login Key)</label>
-        <input type="email" id="nc-email" placeholder="cliente@negocio.com">
-      </div>
-      <div class="form-row">
+
+      <!-- PASO 2: APPS Y FACTURACIÓN -->
+      <div id="nc-step-2" style="display:none">
         <div class="form-group">
-          <label class="form-label">Plan Contratado</label>
-          <select id="nc-plan">
-            <option>eControl</option>
-            <option>eContent Personal</option>
-            <option>eContent Business</option>
-            <option>Suite Completa</option>
-          </select>
+          <label class="form-label">Apps Contratadas * <span style="font-weight:400;color:var(--text1)">(selecciona una o más)</span></label>
+          <div id="nc-apps-checks" style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+            <!-- generado dinámicamente por ncRenderAppsChecks() -->
+          </div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-top:4px">
+          <div style="font-size:11px;font-family:var(--font-mono);color:var(--text1);margin-bottom:10px;letter-spacing:0.06em">RESUMEN DE COBRO</div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+            <span style="color:var(--text1)">Inversión inicial</span>
+            <span id="nc-resumen-inicial" style="font-family:var(--font-mono);color:var(--text0)">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+            <span style="color:var(--text1)">Membresía mensual</span>
+            <span id="nc-resumen-mensual" style="font-family:var(--font-mono);color:var(--text0)">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px">
+            <span style="color:var(--text1)">Descuento por plazo</span>
+            <span id="nc-resumen-descuento" style="font-family:var(--font-mono);color:var(--green)">—</span>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:10px;display:flex;justify-content:space-between;font-size:14px;font-weight:600">
+            <span>Total primer cobro</span>
+            <span id="nc-resumen-total" style="font-family:var(--font-mono);color:var(--accent)">—</span>
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:14px">
+          <div class="form-group">
+            <label class="form-label">Plazo contratado</label>
+            <select id="nc-plazo" onchange="ncCalcularCobro()">
+              <option value="0">Mensual (sin descuento)</option>
+              <option value="5">6 meses (−5%)</option>
+              <option value="10">12 meses (−10%)</option>
+              <option value="15">18 meses (−15%)</option>
+              <option value="20">24 meses (−20%)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Inversión inicial cobrada</label>
+            <select id="nc-inicial-cobrada">
+              <option value="si">Sí, cobrar al inicio</option>
+              <option value="no">No (exonerado)</option>
+            </select>
+          </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Estado</label>
-          <select id="nc-estado">
-            <option value="trial">Trial</option>
-            <option value="activo">Activo</option>
-          </select>
+          <label class="form-label">Notas del contrato</label>
+          <textarea id="nc-notas" rows="2" placeholder="Ej: Descuento especial acordado, forma de pago, contacto..."></textarea>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px">
+          <button class="btn btn-ghost" onclick="ncGoStep(1)">← Atrás</button>
+          <button class="btn btn-primary" onclick="ncGoStep(3)">Siguiente →</button>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Firebase Project ID</label>
-        <input type="text" id="nc-firebase" placeholder="nombre-proyecto-xxxxx">
+
+      <!-- PASO 3: DATOS TÉCNICOS -->
+      <div id="nc-step-3" style="display:none">
+
+        <!-- Firebase ID con guía -->
+        <div class="form-group">
+          <label class="form-label">Firebase Project ID
+            <button onclick="toggleGuia('guia-firebase')" style="margin-left:6px;font-size:10px;background:var(--bg3);border:1px solid var(--border);color:var(--accent);padding:2px 7px;border-radius:4px;cursor:pointer">¿Cómo lo obtengo?</button>
+          </label>
+          <input type="text" id="nc-firebase" placeholder="etrazia-cliente1">
+          <div id="guia-firebase" style="display:none;margin-top:8px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:12px;line-height:1.7;color:var(--text1)">
+            <strong style="color:var(--text0)">Pasos para obtener el Firebase Project ID:</strong><br>
+            1. Ve a <a href="https://console.firebase.google.com" target="_blank" style="color:var(--accent)">console.firebase.google.com</a><br>
+            2. Selecciona el proyecto del cliente<br>
+            3. Haz clic en el ⚙️ engranaje → <em>Configuración del proyecto</em><br>
+            4. En la sección <em>"Tu proyecto"</em>, copia el <strong style="color:var(--text0)">ID del proyecto</strong><br>
+            <span style="color:var(--accent)">Ej: etrazia-lafech, etrazia-cliente2</span>
+          </div>
+        </div>
+
+        <!-- URL con guía -->
+        <div class="form-group">
+          <label class="form-label">URL del Panel (subdominio Etrazia)
+            <button onclick="toggleGuia('guia-url')" style="margin-left:6px;font-size:10px;background:var(--bg3);border:1px solid var(--border);color:var(--accent);padding:2px 7px;border-radius:4px;cursor:pointer">¿Cómo lo obtengo?</button>
+          </label>
+          <input type="text" id="nc-url" placeholder="lafech.etraziapp.com" oninput="ncPreviewUrl()">
+          <div id="nc-url-preview" style="font-size:11px;color:var(--text1);margin-top:4px"></div>
+          <div id="guia-url" style="display:none;margin-top:8px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:12px;line-height:1.7;color:var(--text1)">
+            <strong style="color:var(--text0)">La URL del cliente sigue este formato:</strong><br>
+            <span style="color:var(--accent)">nombrecliente.etraziapp.com</span><br><br>
+            <strong style="color:var(--text0)">Pasos para activarla:</strong><br>
+            1. Ve a <a href="https://namecheap.com" target="_blank" style="color:var(--accent)">namecheap.com</a> → Domain List → etraziapp.com → Manage<br>
+            2. Pestaña <em>Advanced DNS</em> → Add New Record<br>
+            3. Tipo: <strong style="color:var(--text0)">CNAME</strong> · Host: <strong style="color:var(--text0)">nombrecliente</strong> · Value: <strong style="color:var(--text0)">italoamayamoreno-lgtm.github.io</strong><br>
+            4. Guardar y esperar ~30 minutos
+          </div>
+        </div>
+
+        <!-- GitHub Repo -->
+        <div class="form-group">
+          <label class="form-label">Repositorio GitHub</label>
+          <input type="text" id="nc-repo" placeholder="etrazia-lafech">
+          <div style="font-size:11px;color:var(--text1);margin-top:4px">Solo el nombre del repo, sin la URL completa. Ej: <span style="color:var(--accent)">etrazia-lafech</span></div>
+        </div>
+
+        <div style="background:var(--accent-glow);border:1px solid rgba(232,137,42,0.2);border-radius:var(--radius-sm);padding:12px;font-size:12px;color:var(--text1);margin-bottom:16px">
+          💡 <strong style="color:var(--text0)">¿No tienes estos datos aún?</strong> Puedes guardar el cliente ahora y completar los datos técnicos después editando el registro.
+        </div>
+
+        <div style="display:flex;justify-content:space-between;margin-top:8px">
+          <button class="btn btn-ghost" onclick="ncGoStep(2)">← Atrás</button>
+          <button class="btn btn-primary" onclick="guardarCliente()">✓ Guardar Cliente</button>
+        </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">URL del Panel (GitHub Pages)</label>
-        <input type="text" id="nc-url" placeholder="usuario.github.io/proyecto">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Notas internas</label>
-        <textarea id="nc-notas" rows="2" placeholder="Contacto, detalles del contrato..."></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-nuevo-cliente')">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarCliente()">Guardar Cliente</button>
+
     </div>
   </div>
 </div>
@@ -1611,29 +1742,154 @@ function updateTicketStats() {
   document.getElementById('t-tiempo').textContent    = '2.3h';
 }
 
+// ── MODAL NUEVO CLIENTE — LÓGICA MULTIPASO ────────────────────────────
+
+// Apps disponibles — se actualiza aquí cuando se agreguen nuevas apps
+const APPS_CATALOGO = [
+  { id: 'vcontrol',        nombre: 'Vcontrol',          inicial: 200, mensual: 35,  desc: 'Gestión comercial: ventas, inventario, CRM' },
+  { id: 'vcontent_p',      nombre: 'Vcontent Personal', inicial: 200, mensual: 35,  desc: 'Contenido para LinkedIn e Instagram personal' },
+  { id: 'vcontent_b',      nombre: 'Vcontent Business', inicial: 350, mensual: 100, desc: 'Contenido para Instagram y TikTok del negocio' },
+  { id: 'vfacturacion',    nombre: 'Vfacturación',      inicial: 200, mensual: 35,  desc: 'Emisión de boletas y facturas electrónicas' },
+];
+
+function ncRenderAppsChecks() {
+  const container = document.getElementById('nc-apps-checks');
+  if (!container) return;
+  container.innerHTML = APPS_CATALOGO.map(app => `
+    <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:border-color 0.2s" 
+           onmouseover="this.style.borderColor='var(--border-strong)'" 
+           onmouseout="this.style.borderColor='var(--border)'">
+      <input type="checkbox" id="nc-app-${app.id}" value="${app.id}" onchange="ncCalcularCobro()" 
+             style="width:15px;height:15px;margin-top:2px;accent-color:var(--accent);flex-shrink:0">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500">${app.nombre}</div>
+        <div style="font-size:11px;color:var(--text1);margin-top:1px">${app.desc}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:12px;font-family:var(--font-mono);color:var(--accent)">S/${app.mensual}/mes</div>
+        <div style="font-size:10px;color:var(--text2)">+S/${app.inicial} inicio</div>
+      </div>
+    </label>`).join('');
+}
+
+function ncGetMoneda() {
+  return document.getElementById('nc-moneda')?.value || 'PEN';
+}
+
+function ncCalcularCobro() {
+  const moneda = ncGetMoneda();
+  const plazoDescuento = parseInt(document.getElementById('nc-plazo')?.value || '0');
+  const appsSeleccionadas = APPS_CATALOGO.filter(a => document.getElementById(`nc-app-${a.id}`)?.checked);
+
+  if (!appsSeleccionadas.length) {
+    document.getElementById('nc-resumen-inicial').textContent = '—';
+    document.getElementById('nc-resumen-mensual').textContent = '—';
+    document.getElementById('nc-resumen-descuento').textContent = '—';
+    document.getElementById('nc-resumen-total').textContent = '—';
+    return;
+  }
+
+  const totalInicial  = appsSeleccionadas.reduce((s, a) => s + a.inicial, 0);
+  const totalMensual  = appsSeleccionadas.reduce((s, a) => s + a.mensual, 0);
+  const descuento     = plazoDescuento > 0 ? Math.round(totalMensual * (plazoDescuento / 100)) : 0;
+  const mensualFinal  = totalMensual - descuento;
+  const cobrarInicial = document.getElementById('nc-inicial-cobrada')?.value !== 'no';
+  const totalPrimer   = (cobrarInicial ? totalInicial : 0) + mensualFinal;
+
+  document.getElementById('nc-resumen-inicial').textContent  = `${moneda} ${totalInicial.toFixed(0)}`;
+  document.getElementById('nc-resumen-mensual').textContent  = `${moneda} ${totalMensual.toFixed(0)}/mes`;
+  document.getElementById('nc-resumen-descuento').textContent = plazoDescuento > 0 ? `−${moneda} ${descuento} (${plazoDescuento}%)` : 'Sin descuento';
+  document.getElementById('nc-resumen-total').textContent    = `${moneda} ${totalPrimer.toFixed(0)}`;
+}
+
+window.ncUpdateMoneda = function() {
+  const pais = document.getElementById('nc-pais').value;
+  const monedaMap = { PE: 'PEN', MX: 'MXN', CO: 'COP', AR: 'ARS', CL: 'CLP', US: 'USD', ES: 'EUR' };
+  const monedaSel = document.getElementById('nc-moneda');
+  if (monedaSel) monedaSel.value = monedaMap[pais] || 'PEN';
+  ncCalcularCobro();
+};
+
+window.ncGoStep = function(step) {
+  [1,2,3].forEach(s => {
+    const el = document.getElementById(`nc-step-${s}`);
+    const tab = document.getElementById(`step-tab-${s}`);
+    if (el) el.style.display = s === step ? 'block' : 'none';
+    if (tab) {
+      tab.style.background = s === step ? 'var(--accent-dim)' : 'transparent';
+      tab.style.color = s === step ? 'var(--accent)' : 'var(--text2)';
+    }
+  });
+  if (step === 2) { ncRenderAppsChecks(); ncCalcularCobro(); }
+};
+
+window.ncPreviewUrl = function() {
+  const val = document.getElementById('nc-url').value.trim();
+  const preview = document.getElementById('nc-url-preview');
+  if (!preview) return;
+  preview.textContent = val ? `→ https://${val}` : '';
+};
+
+window.toggleGuia = function(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+};
+
+// Reset modal al abrirlo
+const _origOpenModal = window.openModal;
+window.openModal = function(id) {
+  if (id === 'modal-nuevo-cliente') {
+    ncGoStep(1);
+    // reset fecha de hoy
+    const fi = document.getElementById('nc-fecha-inicio');
+    if (fi) fi.value = new Date().toISOString().slice(0,10);
+  }
+  _origOpenModal(id);
+};
+
 // ── GUARDAR / CRUD ─────────────────────────────────────────────────────
 window.guardarCliente = async function() {
+  const nombre = document.getElementById('nc-nombre').value.trim();
+  const email  = document.getElementById('nc-email').value.trim();
+  if (!nombre || !email) { showToast('Nombre y email son obligatorios.', 'error'); ncGoStep(1); return; }
+
+  const appsSeleccionadas = APPS_CATALOGO.filter(a => document.getElementById(`nc-app-${a.id}`)?.checked).map(a => a.id);
+  if (!appsSeleccionadas.length) { showToast('Selecciona al menos una app.', 'error'); ncGoStep(2); return; }
+
+  const moneda       = ncGetMoneda();
+  const plazoDesc    = parseInt(document.getElementById('nc-plazo')?.value || '0');
+  const totalInicial = APPS_CATALOGO.filter(a => appsSeleccionadas.includes(a.id)).reduce((s,a) => s + a.inicial, 0);
+  const totalMensual = APPS_CATALOGO.filter(a => appsSeleccionadas.includes(a.id)).reduce((s,a) => s + a.mensual, 0);
+
   const data = {
-    nombre:      document.getElementById('nc-nombre').value.trim(),
-    ruc:         document.getElementById('nc-ruc').value.trim(),
-    email:       document.getElementById('nc-email').value.trim(),
-    plan:        document.getElementById('nc-plan').value,
-    estado:      document.getElementById('nc-estado').value,
-    firebaseId:  document.getElementById('nc-firebase').value.trim(),
-    url:         document.getElementById('nc-url').value.trim(),
-    notas:       document.getElementById('nc-notas').value.trim(),
-    createdAt:   serverTimestamp(),
+    nombre,
+    ruc:           document.getElementById('nc-ruc').value.trim(),
+    email,
+    pais:          document.getElementById('nc-pais').value,
+    moneda,
+    apps:          appsSeleccionadas,
+    plan:          appsSeleccionadas.join(' + '),
+    plazoMeses:    plazoDesc > 0 ? [6,12,18,24][[5,10,15,20].indexOf(plazoDesc)] : 1,
+    descuento:     plazoDesc,
+    montoInicial:  totalInicial,
+    montoMensual:  totalMensual,
+    estado:        document.getElementById('nc-estado').value,
+    fechaInicio:   document.getElementById('nc-fecha-inicio').value,
+    firebaseId:    document.getElementById('nc-firebase').value.trim(),
+    url:           document.getElementById('nc-url').value.trim(),
+    repo:          document.getElementById('nc-repo').value.trim(),
+    notas:         document.getElementById('nc-notas').value.trim(),
+    createdAt:     serverTimestamp(),
   };
-  if (!data.nombre || !data.email) { showToast('Nombre y email son obligatorios.', 'error'); return; }
+
   try {
     await addDoc(collection(db, 'clientes'), data);
     showToast(`Cliente "${data.nombre}" creado.`, 'success');
     closeModal('modal-nuevo-cliente');
   } catch(e) {
-    // Demo mode
     clientes.unshift({ id: 'demo_' + Date.now(), ...data });
     renderTablaClientes(clientes);
-    showToast(`Cliente "${data.nombre}" creado (demo).`, 'success');
+    showToast(`Cliente "${data.nombre}" guardado.`, 'success');
     closeModal('modal-nuevo-cliente');
   }
 };
