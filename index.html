@@ -1902,14 +1902,14 @@ const APPS_CATALOGO = [
   { id: 'vfacturacion',    nombre: 'Vfacturación',      inicial: 200, mensual: 35,  desc: 'Emisión de boletas y facturas electrónicas' },
 ];
 
-function ncRenderAppsChecks() {
+window.ncRenderAppsChecks = function ncRenderAppsChecks() {
   const container = document.getElementById('nc-apps-checks');
   if (!container) return;
   container.innerHTML = APPS_CATALOGO.map(app => `
     <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:border-color 0.2s" 
            onmouseover="this.style.borderColor='var(--border-strong)'" 
            onmouseout="this.style.borderColor='var(--border)'">
-      <input type="checkbox" id="nc-app-${app.id}" value="${app.id}" onchange="ncCalcularCobro()" 
+      <input type="checkbox" id="nc-app-${app.id}" value="${app.id}" onchange="window.ncCalcularCobro()" 
              style="width:15px;height:15px;margin-top:2px;accent-color:var(--accent);flex-shrink:0">
       <div style="flex:1">
         <div style="font-size:13px;font-weight:500">${app.nombre}</div>
@@ -1926,7 +1926,7 @@ function ncGetMoneda() {
   return document.getElementById('nc-moneda')?.value || 'PEN';
 }
 
-function ncCalcularCobro() {
+window.ncCalcularCobro = function ncCalcularCobro() {
   const moneda = ncGetMoneda();
   const plazoDescuento = parseInt(document.getElementById('nc-plazo')?.value || '0');
   const appsSeleccionadas = APPS_CATALOGO.filter(a => document.getElementById(`nc-app-${a.id}`)?.checked);
@@ -1957,7 +1957,7 @@ window.ncUpdateMoneda = function() {
   const monedaMap = { PE: 'PEN', MX: 'MXN', CO: 'COP', AR: 'ARS', CL: 'CLP', US: 'USD', ES: 'EUR' };
   const monedaSel = document.getElementById('nc-moneda');
   if (monedaSel) monedaSel.value = monedaMap[pais] || 'PEN';
-  ncCalcularCobro();
+  window.ncCalcularCobro();
 };
 
 window.ncGoStep = function(step) {
@@ -1970,7 +1970,7 @@ window.ncGoStep = function(step) {
       tab.style.color = s === step ? 'var(--accent)' : 'var(--text2)';
     }
   });
-  if (step === 2) { ncRenderAppsChecks(); ncCalcularCobro(); }
+  if (step === 2) { window.ncRenderAppsChecks(); window.ncCalcularCobro(); }
 };
 
 window.ncPreviewUrl = function() {}; // legacy
