@@ -3,22 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Etrazia · Panel Admin</title>
+<title>ETRAZIA · Panel Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   /* ═══ RESET & TOKENS ══════════════════════════════════════════════════ */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg0: #0a0c10;
-    --bg1: #111318;
-    --bg2: #181c23;
-    --bg3: #1f242d;
-    --border: rgba(255,255,255,0.07);
-    --border-strong: rgba(255,255,255,0.14);
-    --accent: #e8892a;
-    --accent-dim: rgba(232,137,42,0.15);
-    --accent-glow: rgba(232,137,42,0.08);
+    --bg0: #0B1120;
+    --bg1: #111827;
+    --bg2: #1A2235;
+    --bg3: #243044;
+    --border: rgba(184,115,51,0.1);
+    --border-strong: rgba(184,115,51,0.18);
+    --accent: #B87333;
+    --accent-dim: rgba(184,115,51,0.12);
+    --accent-glow: rgba(184,115,51,0.06);
     --text0: #f0ede6;
     --text1: #a09d96;
     --text2: #5c5a55;
@@ -36,8 +36,8 @@
     --radius-sm: 6px;
     --radius-md: 10px;
     --radius-lg: 14px;
-    --font-head: 'Syne', sans-serif;
-    --font-body: 'DM Sans', sans-serif;
+    --font-head: 'Montserrat', sans-serif;
+    --font-body: 'Inter', sans-serif;
     --font-mono: 'DM Mono', monospace;
     --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
   }
@@ -81,7 +81,7 @@
   .login-btn {
     width: 100%; padding: 10px;
     background: var(--accent);
-    color: #0a0c10;
+    color: #0B1120;
     font-family: var(--font-head);
     font-weight: 700;
     font-size: 13px;
@@ -92,7 +92,7 @@
   }
   .login-btn:hover { opacity: 0.88; }
   .login-err { font-size: 12px; color: var(--red); margin-top: 10px; min-height: 18px; }
-  .login-spinner { display: none; width: 16px; height: 16px; border: 2px solid rgba(10,12,16,0.3); border-top-color: #0a0c10; border-radius: 50%; animation: spin 0.6s linear infinite; margin: 0 auto; }
+  .login-spinner { display: none; width: 16px; height: 16px; border: 2px solid rgba(10,12,16,0.3); border-top-color: #0B1120; border-radius: 50%; animation: spin 0.6s linear infinite; margin: 0 auto; }
   .login-spinner.active { display: block; }
 
   /* ═══ APP SHELL ═══════════════════════════════════════════════════════ */
@@ -128,7 +128,7 @@
     font-family: var(--font-head);
     font-weight: 700;
     font-size: 13px;
-    color: #0a0c10;
+    color: #0B1120;
     letter-spacing: -0.5px;
   }
   .sidebar-logo-text {
@@ -176,7 +176,7 @@
   .nav-badge {
     margin-left: auto;
     background: var(--accent);
-    color: #0a0c10;
+    color: #0B1120;
     font-size: 10px;
     font-weight: 700;
     padding: 1px 6px;
@@ -248,7 +248,7 @@
     transition: background var(--transition), opacity var(--transition);
     cursor: pointer;
   }
-  .btn-primary { background: var(--accent); color: #0a0c10; font-weight: 600; }
+  .btn-primary { background: var(--accent); color: #0B1120; font-weight: 600; }
   .btn-primary:hover { opacity: 0.88; }
   .btn-ghost { background: var(--bg3); color: var(--text0); border: 1px solid var(--border); }
   .btn-ghost:hover { background: var(--bg2); border-color: var(--border-strong); }
@@ -524,7 +524,20 @@
 <!-- ══════════════════════════════════════════════════════════════════════ -->
 <div id="login-screen">
   <div class="login-card">
-    <div class="login-logo">e·<span>trazia</span></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px">
+      <svg width="36" height="36" viewBox="0 0 44 44" fill="none">
+        <path d="M16 22C16 15.37 21.37 10 28 10C34.63 10 40 15.37 40 22C40 28.63 34.63 34 28 34" stroke="#1B2B4B" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M28 22C28 28.63 22.63 34 16 34C9.37 34 4 28.63 4 22C4 15.37 9.37 10 16 10" stroke="url(#admlg1)" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <rect x="17.5" y="17.5" width="9" height="9" rx="1.5" fill="#D97706" transform="rotate(45 22 22)"/>
+        <defs><linearGradient id="admlg1" x1="28" y1="10" x2="4" y2="34" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#B87333"/><stop offset="100%" stop-color="#D97706"/>
+        </linearGradient></defs>
+      </svg>
+      <div style="display:flex;flex-direction:column;line-height:1.1">
+        <span style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:20px;letter-spacing:0.08em;color:#F8FAFC">ETRAZIA</span>
+        <span style="font-size:9px;letter-spacing:0.2em;color:#94A3B8;font-family:'Inter',sans-serif;text-transform:uppercase">panel admin</span>
+      </div>
+    </div>
     <div class="login-sub">// PANEL ADMIN · SUPERADMIN</div>
     <div class="login-field">
       <label class="login-label">Correo</label>
@@ -548,8 +561,20 @@
   <!-- SIDEBAR -->
   <aside id="sidebar">
     <div class="sidebar-header">
-      <div class="sidebar-logo-mark">E·</div>
-      <div class="sidebar-logo-text">e·<span>trazia</span></div>
+<div style="display:flex;align-items:center;gap:8px">
+        <svg width="28" height="28" viewBox="0 0 44 44" fill="none">
+          <path d="M16 22C16 15.37 21.37 10 28 10C34.63 10 40 15.37 40 22C40 28.63 34.63 34 28 34" stroke="#1B2B4B" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <path d="M28 22C28 28.63 22.63 34 16 34C9.37 34 4 28.63 4 22C4 15.37 9.37 10 16 10" stroke="url(#admlg2)" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <rect x="17.5" y="17.5" width="9" height="9" rx="1.5" fill="#D97706" transform="rotate(45 22 22)"/>
+          <defs><linearGradient id="admlg2" x1="28" y1="10" x2="4" y2="34" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#B87333"/><stop offset="100%" stop-color="#D97706"/>
+          </linearGradient></defs>
+        </svg>
+        <div style="display:flex;flex-direction:column;line-height:1.1">
+          <span style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:14px;letter-spacing:0.08em;color:#F8FAFC">ETRAZIA</span>
+          <span style="font-size:8px;letter-spacing:0.18em;color:#94A3B8;font-family:'Inter',sans-serif;text-transform:uppercase">panel admin</span>
+        </div>
+      </div>
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section-label">Principal</div>
@@ -1087,7 +1112,7 @@
       <!-- PASO 3: CONFIGURACIÓN TÉCNICA -->
       <div id="nc-step-3" style="display:none">
 
-        <div style="background:var(--accent-glow);border:1px solid rgba(232,137,42,0.2);border-radius:var(--radius-sm);padding:11px 13px;font-size:12px;color:var(--text1);margin-bottom:20px">
+        <div style="background:var(--accent-glow);border:1px solid rgba(184,115,51,0.2);border-radius:var(--radius-sm);padding:11px 13px;font-size:12px;color:var(--text1);margin-bottom:20px">
           🔧 <strong style="color:var(--text0)">Sección técnica — solo Talo.</strong> Completa los 3 bloques en orden. Puedes guardar sin estos datos y completarlos después.
         </div>
 
@@ -1095,7 +1120,7 @@
         <div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;margin-bottom:16px">
           <div style="background:var(--bg2);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleGuia('bloque-namecheap')">
             <div style="display:flex;align-items:center;gap:8px">
-              <span style="background:var(--accent);color:#0a0c10;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</span>
+              <span style="background:var(--accent);color:#0B1120;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</span>
               <span style="font-size:13px;font-weight:600">Configurar subdominio en Namecheap</span>
             </div>
             <span style="font-size:10px;color:var(--accent);font-family:var(--font-mono)">VER GUÍA ▾</span>
@@ -1178,7 +1203,7 @@
         <div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;margin-bottom:16px">
           <div style="background:var(--bg2);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleGuia('bloque-firebase')">
             <div style="display:flex;align-items:center;gap:8px">
-              <span style="background:var(--blue);color:#0a0c10;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</span>
+              <span style="background:var(--blue);color:#0B1120;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</span>
               <span style="font-size:13px;font-weight:600">Crear y configurar Firebase del cliente</span>
             </div>
             <span style="font-size:10px;color:var(--accent);font-family:var(--font-mono)">VER GUÍA ▾</span>
@@ -1233,7 +1258,7 @@
         <div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;margin-bottom:16px">
           <div style="background:var(--bg2);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleGuia('bloque-github')">
             <div style="display:flex;align-items:center;gap:8px">
-              <span style="background:var(--green);color:#0a0c10;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</span>
+              <span style="background:var(--green);color:#0B1120;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</span>
               <span style="font-size:13px;font-weight:600">Crear repo y activar GitHub Pages</span>
             </div>
             <span style="font-size:10px;color:var(--accent);font-family:var(--font-mono)">VER GUÍA ▾</span>
