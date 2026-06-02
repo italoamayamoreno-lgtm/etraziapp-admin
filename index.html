@@ -1,541 +1,2305 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Contratar — EtraziApp</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --black: #0B1120; --white: #fafaf8; --copper: #B87333;
-      --amber: #D97706; --copper-dim: rgba(184,115,51,0.1);
-      --green: #4CAF7D; --gray-1: #111827; --gray-2: #1A2235;
-      --gray-3: #243044; --gray-4: #374151; --gray-5: #94A3B8; --gray-6: #CBD5E1;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body { background: var(--black); color: var(--white); font-family: 'Inter', sans-serif; font-weight: 300; line-height: 1.6; min-height: 100vh; }
-    h1,h2,h3 { font-family: 'Montserrat', sans-serif; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETRAZIA · Panel Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  /* ═══ RESET & TOKENS ══════════════════════════════════════════════════ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg0: #0B1120;
+    --bg1: #111827;
+    --bg2: #1A2235;
+    --bg3: #243044;
+    --border: rgba(184,115,51,0.1);
+    --border-strong: rgba(184,115,51,0.18);
+    --accent: #B87333;
+    --accent-dim: rgba(184,115,51,0.12);
+    --accent-glow: rgba(184,115,51,0.06);
+    --text0: #f0ede6;
+    --text1: #a09d96;
+    --text2: #5c5a55;
+    --green: #3ecf70;
+    --green-bg: rgba(62,207,112,0.1);
+    --red: #f0594a;
+    --red-bg: rgba(240,89,74,0.1);
+    --blue: #4a9eff;
+    --blue-bg: rgba(74,158,255,0.1);
+    --yellow: #f5c542;
+    --yellow-bg: rgba(245,197,66,0.1);
+    --sidebar-w: 240px;
+    --sidebar-w-collapsed: 64px;
+    --topbar-h: 56px;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --font-head: 'Montserrat', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+  }
+  html, body { height: 100%; background: var(--bg0); color: var(--text0); font-family: var(--font-body); font-size: 14px; line-height: 1.6; overflow: hidden; }
+  button { font-family: var(--font-body); cursor: pointer; border: none; background: none; color: inherit; }
+  input, select, textarea { font-family: var(--font-body); font-size: 14px; color: var(--text0); background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 12px; outline: none; transition: border var(--transition); width: 100%; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  select option { background: var(--bg2); }
+  a { color: var(--accent); text-decoration: none; }
+  ::selection { background: var(--accent-dim); }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
 
-    /* NAV */
-    nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 48px; background: rgba(11,17,32,0.92); backdrop-filter: blur(20px); border-bottom: 0.5px solid rgba(184,115,51,0.08); position: sticky; top: 0; z-index: 100; }
-    .nav-logo { display: flex; align-items: center; gap: 10px; font-family: 'Montserrat', sans-serif; font-size: 17px; font-weight: 700; color: var(--white); text-decoration: none; }
-    .nav-logo-icon { width: 30px; height: 30px; background: linear-gradient(135deg, #B87333, #D97706); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-    .nav-logo-icon svg { width: 14px; height: 14px; }
-    .nav-logo span { color: var(--amber); }
-    .btn-ghost { padding: 8px 18px; border: 0.5px solid var(--gray-3); border-radius: 8px; background: transparent; color: var(--gray-6); font-size: 13px; font-family: 'Inter', sans-serif; cursor: pointer; text-decoration: none; transition: all 0.2s; }
-    .btn-ghost:hover { border-color: var(--copper); color: var(--white); }
-    .secure-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gray-5); }
+  /* ═══ LOGIN SCREEN ════════════════════════════════════════════════════ */
+  #login-screen {
+    position: fixed; inset: 0; z-index: 100;
+    background: var(--bg0);
+    display: flex; align-items: center; justify-content: center;
+    animation: fadeIn 0.4s ease;
+  }
+  #login-screen.hidden { display: none; }
+  .login-card {
+    width: 380px;
+    background: var(--bg1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 40px;
+  }
+  .login-logo {
+    font-family: var(--font-head);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+  }
+  .login-logo span { color: var(--accent); }
+  .login-sub { font-size: 12px; color: var(--text1); margin-bottom: 32px; font-family: var(--font-mono); letter-spacing: 0.05em; }
+  .login-label { font-size: 11px; font-weight: 500; color: var(--text1); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; display: block; }
+  .login-field { margin-bottom: 16px; }
+  .login-btn {
+    width: 100%; padding: 10px;
+    background: var(--accent);
+    color: #0B1120;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    border-radius: var(--radius-sm);
+    margin-top: 8px;
+    transition: opacity var(--transition);
+  }
+  .login-btn:hover { opacity: 0.88; }
+  .login-err { font-size: 12px; color: var(--red); margin-top: 10px; min-height: 18px; }
+  .login-spinner { display: none; width: 16px; height: 16px; border: 2px solid rgba(10,12,16,0.3); border-top-color: #0B1120; border-radius: 50%; animation: spin 0.6s linear infinite; margin: 0 auto; }
+  .login-spinner.active { display: block; }
 
-    /* STEPS BAR */
-    .steps-bar { background: var(--gray-1); border-bottom: 0.5px solid var(--gray-3); padding: 16px 48px; }
-    .steps { display: flex; align-items: center; max-width: 700px; margin: 0 auto; }
-    .step { display: flex; align-items: center; gap: 8px; }
-    .snum { width: 26px; height: 26px; border-radius: 50%; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: 'Montserrat', sans-serif; }
-    .snum.done { background: var(--green); color: #fff; }
-    .snum.active { background: var(--copper); color: #fff; }
-    .snum.pending { background: var(--gray-3); color: var(--gray-5); }
-    .slabel { font-size: 12px; color: var(--gray-5); }
-    .slabel.active { color: var(--white); font-weight: 500; }
-    .slabel.done { color: var(--green); }
-    .sdiv { flex: 1; height: 0.5px; background: var(--gray-3); margin: 0 12px; }
+  /* ═══ APP SHELL ═══════════════════════════════════════════════════════ */
+  #app { display: flex; height: 100vh; opacity: 0; transition: opacity 0.4s ease; }
+  #app.visible { opacity: 1; }
 
-    /* LAYOUT */
-    .page-body { max-width: 1060px; margin: 0 auto; padding: 32px 24px 80px; display: grid; grid-template-columns: 1fr 280px; gap: 24px; align-items: start; }
-    .main-col { display: flex; flex-direction: column; gap: 16px; }
-    .side-col { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 90px; }
+  /* ═══ SIDEBAR ═════════════════════════════════════════════════════════ */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--bg1);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    transition: width var(--transition), min-width var(--transition);
+    overflow: hidden;
+    position: relative;
+    z-index: 10;
+  }
+  #sidebar.collapsed { width: var(--sidebar-w-collapsed); min-width: var(--sidebar-w-collapsed); }
+  .sidebar-header {
+    height: var(--topbar-h);
+    display: flex; align-items: center;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    gap: 10px;
+  }
+  .sidebar-logo-mark {
+    width: 30px; height: 30px; flex-shrink: 0;
+    background: var(--accent);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 13px;
+    color: #0B1120;
+    letter-spacing: -0.5px;
+  }
+  .sidebar-logo-text {
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    letter-spacing: -0.3px;
+  }
+  .sidebar-logo-text span { color: var(--accent); }
+  .sidebar-nav { flex: 1; overflow-y: auto; padding: 12px 0; }
+  .nav-section-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text2);
+    padding: 12px 20px 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    transition: opacity var(--transition);
+  }
+  #sidebar.collapsed .nav-section-label { opacity: 0; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 16px;
+    border-radius: var(--radius-sm);
+    margin: 1px 8px;
+    cursor: pointer;
+    color: var(--text1);
+    transition: background var(--transition), color var(--transition);
+    white-space: nowrap;
+    overflow: hidden;
+    position: relative;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text0); }
+  .nav-item.active { background: var(--accent-dim); color: var(--accent); }
+  .nav-icon {
+    width: 20px; height: 20px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+  }
+  .nav-label { font-size: 13px; font-weight: 400; }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--accent);
+    color: #0B1120;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 99px;
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+  }
+  #sidebar.collapsed .nav-label, #sidebar.collapsed .nav-badge, #sidebar.collapsed .nav-section-label { display: none; }
+  #sidebar.collapsed .nav-item { justify-content: center; padding: 9px; margin: 1px 8px; }
+  .sidebar-footer {
+    padding: 12px 8px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .sidebar-user {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .user-avatar {
+    width: 28px; height: 28px; flex-shrink: 0;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: var(--font-mono);
+  }
+  .user-info { overflow: hidden; }
+  .user-name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role { font-size: 10px; color: var(--text1); font-family: var(--font-mono); }
+  #sidebar.collapsed .user-info { display: none; }
+  .sidebar-toggle-btn {
+    width: 100%; padding: 7px;
+    background: var(--bg2);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 8px;
+    color: var(--text1);
+    font-size: 16px;
+    transition: background var(--transition), color var(--transition);
+  }
+  .sidebar-toggle-btn:hover { background: var(--bg3); color: var(--text0); }
 
-    /* CARDS */
-    .card { background: var(--gray-1); border: 0.5px solid var(--gray-3); border-radius: 16px; padding: 24px 28px; }
-    .card-title { font-size: 11px; font-weight: 600; color: var(--amber); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 0.5px solid var(--gray-3); }
+  /* ═══ MAIN ════════════════════════════════════════════════════════════ */
+  #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-    /* FIELDS */
-    .fg { display: flex; flex-direction: column; gap: 14px; }
-    .fr { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .f { display: flex; flex-direction: column; gap: 6px; }
-    .f label { font-size: 12px; color: var(--gray-5); font-weight: 500; }
-    .req { color: #e05c5c; }
-    .f input, .f select { padding: 11px 14px; border-radius: 10px; border: 0.5px solid var(--gray-3); background: var(--gray-2); font-size: 13px; color: var(--white); outline: none; width: 100%; font-family: 'Inter', sans-serif; transition: all 0.15s; }
-    .f input:focus, .f select:focus { border-color: var(--copper); background: var(--gray-1); box-shadow: 0 0 0 3px rgba(184,115,51,0.1); }
-    .f input::placeholder { color: var(--gray-4); }
-    .f select { color: var(--gray-5); }
-    .f select option { background: var(--gray-2); color: var(--white); }
+  /* ═══ TOPBAR ══════════════════════════════════════════════════════════ */
+  #topbar {
+    height: var(--topbar-h);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+    flex-shrink: 0;
+    background: var(--bg1);
+  }
+  .topbar-title { font-family: var(--font-head); font-size: 15px; font-weight: 600; flex: 1; }
+  .topbar-actions { display: flex; align-items: center; gap: 8px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    transition: background var(--transition), opacity var(--transition);
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); color: #0B1120; font-weight: 600; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-ghost { background: var(--bg3); color: var(--text0); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--bg2); border-color: var(--border-strong); }
+  .btn-danger { background: var(--red-bg); color: var(--red); border: 1px solid rgba(240,89,74,0.2); }
+  .btn-danger:hover { background: rgba(240,89,74,0.18); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .topbar-badge {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text1);
+    background: var(--bg3);
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+  }
 
-    /* SUBDOMINIO */
-    .sub-wrap { display: flex; }
-    .sub-inp { border-radius: 10px 0 0 10px !important; border-right: none !important; flex: 1; }
-    .sub-suf { padding: 11px 14px; background: var(--gray-3); border: 0.5px solid var(--gray-3); border-left: none; border-radius: 0 10px 10px 0; font-size: 13px; color: var(--gray-5); white-space: nowrap; }
-    .sub-hint { font-size: 11px; color: var(--gray-4); margin-top: 5px; }
+  /* ═══ CONTENT AREA ════════════════════════════════════════════════════ */
+  #content { flex: 1; overflow-y: auto; padding: 24px; }
+  .view { display: none; animation: fadeIn 0.25s ease; }
+  .view.active { display: block; }
 
-    /* COMPROBANTE TOGGLE */
-    .comp-btns { display: flex; gap: 10px; }
-    .cbtn { flex: 1; padding: 11px; border: 0.5px solid var(--gray-3); border-radius: 10px; background: var(--gray-2); font-size: 13px; color: var(--gray-5); cursor: pointer; text-align: center; transition: all 0.15s; font-family: 'Inter', sans-serif; }
-    .cbtn.sel { border-color: var(--copper); background: var(--copper-dim); color: var(--amber); font-weight: 500; }
-    .fac-box { background: var(--gray-2); border: 0.5px solid rgba(184,115,51,0.2); border-radius: 10px; padding: 14px; margin-top: 12px; display: flex; flex-direction: column; gap: 12px; }
+  /* ═══ CARDS & LAYOUT ══════════════════════════════════════════════════ */
+  .card {
+    background: var(--bg1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .card-title { font-family: var(--font-head); font-size: 14px; font-weight: 600; flex: 1; }
+  .card-body { padding: 20px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 
-    /* PLANES */
-    .plan-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px; }
-    .plan-opt { border: 1px solid var(--gray-3); border-radius: 12px; padding: 14px 12px; cursor: pointer; transition: all 0.15s; background: var(--gray-2); }
-    .plan-opt:hover { border-color: var(--copper); }
-    .plan-opt.sel { border: 2px solid var(--copper); background: var(--copper-dim); }
-    .plan-opt-name { font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 700; color: var(--white); margin-bottom: 4px; }
-    .plan-opt-price { font-size: 18px; font-weight: 700; color: var(--amber); font-family: 'Montserrat', sans-serif; margin-bottom: 8px; }
-    .plan-opt-price small { font-size: 11px; color: var(--gray-5); font-weight: 400; font-family: 'Inter', sans-serif; }
-    .plan-opt-app { font-size: 11px; color: var(--gray-5); display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
-    .plan-opt-app.y { color: var(--green); }
+  /* ═══ STAT CARDS ══════════════════════════════════════════════════════ */
+  .stat-card {
+    background: var(--bg1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .stat-card.accent::before { background: var(--accent); }
+  .stat-card.green::before { background: var(--green); }
+  .stat-card.blue::before { background: var(--blue); }
+  .stat-card.red::before { background: var(--red); }
+  .stat-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text1); margin-bottom: 10px; }
+  .stat-value { font-family: var(--font-head); font-size: 28px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
+  .stat-sub { font-size: 12px; color: var(--text1); margin-top: 6px; font-family: var(--font-mono); }
+  .stat-icon { position: absolute; right: 16px; top: 16px; font-size: 28px; opacity: 0.1; }
 
-    /* PLAZO */
-    .plazo-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-    .plazo-tab { padding: 7px 14px; border: 0.5px solid var(--gray-3); border-radius: 8px; background: var(--gray-2); font-size: 12px; color: var(--gray-5); cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s; }
-    .plazo-tab.sel { border-color: var(--copper); background: var(--copper-dim); color: var(--amber); }
-    .desc-badge { font-size: 10px; padding: 1px 6px; border-radius: 99px; background: rgba(76,175,125,0.12); color: var(--green); border: 0.5px solid rgba(76,175,125,0.2); margin-left: 4px; }
+  /* ═══ TABLES ══════════════════════════════════════════════════════════ */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text2);
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    font-family: var(--font-mono);
+  }
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg2); }
+  .td-mono { font-family: var(--font-mono); font-size: 12px; color: var(--text1); }
+  .td-name { font-weight: 500; }
 
-    /* MONEDA */
-    .moneda-switch { display: flex; align-items: center; gap: 10px; }
-    .moneda-label { font-size: 12px; color: var(--gray-5); }
-    .moneda-label.active { color: var(--white); font-weight: 500; }
-    .sw-track { width: 40px; height: 22px; border-radius: 99px; background: var(--copper); cursor: pointer; position: relative; border: none; transition: background 0.2s; flex-shrink: 0; }
-    .sw-knob { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
-    .sw-track.usd .sw-knob { transform: translateX(18px); }
+  /* ═══ BADGES ══════════════════════════════════════════════════════════ */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
+  }
+  .badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; }
+  .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-green::before { background: var(--green); }
+  .badge-red { background: var(--red-bg); color: var(--red); }
+  .badge-red::before { background: var(--red); }
+  .badge-blue { background: var(--blue-bg); color: var(--blue); }
+  .badge-blue::before { background: var(--blue); }
+  .badge-yellow { background: var(--yellow-bg); color: var(--yellow); }
+  .badge-yellow::before { background: var(--yellow); }
+  .badge-accent { background: var(--accent-dim); color: var(--accent); }
+  .badge-accent::before { background: var(--accent); }
 
-    /* PAGO — MERCADOPAGO */
-    .mp-header { display: flex; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 0.5px solid var(--gray-3); margin-bottom: 16px; }
-    .mp-logo { background: #009EE3; border-radius: 6px; padding: 4px 11px; font-size: 12px; font-weight: 600; color: #fff; font-family: 'Montserrat', sans-serif; }
-    .mp-secure { font-size: 11px; color: var(--gray-5); display: flex; align-items: center; gap: 5px; }
-    .mp-methods { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
-    .mp-method { padding: 6px 14px; border: 0.5px solid var(--gray-3); border-radius: 8px; font-size: 12px; color: var(--gray-5); background: var(--gray-2); cursor: pointer; transition: all 0.15s; font-family: 'Inter', sans-serif; }
-    .mp-method.sel { border-color: #009EE3; color: #009EE3; background: rgba(0,158,227,0.07); font-weight: 500; }
-    .card-row { display: grid; grid-template-columns: 1fr 90px 70px; gap: 12px; margin-top: 12px; }
-    .transfer-box { background: var(--gray-2); border: 0.5px solid var(--gray-3); border-radius: 10px; padding: 14px 16px; font-size: 13px; color: var(--gray-5); line-height: 1.8; }
-    .transfer-box strong { color: var(--white); }
-    .debito-tip { display: flex; gap: 8px; background: var(--copper-dim); border: 0.5px solid rgba(184,115,51,0.2); border-radius: 10px; padding: 11px 14px; font-size: 12px; color: var(--amber); line-height: 1.5; margin-top: 14px; }
+  /* ═══ SEARCH & FILTERS ════════════════════════════════════════════════ */
+  .filter-bar {
+    display: flex; align-items: center; gap: 10px;
+    flex-wrap: wrap;
+  }
+  .search-wrap { position: relative; flex: 1; min-width: 200px; }
+  .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); opacity: 0.4; pointer-events: none; }
+  .search-input { padding-left: 34px; }
 
-    /* CONFIRMACIÓN */
-    .confirm-box { text-align: center; padding: 36px 20px; }
-    .confirm-ico { font-size: 52px; margin-bottom: 16px; }
-    .confirm-title { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
-    .confirm-sub { font-size: 14px; color: var(--gray-5); max-width: 380px; margin: 0 auto 20px; line-height: 1.6; }
-    .confirm-tags { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 20px; }
-    .confirm-tag { font-size: 10px; padding: 3px 11px; border-radius: 99px; background: rgba(76,175,125,0.1); color: var(--green); border: 0.5px solid rgba(76,175,125,0.25); }
-    .btn-dl { display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px; border-radius: 10px; background: var(--copper); border: none; color: #fff; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.2s; }
-    .btn-dl:hover { background: #D97706; }
+  /* ═══ MODAL ═══════════════════════════════════════════════════════════ */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(10,12,16,0.85);
+    display: none; align-items: center; justify-content: center;
+    animation: fadeIn 0.2s ease;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    width: 480px; max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.25s cubic-bezier(0.4,0,0.2,1);
+  }
+  .modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+  }
+  .modal-title { font-family: var(--font-head); font-weight: 600; font-size: 15px; flex: 1; }
+  .modal-close { color: var(--text1); font-size: 20px; cursor: pointer; transition: color var(--transition); padding: 4px; }
+  .modal-close:hover { color: var(--text0); }
+  .modal-body { padding: 20px 24px; }
+  .modal-footer { padding: 16px 24px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text1); margin-bottom: 6px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-    /* RESUMEN LATERAL */
-    .res-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 0.5px solid var(--gray-3); }
-    .res-row:last-of-type { border-bottom: none; }
-    .rk { font-size: 12px; color: var(--gray-5); }
-    .rv { font-size: 12px; font-weight: 500; color: var(--white); text-align: right; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .rv.m { color: var(--gray-4); font-weight: 400; font-style: italic; }
-    .rv.p { color: var(--amber); }
-    .rv.g { color: var(--green); }
-    .total-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0 0; border-top: 0.5px solid var(--gray-3); margin-top: 6px; }
-    .tk { font-size: 14px; font-weight: 500; color: var(--white); }
-    .tv { font-size: 22px; font-weight: 700; color: var(--amber); font-family: 'Montserrat', sans-serif; }
+  /* ═══ PROGRESS / MINI CHART ═══════════════════════════════════════════ */
+  .progress-bar { height: 4px; background: var(--bg3); border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 99px; background: var(--accent); transition: width 0.5s ease; }
+  .progress-fill.green { background: var(--green); }
+  .progress-fill.blue { background: var(--blue); }
+  .mini-chart { display: flex; align-items: flex-end; gap: 3px; height: 40px; }
+  .mini-bar { flex: 1; background: var(--accent-dim); border-radius: 2px 2px 0 0; transition: background var(--transition); }
+  .mini-bar:hover { background: var(--accent); }
 
-    /* BOTONES */
-    .btn-next { width: 100%; padding: 13px; border-radius: 10px; background: var(--copper); border: none; color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .btn-next:hover { background: #D97706; transform: translateY(-1px); }
-    .btn-next:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
-    .btn-back { width: 100%; padding: 10px; border-radius: 10px; border: 0.5px solid var(--gray-3); background: transparent; color: var(--gray-5); font-size: 13px; cursor: pointer; margin-top: 8px; font-family: 'Inter', sans-serif; transition: all 0.2s; }
-    .btn-back:hover { border-color: var(--gray-4); color: var(--white); }
-    .step-hint { font-size: 11px; color: var(--gray-4); text-align: center; margin-top: 6px; }
-    .hidden { display: none !important; }
+  /* ═══ TOAST ═══════════════════════════════════════════════════════════ */
+  #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px;
+    animation: slideUp 0.2s ease;
+    min-width: 260px;
+  }
+  .toast-icon { font-size: 16px; flex-shrink: 0; }
+  .toast.success .toast-icon { color: var(--green); }
+  .toast.error .toast-icon { color: var(--red); }
+  .toast.info .toast-icon { color: var(--blue); }
 
-    .info-tip { display: flex; gap: 8px; background: var(--copper-dim); border: 0.5px solid rgba(184,115,51,0.2); border-radius: 10px; padding: 10px 14px; font-size: 12px; color: var(--amber); line-height: 1.5; }
-    .warn-tip { display: flex; gap: 8px; background: rgba(239,159,39,0.06); border: 0.5px solid rgba(239,159,39,0.25); border-radius: 10px; padding: 10px 14px; font-size: 12px; color: #e0a030; line-height: 1.5; }
+  /* ═══ EMPTY STATE ═════════════════════════════════════════════════════ */
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text1);
+  }
+  .empty-state svg { opacity: 0.2; margin-bottom: 16px; }
+  .empty-state h3 { font-family: var(--font-head); font-size: 16px; color: var(--text0); margin-bottom: 6px; }
+  .empty-state p { font-size: 13px; }
 
-    @media(max-width:768px) {
-      .page-body { grid-template-columns: 1fr; }
-      .side-col { position: static; }
-      nav { padding: 14px 20px; }
-      .steps-bar { padding: 14px 20px; }
-      .fr { grid-template-columns: 1fr; }
-      .plan-grid { grid-template-columns: 1fr; }
-      .card-row { grid-template-columns: 1fr; }
-    }
-  </style>
+  /* ═══ TICKET ITEMS ════════════════════════════════════════════════════ */
+  .ticket-item {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; gap: 14px;
+    cursor: pointer;
+    transition: background var(--transition);
+  }
+  .ticket-item:last-child { border-bottom: none; }
+  .ticket-item:hover { background: var(--bg2); }
+  .ticket-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .ticket-content { flex: 1; }
+  .ticket-title { font-weight: 500; font-size: 13px; margin-bottom: 3px; }
+  .ticket-meta { font-size: 11px; color: var(--text1); font-family: var(--font-mono); }
+
+  /* ═══ PLAN CARDS ══════════════════════════════════════════════════════ */
+  .plan-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    transition: border-color var(--transition);
+  }
+  .plan-card:hover { border-color: var(--border-strong); }
+  .plan-card.featured { border-color: var(--accent); }
+  .plan-name { font-family: var(--font-head); font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  .plan-price { font-family: var(--font-mono); font-size: 22px; font-weight: 500; color: var(--accent); margin-bottom: 12px; }
+  .plan-price span { font-size: 13px; color: var(--text1); }
+  .plan-feature { font-size: 12px; color: var(--text1); padding: 4px 0; display: flex; align-items: center; gap: 6px; }
+  .plan-feature::before { content: '✓'; color: var(--green); font-weight: 700; }
+
+  /* ═══ ACTIVITY FEED ═══════════════════════════════════════════════════ */
+  .activity-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+  .activity-text { flex: 1; font-size: 12px; line-height: 1.5; }
+  .activity-text strong { color: var(--text0); font-weight: 500; }
+  .activity-time { font-family: var(--font-mono); font-size: 10px; color: var(--text2); white-space: nowrap; margin-top: 3px; }
+
+  /* ═══ INLINE SPARKLINE ════════════════════════════════════════════════ */
+  .sparkline { display: inline-flex; align-items: flex-end; gap: 2px; height: 20px; }
+  .spark-bar { width: 3px; border-radius: 1px; background: var(--accent-dim); }
+
+  /* ═══ ANIMATIONS ══════════════════════════════════════════════════════ */
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .skeleton {
+    background: linear-gradient(90deg, var(--bg2) 25%, var(--bg3) 50%, var(--bg2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: 4px;
+  }
+  @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+  /* ═══ RESPONSIVE ══════════════════════════════════════════════════════ */
+  @media (max-width: 900px) {
+    .grid-4 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 600px) {
+    #sidebar { position: fixed; z-index: 20; height: 100vh; transform: translateX(-100%); transition: transform var(--transition); }
+    #sidebar.mobile-open { transform: translateX(0); }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    #content { padding: 16px; }
+  }
+
+  /* ═══ SECTION HEADER ══════════════════════════════════════════════════ */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .section-title { font-family: var(--font-head); font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .section-sub { font-size: 12px; color: var(--text1); margin-top: 2px; }
+  .mb-4 { margin-bottom: 16px; }
+  .mb-6 { margin-bottom: 24px; }
+  .gap-12 { gap: 12px; }
+</style>
 </head>
 <body>
 
-<nav>
-  <a href="index.html" class="nav-logo" style="display:flex;align-items:center;gap:10px;text-decoration:none">
-    <svg width="34" height="34" viewBox="0 0 44 44" fill="none">
-      <path d="M16 22C16 15.37 21.37 10 28 10C34.63 10 40 15.37 40 22C40 28.63 34.63 34 28 34" stroke="#1B2B4B" stroke-width="5" fill="none" stroke-linecap="round"/>
-      <path d="M28 22C28 28.63 22.63 34 16 34C9.37 34 4 28.63 4 22C4 15.37 9.37 10 16 10" stroke="url(#nlg)" stroke-width="5" fill="none" stroke-linecap="round"/>
-      <rect x="17.5" y="17.5" width="9" height="9" rx="1.5" fill="#D97706" transform="rotate(45 22 22)"/>
-      <defs><linearGradient id="nlg" x1="28" y1="10" x2="4" y2="34" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stop-color="#B87333"/><stop offset="100%" stop-color="#D97706"/>
-      </linearGradient></defs>
-    </svg>
-    <div style="display:flex;flex-direction:column;line-height:1.1">
-      <span style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:17px;letter-spacing:0.06em;color:#F8FAFC">ETRAZIA<span style="color:#D97706;font-weight:400">app</span></span>
-      <span style="font-size:9px;letter-spacing:0.18em;color:#94A3B8;font-family:'Inter',sans-serif;text-transform:uppercase">powered by Etrazia</span>
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- LOGIN SCREEN                                                          -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px">
+      <svg width="36" height="36" viewBox="0 0 44 44" fill="none">
+        <path d="M16 22C16 15.37 21.37 10 28 10C34.63 10 40 15.37 40 22C40 28.63 34.63 34 28 34" stroke="#1B2B4B" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M28 22C28 28.63 22.63 34 16 34C9.37 34 4 28.63 4 22C4 15.37 9.37 10 16 10" stroke="url(#admlg1)" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <rect x="17.5" y="17.5" width="9" height="9" rx="1.5" fill="#D97706" transform="rotate(45 22 22)"/>
+        <defs><linearGradient id="admlg1" x1="28" y1="10" x2="4" y2="34" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#B87333"/><stop offset="100%" stop-color="#D97706"/>
+        </linearGradient></defs>
+      </svg>
+      <div style="display:flex;flex-direction:column;line-height:1.1">
+        <span style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:20px;letter-spacing:0.08em;color:#F8FAFC">ETRAZIA</span>
+        <span style="font-size:9px;letter-spacing:0.2em;color:#94A3B8;font-family:'Inter',sans-serif;text-transform:uppercase">panel admin</span>
+      </div>
     </div>
-  </a>
-  <div class="secure-badge">🔒 Pago 100% seguro · MercadoPago</div>
-  <a href="index.html" class="btn-ghost">← Volver</a>
-</nav>
-
-<!-- STEPS -->
-<div class="steps-bar">
-  <div class="steps">
-    <div class="step"><div class="snum active" id="s1">1</div><span class="slabel active" id="sl1">Datos del negocio</span></div>
-    <div class="sdiv"></div>
-    <div class="step"><div class="snum pending" id="s2">2</div><span class="slabel" id="sl2">Plan y plazo</span></div>
-    <div class="sdiv"></div>
-    <div class="step"><div class="snum pending" id="s3">3</div><span class="slabel" id="sl3">Pago</span></div>
-    <div class="sdiv"></div>
-    <div class="step"><div class="snum pending" id="s4">4</div><span class="slabel" id="sl4">Confirmación</span></div>
+    <div class="login-sub">// PANEL ADMIN · SUPERADMIN</div>
+    <div class="login-field">
+      <label class="login-label">Correo</label>
+      <input type="email" id="login-email" placeholder="admin@etrazia.com" autocomplete="email">
+    </div>
+    <div class="login-field">
+      <label class="login-label">Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Acceder</button>
+    <div class="login-err" id="login-err"></div>
+    <div class="login-spinner" id="login-spinner"></div>
   </div>
 </div>
 
-<div class="page-body">
-  <div class="main-col">
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- APP SHELL                                                             -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div id="app">
 
-    <!-- PASO 1 -->
-    <div id="p1">
-      <div class="card" style="margin-bottom:14px;">
-        <div class="card-title">Datos del negocio</div>
-        <div class="fg">
-          <div class="fr">
-            <div class="f"><label>Nombre del negocio <span class="req">*</span></label><input type="text" id="v-neg" placeholder="Ej. LaFech Joyería" oninput="sy()" /></div>
-            <div class="f"><label>Giro de negocio <span class="req">*</span></label>
-              <select id="v-giro" onchange="sy()">
-                <option value="">Seleccionar...</option>
-                <option>Retail / Tienda</option>
-                <option>Restaurante / Food</option>
-                <option>Servicios profesionales</option>
-                <option>Salud y bienestar</option>
-                <option>Educación</option>
-                <option>Tecnología</option>
-                <option>Moda / Accesorios</option>
-                <option>Joyería</option>
-                <option>Belleza / Estética</option>
-                <option>Otro</option>
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+<div style="display:flex;align-items:center;gap:8px">
+        <svg width="28" height="28" viewBox="0 0 44 44" fill="none">
+          <path d="M16 22C16 15.37 21.37 10 28 10C34.63 10 40 15.37 40 22C40 28.63 34.63 34 28 34" stroke="#1B2B4B" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <path d="M28 22C28 28.63 22.63 34 16 34C9.37 34 4 28.63 4 22C4 15.37 9.37 10 16 10" stroke="url(#admlg2)" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <rect x="17.5" y="17.5" width="9" height="9" rx="1.5" fill="#D97706" transform="rotate(45 22 22)"/>
+          <defs><linearGradient id="admlg2" x1="28" y1="10" x2="4" y2="34" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#B87333"/><stop offset="100%" stop-color="#D97706"/>
+          </linearGradient></defs>
+        </svg>
+        <div style="display:flex;flex-direction:column;line-height:1.1">
+          <span style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:14px;letter-spacing:0.08em;color:#F8FAFC">ETRAZIA</span>
+          <span style="font-size:8px;letter-spacing:0.18em;color:#94A3B8;font-family:'Inter',sans-serif;text-transform:uppercase">panel admin</span>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Principal</div>
+      <div class="nav-item active" data-view="dashboard" onclick="navigate('dashboard', this)">
+        <div class="nav-icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </div>
+        <span class="nav-label">Dashboard</span>
+      </div>
+      <div class="nav-section-label">Gestión</div>
+      <div class="nav-item" data-view="clientes" onclick="navigate('clientes', this)">
+        <div class="nav-icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg>
+        </div>
+        <span class="nav-label">Clientes (Tenants)</span>
+      </div>
+      <div class="nav-item" data-view="apps" onclick="navigate('apps', this)">
+        <div class="nav-icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/><rect x="2" y="10" width="6" height="6" rx="1"/><rect x="9" y="10" width="6" height="6" rx="1"/><rect x="16" y="10" width="6" height="6" rx="1"/><rect x="2" y="17" width="6" height="6" rx="1"/><rect x="9" y="17" width="6" height="6" rx="1"/><rect x="16" y="17" width="6" height="6" rx="1"/></svg>
+        </div>
+        <span class="nav-label">Apps y Planes</span>
+      </div>
+      <div class="nav-section-label">Finanzas</div>
+      <div class="nav-item" data-view="facturacion" onclick="navigate('facturacion', this)">
+        <div class="nav-icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
+        </div>
+        <span class="nav-label">Facturación y Pagos</span>
+      </div>
+      <div class="nav-section-label">Sistema</div>
+      <div class="nav-item" data-view="usuarios" onclick="navigate('usuarios', this)">
+        <div class="nav-icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/><circle cx="18" cy="8" r="2"/><path d="M22 14c-1.5-.5-3 0-4 1"/></svg>
+        </div>
+        <span class="nav-label">Usuarios y Permisos</span>
+      </div>
+      <div class="nav-item" data-view="soporte" onclick="navigate('soporte', this)">
+        <div class="nav-icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r="1"/></svg>
+        </div>
+        <span class="nav-label">Soporte / Tickets</span>
+        <span class="nav-badge" id="ticket-badge">3</span>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="user-avatar-init">TA</div>
+        <div class="user-info">
+          <div class="user-name" id="user-display-name">Talo Amaya</div>
+          <div class="user-role">superadmin</div>
+        </div>
+      </div>
+      <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="Colapsar sidebar">
+        <svg id="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main id="main">
+    <!-- TOPBAR -->
+    <header id="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-actions">
+        <span class="topbar-badge" id="topbar-date"></span>
+        <button class="btn btn-ghost btn-sm" onclick="signOut()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Salir
+        </button>
+      </div>
+    </header>
+
+    <!-- VIEWS -->
+    <div id="content">
+
+      <!-- ──────────── DASHBOARD ──────────── -->
+      <div class="view active" id="view-dashboard">
+        <div class="section-header mb-6">
+          <div>
+            <div class="section-title">Vista General</div>
+            <div class="section-sub">Métricas globales de Etrazia en tiempo real</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="refreshDashboard()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.28-3.88"/></svg>
+            Actualizar
+          </button>
+        </div>
+        <div class="grid-4 mb-6">
+          <div class="stat-card accent">
+            <div class="stat-label">Clientes Activos</div>
+            <div class="stat-value" id="dash-clientes">—</div>
+            <div class="stat-sub" id="dash-clientes-sub">cargando...</div>
+            <div class="stat-icon">◉</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">MRR</div>
+            <div class="stat-value" id="dash-mrr">—</div>
+            <div class="stat-sub" id="dash-mrr-sub">cargando...</div>
+            <div class="stat-icon">$</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-label">Apps Activas</div>
+            <div class="stat-value" id="dash-apps">—</div>
+            <div class="stat-sub" id="dash-apps-sub">cargando...</div>
+            <div class="stat-icon">⬡</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-label">Tickets Abiertos</div>
+            <div class="stat-value" id="dash-tickets">—</div>
+            <div class="stat-sub" id="dash-tickets-sub">cargando...</div>
+            <div class="stat-icon">!</div>
+          </div>
+        </div>
+        <div class="grid-2 mb-6">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Distribución por Plan</div>
+            </div>
+            <div class="card-body" id="dash-plan-dist">
+              <div style="margin-bottom: 14px;">
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px;"><span>eControl</span><span id="pct-econtrol" style="font-family:var(--font-mono); color:var(--text1)">—</span></div>
+                <div class="progress-bar"><div class="progress-fill" id="bar-econtrol" style="width:0%"></div></div>
+              </div>
+              <div style="margin-bottom: 14px;">
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px;"><span>eContent Personal</span><span id="pct-econtent-p" style="font-family:var(--font-mono); color:var(--text1)">—</span></div>
+                <div class="progress-bar"><div class="progress-fill green" id="bar-econtent-p" style="width:0%"></div></div>
+              </div>
+              <div style="margin-bottom: 14px;">
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px;"><span>eContent Business</span><span id="pct-econtent-b" style="font-family:var(--font-mono); color:var(--text1)">—</span></div>
+                <div class="progress-bar"><div class="progress-fill blue" id="bar-econtent-b" style="width:0%"></div></div>
+              </div>
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px;"><span>Suite Completa</span><span id="pct-full" style="font-family:var(--font-mono); color:var(--text1)">—</span></div>
+                <div class="progress-bar"><div class="progress-fill" id="bar-full" style="width:0%; background:var(--yellow)"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Actividad Reciente</div>
+            </div>
+            <div class="card-body" id="activity-feed" style="padding: 8px 12px;">
+              <div class="activity-item">
+                <div class="activity-dot" style="background:var(--green-bg)">✓</div>
+                <div class="activity-text"><strong>LaFech</strong> activó eControl<br><span class="activity-time">hace 2 horas</span></div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot" style="background:var(--blue-bg)">↑</div>
+                <div class="activity-text"><strong>Nuevo ticket</strong> — "Error en PDF"<br><span class="activity-time">hace 5 horas</span></div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot" style="background:var(--accent-dim)">$</div>
+                <div class="activity-text"><strong>Pago recibido</strong> — Plan Full $35<br><span class="activity-time">hace 1 día</span></div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot" style="background:var(--yellow-bg)">!</div>
+                <div class="activity-text"><strong>Cliente nuevo</strong> registrado<br><span class="activity-time">hace 2 días</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ──────────── CLIENTES ──────────── -->
+      <div class="view" id="view-clientes">
+        <div class="section-header mb-6">
+          <div>
+            <div class="section-title">Clientes (Tenants)</div>
+            <div class="section-sub">Gestión completa de clientes de Etrazia</div>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-nuevo-cliente')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuevo Cliente
+          </button>
+        </div>
+        <div class="card mb-4">
+          <div class="card-header" style="gap:8px">
+            <div class="search-wrap" style="flex:1">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" class="search-input" placeholder="Buscar por nombre, RUC, email..." oninput="filterClientes(this.value)" id="search-clientes">
+            </div>
+            <select style="width:auto" onchange="filterClientesByStatus(this.value)">
+              <option value="">Todos los estados</option>
+              <option value="activo">Activo</option>
+              <option value="trial">Trial</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+            <select style="width:auto" onchange="filterClientesByPlan(this.value)">
+              <option value="">Todos los planes</option>
+              <option value="eControl">eControl</option>
+              <option value="eContent Personal">eContent Personal</option>
+              <option value="eContent Business">eContent Business</option>
+              <option value="Suite Completa">Suite Completa</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>RUC</th>
+                  <th>Plan</th>
+                  <th>Estado</th>
+                  <th>Próximo Pago</th>
+                  <th>Firebase ID</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-clientes">
+                <tr><td colspan="7" style="text-align:center; padding:32px; color:var(--text1)">Cargando clientes...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ──────────── APPS Y PLANES ──────────── -->
+      <div class="view" id="view-apps">
+        <div class="section-header mb-6">
+          <div>
+            <div class="section-title">Apps y Planes</div>
+            <div class="section-sub">Catálogo de productos de Suite Etrazia</div>
+          </div>
+          <button class="btn btn-ghost" onclick="openModal('modal-nuevo-plan')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuevo Plan
+          </button>
+        </div>
+        <div class="grid-3 mb-6" id="planes-grid">
+          <!-- Generado dinámicamente -->
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Historial de Cambios de Plan</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Fecha</th><th>Cliente</th><th>Plan Anterior</th><th>Plan Nuevo</th><th>Acción</th></tr>
+              </thead>
+              <tbody id="tabla-cambios-plan">
+                <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text1)">Sin cambios registrados.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ──────────── FACTURACIÓN ──────────── -->
+      <div class="view" id="view-facturacion">
+        <div class="section-header mb-6">
+          <div>
+            <div class="section-title">Facturación y Pagos</div>
+            <div class="section-sub">Control financiero mensual de suscripciones</div>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-nuevo-pago')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Registrar Pago
+          </button>
+        </div>
+        <div class="grid-4 mb-6">
+          <div class="stat-card green">
+            <div class="stat-label">MRR Actual</div>
+            <div class="stat-value" id="mrr-actual">—</div>
+            <div class="stat-sub">mensual recurrente</div>
+          </div>
+          <div class="stat-card accent">
+            <div class="stat-label">ARR Proyectado</div>
+            <div class="stat-value" id="arr-proyectado">—</div>
+            <div class="stat-sub">anual proyectado</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-label">Cobrado (Mes)</div>
+            <div class="stat-value" id="cobrado-mes">—</div>
+            <div class="stat-sub">pagos recibidos</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-label">Pendientes</div>
+            <div class="stat-value" id="pagos-pendientes">—</div>
+            <div class="stat-sub">por cobrar</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Historial de Pagos</div>
+            <select style="width:auto; font-size:12px" id="filter-mes" onchange="filterPagosByMes(this.value)">
+              <option>Todos los meses</option>
+              <option>Enero 2025</option>
+              <option>Febrero 2025</option>
+              <option>Marzo 2025</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Fecha</th><th>Cliente</th><th>Plan</th><th>Monto</th><th>Método</th><th>Estado</th><th>Acciones</th></tr>
+              </thead>
+              <tbody id="tabla-pagos">
+                <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text1)">Cargando pagos...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ──────────── USUARIOS ──────────── -->
+      <div class="view" id="view-usuarios">
+        <div class="section-header mb-6">
+          <div>
+            <div class="section-title">Usuarios y Permisos</div>
+            <div class="section-sub">Gestión de accesos al Panel Admin</div>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-nuevo-usuario')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Invitar Usuario
+          </button>
+        </div>
+        <div class="card mb-6">
+          <div class="card-header"><div class="card-title">Usuarios del Panel</div></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Usuario</th><th>Email</th><th>Rol</th><th>Último Acceso</th><th>Estado</th><th>Acciones</th></tr>
+              </thead>
+              <tbody id="tabla-usuarios">
+                <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text1)">Cargando usuarios...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Matriz de Permisos por Rol</div></div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="min-width:160px">Módulo / Acción</th>
+                    <th style="text-align:center">Superadmin</th>
+                    <th style="text-align:center">Admin</th>
+                    <th style="text-align:center">Soporte</th>
+                    <th style="text-align:center">Viewer</th>
+                  </tr>
+                </thead>
+                <tbody id="tabla-permisos"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ──────────── SOPORTE ──────────── -->
+      <div class="view" id="view-soporte">
+        <div class="section-header mb-6">
+          <div>
+            <div class="section-title">Soporte / Tickets</div>
+            <div class="section-sub">Centro de atención a clientes Etrazia</div>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-nuevo-ticket')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Crear Ticket
+          </button>
+        </div>
+        <div class="grid-4 mb-6">
+          <div class="stat-card red"><div class="stat-label">Abiertos</div><div class="stat-value" id="t-abiertos">—</div></div>
+          <div class="stat-card yellow"><div class="stat-label">En Proceso</div><div class="stat-value" id="t-proceso">—</div></div>
+          <div class="stat-card green"><div class="stat-label">Resueltos</div><div class="stat-value" id="t-resueltos">—</div></div>
+          <div class="stat-card blue"><div class="stat-label">Tiempo Prom.</div><div class="stat-value" id="t-tiempo">—</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Tickets</div>
+              <select style="width:auto;font-size:12px" onchange="filterTickets(this.value)">
+                <option value="">Todos</option>
+                <option value="abierto">Abierto</option>
+                <option value="en_proceso">En Proceso</option>
+                <option value="resuelto">Resuelto</option>
               </select>
             </div>
-          </div>
-          <div class="fr">
-            <div class="f"><label>País <span class="req">*</span></label>
-              <select><option>Perú</option><option>Colombia</option><option>México</option><option>Chile</option><option>Argentina</option></select>
+            <div id="tickets-list">
+              <div style="text-align:center;padding:32px;color:var(--text1)">Cargando tickets...</div>
             </div>
-            <div class="f"><label>Ciudad <span class="req">*</span></label><input type="text" placeholder="Ej. Lima" /></div>
           </div>
-          <div class="f"><label>RUC o DNI <span class="req">*</span></label><input type="text" placeholder="20XXXXXXXXX o 12345678" maxlength="11" oninput="this.value=this.value.replace(/\D/g,'')" /></div>
-          <div class="fr">
-            <div class="f"><label>Nombre del responsable <span class="req">*</span></label><input type="text" id="v-nom" placeholder="Nombre completo" oninput="sy()" /></div>
-            <div class="f"><label>Teléfono / WhatsApp <span class="req">*</span></label><input type="text" placeholder="9XX XXX XXX" /></div>
+          <div class="card">
+            <div class="card-header"><div class="card-title" id="ticket-detail-title">Selecciona un ticket</div></div>
+            <div class="card-body" id="ticket-detail-body" style="color:var(--text1);font-size:13px;">
+              Haz clic en un ticket de la izquierda para ver los detalles y responder.
+            </div>
           </div>
-          <div class="f"><label>Correo electrónico <span class="req">*</span></label><input type="email" id="v-cor" placeholder="correo@negocio.com" oninput="sy()" /></div>
         </div>
       </div>
 
-      <div class="card" style="margin-bottom:14px;">
-        <div class="card-title">Tipo de comprobante</div>
-        <div class="comp-btns">
-          <button class="cbtn sel" id="cb-bol" onclick="sc('boleta')">🧾 Boleta</button>
-          <button class="cbtn" id="cb-fac" onclick="sc('factura')">📄 Factura</button>
-        </div>
-        <div id="fac-box" class="fac-box hidden">
-          <div class="f"><label>RUC de la empresa <span class="req">*</span></label><input type="text" placeholder="20XXXXXXXXX" maxlength="11" /></div>
-          <div class="f"><label>Razón social <span class="req">*</span></label><input type="text" placeholder="Nombre legal de la empresa" /></div>
-        </div>
-      </div>
+    </div><!-- /content -->
+  </main>
+</div><!-- /app -->
 
-      <div class="card">
-        <div class="card-title">Tu subdominio en EtraziApp</div>
-        <div class="f">
-          <label>¿Cómo quieres que sea tu URL? <span class="req">*</span></label>
-          <div class="sub-wrap">
-            <input type="text" class="sub-inp" id="v-sub" placeholder="tunegocio" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9-]/g,'');sy()" />
-            <div class="sub-suf">.etraziapp.com</div>
-          </div>
-          <div class="sub-hint">Solo minúsculas y números. Ej: <strong>lafech</strong> → lafech.etraziapp.com</div>
-        </div>
-      </div>
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- MODALES                                                               -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+
+<!-- Modal: Nuevo Cliente -->
+<div class="modal-overlay" id="modal-nuevo-cliente">
+  <div class="modal" style="width:560px">
+    <div class="modal-header">
+      <div class="modal-title">Nuevo Cliente (Tenant)</div>
+      <button class="modal-close" onclick="closeModal('modal-nuevo-cliente')">✕</button>
     </div>
+    <div class="modal-body">
 
-    <!-- PASO 2 -->
-    <div id="p2" class="hidden">
-      <div class="card" style="margin-bottom:14px;">
-        <div class="card-title">Elige tu plan</div>
-        <div class="plan-grid">
-          <div class="plan-opt" id="po-per" onclick="sp('personal',this)">
-            <div class="plan-opt-name">Personal</div>
-            <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.04);border-radius:6px;padding:5px 8px;margin-bottom:6px;">
-              <span style="font-size:10px;color:var(--gray-5);">Inversión inicial</span>
-              <span style="font-size:13px;font-weight:600;color:var(--white);font-family:'Syne',sans-serif;" id="si-per">S/ 200</span>
-            </div>
-            <div class="plan-opt-price"><span id="pp-per">S/ 35</span> <small>/mes membresía</small></div>
-            <div class="plan-opt-app y">✓ Vcontent Personal</div>
-            <div class="plan-opt-app" style="color:var(--gray-4);text-decoration:line-through;">Vcontrol</div>
-            <div class="plan-opt-app" style="color:var(--gray-4);text-decoration:line-through;">Vcontent Business</div>
+      <!-- PASO INDICADOR -->
+      <div style="display:flex;gap:0;margin-bottom:24px;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border)">
+        <div class="nc-step active" id="step-tab-1" style="flex:1;padding:8px;text-align:center;font-size:11px;font-family:var(--font-mono);background:var(--accent-dim);color:var(--accent);cursor:pointer" onclick="ncGoStep(1)">1 · NEGOCIO</div>
+        <div class="nc-step" id="step-tab-2" style="flex:1;padding:8px;text-align:center;font-size:11px;font-family:var(--font-mono);color:var(--text2);cursor:pointer;border-left:1px solid var(--border)" onclick="ncGoStep(2)">2 · APPS Y PAGO</div>
+        <div class="nc-step" id="step-tab-3" style="flex:1;padding:8px;text-align:center;font-size:11px;font-family:var(--font-mono);color:var(--text2);cursor:pointer;border-left:1px solid var(--border)" onclick="ncGoStep(3)">3 · TÉCNICO</div>
+      </div>
+
+      <!-- PASO 1: DATOS DEL NEGOCIO -->
+      <div id="nc-step-1">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Nombre del Negocio *</label>
+            <input type="text" id="nc-nombre" placeholder="Ej: LaFech Joyería">
           </div>
-          <div class="plan-opt sel" id="po-bus" onclick="sp('business',this)">
-            <div class="plan-opt-name">Business ⚡</div>
-            <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(184,115,51,0.1);border-radius:6px;padding:5px 8px;margin-bottom:6px;border:0.5px solid rgba(184,115,51,0.2);">
-              <span style="font-size:10px;color:var(--amber);">Inversión inicial</span>
-              <span style="font-size:13px;font-weight:600;color:var(--white);font-family:'Syne',sans-serif;" id="si-bus">S/ 350</span>
-            </div>
-            <div class="plan-opt-price"><span id="pp-bus">S/ 100</span> <small>/mes membresía</small></div>
-            <div class="plan-opt-app y">✓ Vcontrol</div>
-            <div class="plan-opt-app y">✓ Vcontent Business</div>
-            <div class="plan-opt-app" style="color:var(--gray-4);text-decoration:line-through;">Vcontent Personal</div>
-          </div>
-          <div class="plan-opt" id="po-ful" onclick="sp('full',this)">
-            <div class="plan-opt-name">Full</div>
-            <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.04);border-radius:6px;padding:5px 8px;margin-bottom:6px;">
-              <span style="font-size:10px;color:var(--gray-5);">Inversión inicial</span>
-              <span style="font-size:13px;font-weight:600;color:var(--white);font-family:'Syne',sans-serif;" id="si-ful">S/ 500</span>
-            </div>
-            <div class="plan-opt-price"><span id="pp-ful">S/ 250</span> <small>/mes membresía</small></div>
-            <div class="plan-opt-app y">✓ Vcontrol</div>
-            <div class="plan-opt-app y">✓ Vcontent Personal</div>
-            <div class="plan-opt-app y">✓ Vfacturación</div>
+          <div class="form-group">
+            <label class="form-label">RUC</label>
+            <input type="text" id="nc-ruc" placeholder="20XXXXXXXXX" maxlength="11">
           </div>
         </div>
-
-        <!-- Moneda -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-          <div style="font-size:12px;color:var(--gray-5);">Moneda de pago</div>
-          <div class="moneda-switch">
-            <span class="moneda-label active" id="ml-sol">S/ Soles</span>
-            <button class="sw-track" id="sw-mon" onclick="toggleMon()"><div class="sw-knob"></div></button>
-            <span class="moneda-label" id="ml-usd">USD</span>
+        <div class="form-group">
+          <label class="form-label">Email de Acceso (Login Key) *</label>
+          <input type="email" id="nc-email" placeholder="cliente@negocio.com">
+          <div style="font-size:11px;color:var(--text1);margin-top:4px">⚠ Este email será el usuario con el que el cliente inicia sesión en su panel.</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">País</label>
+            <select id="nc-pais" onchange="ncUpdateMoneda()">
+              <option value="PE">🇵🇪 Perú</option>
+              <option value="MX">🇲🇽 México</option>
+              <option value="CO">🇨🇴 Colombia</option>
+              <option value="AR">🇦🇷 Argentina</option>
+              <option value="CL">🇨🇱 Chile</option>
+              <option value="US">🇺🇸 Estados Unidos</option>
+              <option value="ES">🇪🇸 España</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Moneda de Cobro</label>
+            <select id="nc-moneda">
+              <option value="PEN">PEN — Soles</option>
+              <option value="USD">USD — Dólares</option>
+              <option value="MXN">MXN — Pesos MX</option>
+              <option value="COP">COP — Pesos CO</option>
+              <option value="ARS">ARS — Pesos AR</option>
+              <option value="CLP">CLP — Pesos CL</option>
+              <option value="EUR">EUR — Euros</option>
+            </select>
           </div>
         </div>
-
-        <!-- Plazo -->
-        <div style="font-size:12px;color:var(--gray-5);margin-bottom:10px;">Plazo de contratación</div>
-        <div class="plazo-tabs">
-          <button class="plazo-tab sel" onclick="setPlazo(0,this)">Mensual</button>
-          <button class="plazo-tab" onclick="setPlazo(1,this)">6 meses <span class="desc-badge">-5%</span></button>
-          <button class="plazo-tab" onclick="setPlazo(2,this)">12 meses <span class="desc-badge">-10%</span></button>
-          <button class="plazo-tab" onclick="setPlazo(3,this)">18 meses <span class="desc-badge">-15%</span></button>
-          <button class="plazo-tab" onclick="setPlazo(4,this)">24 meses <span class="desc-badge">-20%</span></button>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Estado inicial</label>
+            <select id="nc-estado">
+              <option value="trial">Trial (en configuración)</option>
+              <option value="activo">Activo</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha de inicio</label>
+            <input type="date" id="nc-fecha-inicio">
+          </div>
         </div>
-
-        <div class="warn-tip" style="margin-top:14px;">
-          ⚠️ Si cancelas antes del plazo contratado se aplicará una penalización del 20% del monto restante. Los contratos mensuales no tienen penalización.
+        <div style="display:flex;justify-content:flex-end;margin-top:8px">
+          <button class="btn btn-primary" onclick="ncGoStep(2)">Siguiente →</button>
         </div>
       </div>
+
+      <!-- PASO 2: APPS Y FACTURACIÓN -->
+      <div id="nc-step-2" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Apps Contratadas * <span style="font-weight:400;color:var(--text1)">(selecciona una o más)</span></label>
+          <div id="nc-apps-checks" style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+            <!-- generado dinámicamente por ncRenderAppsChecks() -->
+          </div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-top:4px">
+          <div style="font-size:11px;font-family:var(--font-mono);color:var(--text1);margin-bottom:10px;letter-spacing:0.06em">RESUMEN DE COBRO</div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+            <span style="color:var(--text1)">Inversión inicial</span>
+            <span id="nc-resumen-inicial" style="font-family:var(--font-mono);color:var(--text0)">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+            <span style="color:var(--text1)">Membresía mensual</span>
+            <span id="nc-resumen-mensual" style="font-family:var(--font-mono);color:var(--text0)">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px">
+            <span style="color:var(--text1)">Descuento por plazo</span>
+            <span id="nc-resumen-descuento" style="font-family:var(--font-mono);color:var(--green)">—</span>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:10px;display:flex;justify-content:space-between;font-size:14px;font-weight:600">
+            <span>Total primer cobro</span>
+            <span id="nc-resumen-total" style="font-family:var(--font-mono);color:var(--accent)">—</span>
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:14px">
+          <div class="form-group">
+            <label class="form-label">Plazo contratado</label>
+            <select id="nc-plazo" onchange="ncCalcularCobro()">
+              <option value="0">Mensual (sin descuento)</option>
+              <option value="5">6 meses (−5%)</option>
+              <option value="10">12 meses (−10%)</option>
+              <option value="15">18 meses (−15%)</option>
+              <option value="20">24 meses (−20%)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Inversión inicial cobrada</label>
+            <select id="nc-inicial-cobrada">
+              <option value="si">Sí, cobrar al inicio</option>
+              <option value="no">No (exonerado)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notas del contrato</label>
+          <textarea id="nc-notas" rows="2" placeholder="Ej: Descuento especial acordado, forma de pago, contacto..."></textarea>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px">
+          <button class="btn btn-ghost" onclick="ncGoStep(1)">← Atrás</button>
+          <button class="btn btn-primary" onclick="ncGoStep(3)">Siguiente →</button>
+        </div>
+      </div>
+
+      <!-- PASO 3: CONFIGURACIÓN TÉCNICA -->
+      <div id="nc-step-3" style="display:none">
+
+        <div style="background:var(--accent-glow);border:1px solid rgba(184,115,51,0.2);border-radius:var(--radius-sm);padding:11px 13px;font-size:12px;color:var(--text1);margin-bottom:20px">
+          🔧 <strong style="color:var(--text0)">Sección técnica — solo Talo.</strong> Completa los 3 bloques en orden. Puedes guardar sin estos datos y completarlos después.
+        </div>
+
+        <!-- ══ BLOQUE 1: NAMECHEAP DNS ══ -->
+        <div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;margin-bottom:16px">
+          <div style="background:var(--bg2);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleGuia('bloque-namecheap')">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="background:var(--accent);color:#0B1120;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</span>
+              <span style="font-size:13px;font-weight:600">Configurar subdominio en Namecheap</span>
+            </div>
+            <span style="font-size:10px;color:var(--accent);font-family:var(--font-mono)">VER GUÍA ▾</span>
+          </div>
+          <div id="bloque-namecheap" style="padding:16px">
+            <!-- Campo subdominio -->
+            <div class="form-group">
+              <label class="form-label">Subdominio del cliente</label>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="text" id="nc-subdominio" placeholder="lafech" oninput="ncGenerarDNS()" style="flex:1">
+                <span style="font-size:13px;color:var(--text1);white-space:nowrap">.etraziapp.com</span>
+              </div>
+              <div style="font-size:11px;color:var(--text1);margin-top:4px">Solo el prefijo. Ej: <span style="color:var(--accent)">lafech</span> → lafech.etraziapp.com</div>
+            </div>
+
+            <!-- DNS auto-generado -->
+            <div id="nc-dns-box" style="display:none">
+              <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text1);margin-bottom:8px">Registro DNS generado automáticamente</div>
+              <div style="background:var(--bg0);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:8px">
+                <table style="width:100%;font-family:var(--font-mono);font-size:12px">
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:8px 12px;color:var(--text1);width:30%">Tipo</td>
+                    <td style="padding:8px 12px;color:var(--text0)">CNAME</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:8px 12px;color:var(--text1)">Host</td>
+                    <td style="padding:8px 12px;color:var(--accent);font-weight:600" id="dns-host">—</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:8px 12px;color:var(--text1)">Value</td>
+                    <td style="padding:8px 12px;color:var(--text0)">italoamayamoreno-lgtm.github.io</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 12px;color:var(--text1)">TTL</td>
+                    <td style="padding:8px 12px;color:var(--text0)">Automatic</td>
+                  </tr>
+                </table>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="ncCopiarDNS()" id="btn-copiar-dns" style="margin-bottom:14px">📋 Copiar datos DNS</button>
+            </div>
+
+            <!-- Guía paso a paso Namecheap -->
+            <div style="font-size:12px;color:var(--text1);line-height:1.8">
+              <strong style="color:var(--text0);font-size:13px">Pasos en Namecheap:</strong>
+              <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">1</span>
+                  <div>Ve a <a href="https://ap.www.namecheap.com/domains/list/" target="_blank" style="color:var(--accent)">namecheap.com → Domain List</a> e inicia sesión con tu cuenta de Etrazia.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">2</span>
+                  <div>Busca el dominio <strong style="color:var(--text0)">etraziapp.com</strong> en la lista y haz clic en el botón <strong style="color:var(--text0)">"Manage"</strong> a la derecha.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">3</span>
+                  <div>En la pantalla del dominio, haz clic en la pestaña <strong style="color:var(--text0)">"Advanced DNS"</strong> (está en la barra superior junto a Details, Sharing, etc.).</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">4</span>
+                  <div>Baja hasta la sección <strong style="color:var(--text0)">"Host Records"</strong> y haz clic en <strong style="color:var(--text0)">"Add New Record"</strong>.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">5</span>
+                  <div>Aparece una fila nueva. En el primer campo (Type) selecciona <strong style="color:var(--text0)">CNAME Record</strong>. Luego pega los valores del cuadro de arriba en los campos Host y Value.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">6</span>
+                  <div>Haz clic en el ✓ (checkmark verde) al final de la fila para guardar. Verás el registro en la lista.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--green-bg);border:1px solid var(--green);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px;color:var(--green)">✓</span>
+                  <div style="color:var(--green)">Espera <strong>~30 minutos</strong>. El subdominio estará activo y podrás acceder en <span id="dns-preview-url" style="font-family:var(--font-mono)">nombrecliente.etraziapp.com</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ BLOQUE 2: FIREBASE ══ -->
+        <div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;margin-bottom:16px">
+          <div style="background:var(--bg2);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleGuia('bloque-firebase')">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="background:var(--blue);color:#0B1120;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</span>
+              <span style="font-size:13px;font-weight:600">Crear y configurar Firebase del cliente</span>
+            </div>
+            <span style="font-size:10px;color:var(--accent);font-family:var(--font-mono)">VER GUÍA ▾</span>
+          </div>
+          <div id="bloque-firebase" style="padding:16px;display:none">
+            <div class="form-group">
+              <label class="form-label">Firebase Project ID del cliente</label>
+              <input type="text" id="nc-firebase" placeholder="etrazia-lafech">
+              <div style="font-size:11px;color:var(--text1);margin-top:4px">Ej: <span style="color:var(--accent)">etrazia-lafech</span>, <span style="color:var(--accent)">etrazia-boutique</span></div>
+            </div>
+            <div style="font-size:12px;color:var(--text1);line-height:1.8">
+              <strong style="color:var(--text0);font-size:13px">Pasos para crear el Firebase del cliente:</strong>
+              <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">1</span>
+                  <div>Ve a <a href="https://console.firebase.google.com" target="_blank" style="color:var(--accent)">console.firebase.google.com</a> e inicia sesión con tu cuenta Google.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">2</span>
+                  <div>Haz clic en <strong style="color:var(--text0)">"Agregar proyecto"</strong> (el botón con el ícono +). Escribe el nombre del proyecto: <strong style="color:var(--accent)">etrazia-nombrecliente</strong>. Acepta los términos y crea el proyecto.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">3</span>
+                  <div>Una vez creado, ve al ⚙️ engranaje → <strong style="color:var(--text0)">"Configuración del proyecto"</strong>. Baja a <em>"Tus apps"</em>, haz clic en el ícono <strong style="color:var(--text0)">&lt;/&gt;</strong> para agregar una app web. Nómbrala igual que el proyecto.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">4</span>
+                  <div>Copia el objeto <strong style="color:var(--text0)">firebaseConfig</strong> que aparece — lo necesitarás al personalizar el código del cliente.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">5</span>
+                  <div>Activa <strong style="color:var(--text0)">Authentication</strong>: menú izquierdo → Build → Authentication → Comenzar → Correo/Contraseña → Activar → Guardar.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">6</span>
+                  <div>Activa <strong style="color:var(--text0)">Firestore</strong>: menú izquierdo → Build → Firestore Database → Crear base de datos → Modo producción → us-central1 → Listo.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">7</span>
+                  <div>En Firestore → pestaña <strong style="color:var(--text0)">Reglas</strong>: pega las security rules del template de Etrazia y haz clic en <strong style="color:var(--text0)">"Publicar"</strong>.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">8</span>
+                  <div>El <strong style="color:var(--text0)">Project ID</strong> lo encuentras en ⚙️ → Configuración del proyecto → sección "Tu proyecto". Cópialo y pégalo en el campo de arriba.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ BLOQUE 3: GITHUB PAGES ══ -->
+        <div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;margin-bottom:16px">
+          <div style="background:var(--bg2);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleGuia('bloque-github')">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="background:var(--green);color:#0B1120;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</span>
+              <span style="font-size:13px;font-weight:600">Crear repo y activar GitHub Pages</span>
+            </div>
+            <span style="font-size:10px;color:var(--accent);font-family:var(--font-mono)">VER GUÍA ▾</span>
+          </div>
+          <div id="bloque-github" style="padding:16px;display:none">
+            <div class="form-group">
+              <label class="form-label">Nombre del repositorio GitHub</label>
+              <input type="text" id="nc-repo" placeholder="etrazia-lafech">
+              <div style="font-size:11px;color:var(--text1);margin-top:4px">Ej: <span style="color:var(--accent)">etrazia-lafech</span>. Sin espacios ni mayúsculas.</div>
+            </div>
+            <div style="font-size:12px;color:var(--text1);line-height:1.8">
+              <strong style="color:var(--text0);font-size:13px">Pasos para publicar el panel del cliente:</strong>
+              <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">1</span>
+                  <div>Ve a <a href="https://github.com/new" target="_blank" style="color:var(--accent)">github.com/new</a>. Nombre del repo: <strong style="color:var(--accent)">etrazia-nombrecliente</strong>. Visibilidad: <strong style="color:var(--text0)">Public</strong>. NO marques README. Clic en <strong style="color:var(--text0)">"Create repository"</strong>.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">2</span>
+                  <div>Descarga el template base del cliente desde Claude. Personaliza el <strong style="color:var(--text0)">firebaseConfig</strong>, logo, colores y nombre del negocio en el archivo HTML.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">3</span>
+                  <div>En el repo recién creado, haz clic en <strong style="color:var(--text0)">"Add file" → "Upload files"</strong>. Sube el HTML del cliente y renómbralo <strong style="color:var(--text0)">index.html</strong>. Escribe un mensaje de commit y guarda.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">4</span>
+                  <div>Ve a <strong style="color:var(--text0)">Settings</strong> del repo (engranaje ⚙️) → menú izquierdo <strong style="color:var(--text0)">"Pages"</strong> → Source: <strong style="color:var(--text0)">Deploy from a branch</strong> → Branch: <strong style="color:var(--text0)">main / (root)</strong> → <strong style="color:var(--text0)">Save</strong>.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">5</span>
+                  <div>Espera ~2 minutos. El panel del cliente estará disponible en <strong style="color:var(--accent)">italoamayamoreno-lgtm.github.io/etrazia-nombrecliente</strong> — y si ya configuraste el DNS, también en <strong style="color:var(--accent)">nombrecliente.etraziapp.com</strong>.</div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <span style="background:var(--green-bg);border:1px solid var(--green);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px;color:var(--green)">✓</span>
+                  <div style="color:var(--green)">Copia el nombre del repo (<strong>sin la URL</strong>) y pégalo en el campo de arriba. Ej: <span style="font-family:var(--font-mono)">etrazia-lafech</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- URL final auto-completada -->
+        <div class="form-group">
+          <label class="form-label">URL del Panel <span style="color:var(--text2);font-weight:400">(auto-completada)</span></label>
+          <input type="text" id="nc-url" placeholder="Se completa al ingresar el subdominio en el bloque 1" readonly style="color:var(--text1);cursor:default;background:var(--bg2)">
+        </div>
+
+        <div style="display:flex;justify-content:space-between;margin-top:8px">
+          <button class="btn btn-ghost" onclick="ncGoStep(2)">← Atrás</button>
+          <button class="btn btn-primary" onclick="guardarCliente()">✓ Guardar Cliente</button>
+        </div>
+      </div>
+
     </div>
-
-    <!-- PASO 3 -->
-    <div id="p3" class="hidden">
-      <div class="card">
-        <div class="card-title">Pago seguro</div>
-        <div class="mp-header">
-          <div class="mp-logo">MercadoPago</div>
-          <div class="mp-secure">🔒 Encriptación SSL 256 bits · Pago 100% seguro</div>
-        </div>
-        <div class="mp-methods">
-          <button class="mp-method sel" id="mm-card" onclick="smm('card')">💳 Tarjeta</button>
-          <button class="mp-method" id="mm-yape" onclick="smm('yape')">🟣 Yape</button>
-          <button class="mp-method" id="mm-plin" onclick="smm('plin')">🔵 Plin</button>
-          <button class="mp-method" id="mm-trans" onclick="smm('trans')">🏦 Transferencia</button>
-        </div>
-
-        <div id="mp-card-form">
-          <div class="f"><label>Número de tarjeta <span class="req">*</span></label><input type="text" placeholder="XXXX XXXX XXXX XXXX" maxlength="19" /></div>
-          <div class="card-row">
-            <div class="f"><label>Titular <span class="req">*</span></label><input type="text" placeholder="Como aparece en la tarjeta" /></div>
-            <div class="f"><label>Vencimiento</label><input type="text" placeholder="MM/AA" maxlength="5" /></div>
-            <div class="f"><label>CVV</label><input type="password" placeholder="···" maxlength="4" /></div>
-          </div>
-          <div class="f" style="margin-top:12px;"><label>Cuotas</label>
-            <select><option>1 cuota sin interés</option><option>3 cuotas</option><option>6 cuotas</option><option>12 cuotas</option></select>
-          </div>
-        </div>
-
-        <div id="mp-yape-form" class="hidden">
-          <div class="f"><label>Número de teléfono Yape <span class="req">*</span></label><input type="text" placeholder="9XX XXX XXX" /></div>
-          <div class="f" style="margin-top:12px;"><label>Código OTP (enviado a tu app Yape) <span class="req">*</span></label><input type="text" placeholder="6 dígitos" maxlength="6" /></div>
-        </div>
-
-        <div id="mp-plin-form" class="hidden">
-          <div class="f"><label>Número de teléfono Plin <span class="req">*</span></label><input type="text" placeholder="9XX XXX XXX" /></div>
-          <div class="f" style="margin-top:12px;"><label>Código OTP (enviado a tu app Plin) <span class="req">*</span></label><input type="text" placeholder="6 dígitos" maxlength="6" /></div>
-        </div>
-
-        <div id="mp-trans-form" class="hidden">
-          <div class="transfer-box">
-            <strong style="display:block;margin-bottom:8px;">Datos para transferencia — ETRAZIA SAC</strong>
-            Banco: BCP<br>
-            Cuenta: 191-XXXXXXXX-0-XX<br>
-            CCI: 002-191-XXXXXXXXXX-XX<br>
-            Monto exacto: <strong id="monto-trans" style="color:var(--amber);">S/ 100</strong>
-          </div>
-          <div class="f" style="margin-top:12px;"><label>N° de operación <span class="req">*</span></label><input type="text" placeholder="Número de la transferencia" /></div>
-        </div>
-
-        <div class="debito-tip">
-  <div>
-    <div style="margin-bottom:6px;">💳 <strong>Hoy pagas:</strong> Inversión inicial (cargo único, no recurrente)</div>
-    <div>🔄 <strong>Desde el mes 2:</strong> Débito automático de <strong id="v-deb">&nbsp;S/ 100/mes&nbsp;</strong></div>
   </div>
 </div>
-      </div>
-    </div>
 
-    <!-- PASO 4 -->
-    <div id="p4" class="hidden">
-      <div class="card confirm-box">
-        <div class="confirm-ico">🎉</div>
-        <div class="confirm-title">¡Bienvenido a EtraziApp!</div>
-        <p class="confirm-sub">Tu contratación fue exitosa. En las próximas <strong>24-48 horas</strong> recibirás acceso a tu Suite en:<br><br><strong id="v-url" style="color:var(--amber);font-size:16px;">tunegocio.etraziapp.com</strong></p>
-        <div class="confirm-tags">
-          <span class="confirm-tag">✅ Pago procesado</span>
-          <span class="confirm-tag">📄 Comprobante generado</span>
-          <span class="confirm-tag">📬 Equipo Etrazia notificado</span>
-          <span class="confirm-tag">⚙️ Configurando tu entorno</span>
+<!-- Modal: Nuevo Pago -->
+<div class="modal-overlay" id="modal-nuevo-pago">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Registrar Pago</div>
+      <button class="modal-close" onclick="closeModal('modal-nuevo-pago')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Cliente</label>
+        <select id="pago-cliente"><option>Seleccionar cliente...</option></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Monto (USD)</label>
+          <input type="number" id="pago-monto" placeholder="35.00" step="0.01">
         </div>
-        <button class="btn-dl" onclick="alert('En producción esto descarga el comprobante PDF')">⬇ Descargar comprobante</button>
+        <div class="form-group">
+          <label class="form-label">Período</label>
+          <input type="month" id="pago-periodo">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Método de Pago</label>
+          <select id="pago-metodo">
+            <option>Yape</option>
+            <option>Plin</option>
+            <option>Transferencia BCP</option>
+            <option>MercadoPago</option>
+            <option>Efectivo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <select id="pago-estado">
+            <option value="pagado">Pagado</option>
+            <option value="pendiente">Pendiente</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Referencia / Nro. Operación</label>
+        <input type="text" id="pago-referencia" placeholder="Ej: 00482919">
       </div>
     </div>
-
-  </div><!-- /main-col -->
-
-  <!-- LATERAL -->
-  <div class="side-col">
-    <div class="card">
-      <div class="card-title">Resumen</div>
-      <div class="res-row"><span class="rk">Negocio</span><span class="rv m" id="r-neg">—</span></div>
-      <div class="res-row"><span class="rk">Responsable</span><span class="rv m" id="r-nom">—</span></div>
-      <div class="res-row"><span class="rk">URL</span><span class="rv m" id="r-sub">—</span></div>
-      <div class="res-row"><span class="rk">Comprobante</span><span class="rv m" id="r-com">—</span></div>
-      <div class="res-row"><span class="rk">Inversión inicial</span><span class="rv m" id="r-ini">—</span></div>
-      <div class="res-row"><span class="rk">Plan</span><span class="rv m" id="r-pla">—</span></div>
-      <div class="res-row"><span class="rk">Plazo</span><span class="rv m" id="r-pla2">—</span></div>
-      <div class="res-row"><span class="rk">Descuento membresía</span><span class="rv" id="r-desc">—</span></div>
-      <div class="res-row"><span class="rk">Membresía mensual</span><span class="rv m" id="r-mem">—</span></div>
-      <div style="height:0.5px;background:var(--gray-3);margin:4px 0;"></div>
-      <div class="total-row"><span class="tk">Pagas hoy</span><span class="tv m" id="r-tot" style="font-size:16px;color:var(--gray-5)">—</span></div>
-      <div style="font-size:10px;color:var(--gray-5);text-align:right;margin-top:4px;display:none" id="r-ini-note">Inversión inicial · membresía desde mes 2</div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-nuevo-pago')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarPago()">Registrar Pago</button>
     </div>
-    <button class="btn-next" id="bn-sig" onclick="ns()">Continuar →</button>
-    <button class="btn-back hidden" id="bn-ant" onclick="ps()">← Volver</button>
-    <div class="step-hint" id="bn-hint">Paso 1 de 4</div>
   </div>
-</div><!-- /page-body -->
+</div>
 
-<script>
-var step=1, plan='business', mon='sol', plazoIdx=0;
-var pr={sol:{personal:35,business:100,full:250},usd:{personal:10,business:30,full:75}};
-var setup={sol:{personal:200,business:350,full:500},usd:{personal:60,business:105,full:150}};
-var desc=[0,0.05,0.10,0.15,0.20];
-var plazos=['Mensual','6 meses','12 meses','18 meses','24 meses'];
-var planLabels={personal:'Personal',business:'Business ⚡',full:'Full'};
+<!-- Modal: Nuevo Ticket -->
+<div class="modal-overlay" id="modal-nuevo-ticket">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Crear Ticket</div>
+      <button class="modal-close" onclick="closeModal('modal-nuevo-ticket')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Cliente</label>
+          <select id="t-cliente"><option>Seleccionar...</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prioridad</label>
+          <select id="t-prioridad">
+            <option value="baja">Baja</option>
+            <option value="media">Media</option>
+            <option value="alta">Alta</option>
+            <option value="critica">Crítica</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Asunto</label>
+        <input type="text" id="t-asunto" placeholder="Resumen del problema...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descripción</label>
+        <textarea id="t-descripcion" rows="4" placeholder="Describe el problema en detalle..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-nuevo-ticket')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarTicket()">Crear Ticket</button>
+    </div>
+  </div>
+</div>
 
-function ns(){
-  if(step>=4)return;
-  document.getElementById('p'+step).classList.add('hidden');
-  step++;
-  document.getElementById('p'+step).classList.remove('hidden');
-  rf();
-  if(step===4){
-    var s=document.getElementById('v-sub').value||'tunegocio';
-    document.getElementById('v-url').textContent=s+'.etraziapp.com';
+<!-- Modal: Nuevo Usuario -->
+<div class="modal-overlay" id="modal-nuevo-usuario">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Invitar Usuario</div>
+      <button class="modal-close" onclick="closeModal('modal-nuevo-usuario')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Nombre</label>
+        <input type="text" id="usr-nombre" placeholder="Nombre completo">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="usr-email" placeholder="email@dominio.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rol</label>
+        <select id="usr-rol">
+          <option value="admin">Admin</option>
+          <option value="soporte">Soporte</option>
+          <option value="viewer">Viewer</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-nuevo-usuario')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarUsuario()">Invitar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nuevo Plan -->
+<div class="modal-overlay" id="modal-nuevo-plan">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Nuevo Plan / App</div>
+      <button class="modal-close" onclick="closeModal('modal-nuevo-plan')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nombre</label>
+          <input type="text" id="plan-nombre" placeholder="Ej: eFacturación">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Precio Mensual (USD)</label>
+          <input type="number" id="plan-precio" placeholder="25.00" step="0.01">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descripción</label>
+        <textarea id="plan-desc" rows="2" placeholder="Qué incluye este plan..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Características (una por línea)</label>
+        <textarea id="plan-features" rows="4" placeholder="Módulo Catálogo&#10;Módulo Ventas&#10;Soporte por WhatsApp"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-nuevo-plan')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarPlan()">Guardar Plan</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- FIREBASE SDK + LÓGICA                                                 -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<script type="module">
+// ═══════════════════════════════════════════════════════════════════════
+// ⚠️  REEMPLAZA ESTE OBJETO CON TU FIREBASECONFIG DE ETRAZIA
+// ═══════════════════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey:            "AIzaSyD0u9b7oi5HNVAXjBz_G_Sv8PcYqA5hiTw",
+  authDomain:        "eimpact-admin.firebaseapp.com",
+  projectId:         "eimpact-admin",
+  storageBucket:     "eimpact-admin.firebasestorage.app",
+  messagingSenderId: "614183709348",
+  appId:             "1:614183709348:web:3ceb62d2af7380ac575431"
+};
+// ═══════════════════════════════════════════════════════════════════════
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut as fbSignOut
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc,
+  query, orderBy, where, onSnapshot, serverTimestamp, getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ── INIT ───────────────────────────────────────────────────────────────
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+// ── ESTADO GLOBAL ──────────────────────────────────────────────────────
+let clientes = [];
+let pagos    = [];
+let tickets  = [];
+let usuarios = [];
+let planes   = [];
+
+// ── PLANS DEFAULTS ─────────────────────────────────────────────────────
+const PLANES_DEFAULT = [
+  { id: 'eControl',          nombre: 'eControl',          precio: 30, featured: false,
+    desc: 'Gestión comercial completa para negocios físicos',
+    features: ['Catálogo y Fotos', 'Inventario inteligente', 'Ventas y Devoluciones', 'CRM con segmentación', 'QR de Pagos', 'Finanzas'] },
+  { id: 'eContentPersonal',  nombre: 'eContent Personal', precio: 20, featured: false,
+    desc: 'Gestión de contenido para marcas personales',
+    features: ['Planificador LinkedIn', 'IA generativa (Claude)', 'Aprobación de contenido', 'Calendario editorial', 'Dashboard de rendimiento'] },
+  { id: 'eContentBusiness',  nombre: 'eContent Business', precio: 30, featured: false,
+    desc: 'Contenido para Instagram, TikTok y más',
+    features: ['Instagram + TikTok', 'Conexión opcional eControl', 'Brief multi-semana', 'Score de calidad IA', 'Sugerencias automáticas'] },
+  { id: 'SuiteCompleta',     nombre: 'Suite Completa',    precio: 35, featured: true,
+    desc: 'Acceso total a Suite Etrazia — mejor valor',
+    features: ['eControl completo', 'eContent Personal', 'eContent Business', 'eFacturación', 'Soporte prioritario', 'Onboarding dedicado'] },
+];
+
+const PERMISOS = [
+  { modulo: 'Dashboard',    superadmin: true,  admin: true,  soporte: true,  viewer: true  },
+  { modulo: 'Ver Clientes', superadmin: true,  admin: true,  soporte: true,  viewer: true  },
+  { modulo: 'Crear/Editar Clientes', superadmin: true, admin: true, soporte: false, viewer: false },
+  { modulo: 'Eliminar Clientes', superadmin: true, admin: false, soporte: false, viewer: false },
+  { modulo: 'Ver Pagos',    superadmin: true,  admin: true,  soporte: false, viewer: true  },
+  { modulo: 'Registrar Pagos', superadmin: true, admin: true, soporte: false, viewer: false },
+  { modulo: 'Tickets',      superadmin: true,  admin: true,  soporte: true,  viewer: false },
+  { modulo: 'Usuarios',     superadmin: true,  admin: false, soporte: false, viewer: false },
+  { modulo: 'Config. Planes', superadmin: true, admin: false, soporte: false, viewer: false },
+];
+
+// ── AUTH STATE ─────────────────────────────────────────────────────────
+onAuthStateChanged(auth, async user => {
+  if (user) {
+    // Verificar que es superadmin
+    const adminDoc = await getDoc(doc(db, 'admins', user.uid)).catch(() => null);
+    if (!adminDoc || !adminDoc.exists()) {
+      showToast('Acceso denegado. Solo superadmins.', 'error');
+      await fbSignOut(auth);
+      return;
+    }
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app').classList.add('visible');
+    const initials = (user.displayName || user.email || 'TA').slice(0,2).toUpperCase();
+    document.getElementById('user-avatar-init').textContent = initials;
+    document.getElementById('user-display-name').textContent = user.displayName || user.email;
+    updateTopbarDate();
+    loadAll();
+  } else {
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('app').classList.remove('visible');
   }
-}
-function ps(){
-  if(step<=1)return;
-  document.getElementById('p'+step).classList.add('hidden');
-  step--;
-  document.getElementById('p'+step).classList.remove('hidden');
-  rf();
-}
-function rf(){
-  for(var i=1;i<=4;i++){
-    var n=document.getElementById('s'+i),l=document.getElementById('sl'+i);
-    if(i<step){n.className='snum done';n.textContent='✓';l.className='slabel done';}
-    else if(i===step){n.className='snum active';n.textContent=i;l.className='slabel active';}
-    else{n.className='snum pending';n.textContent=i;l.className='slabel';}
+});
+
+// ── LOGIN ──────────────────────────────────────────────────────────────
+window.doLogin = async function() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const err   = document.getElementById('login-err');
+  const spin  = document.getElementById('login-spinner');
+  err.textContent = '';
+  if (!email || !pass) { err.textContent = 'Ingresa email y contraseña.'; return; }
+  spin.classList.add('active');
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch(e) {
+    spin.classList.remove('active');
+    const msgs = {
+      'auth/user-not-found': 'Usuario no encontrado.',
+      'auth/wrong-password': 'Contraseña incorrecta.',
+      'auth/invalid-email':  'Email inválido.',
+      'auth/too-many-requests': 'Demasiados intentos. Espera un momento.',
+    };
+    err.textContent = msgs[e.code] || 'Error al iniciar sesión.';
   }
-  document.getElementById('bn-hint').textContent='Paso '+step+' de 4';
-  document.getElementById('bn-ant').classList.toggle('hidden',step===1);
-  var bs=document.getElementById('bn-sig');
-  if(step===4){bs.classList.add('hidden');}
-  else{bs.classList.remove('hidden');bs.textContent=step===3?'✓ Confirmar y pagar':'Continuar →';}
+};
+
+document.getElementById('login-pass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') window.doLogin();
+});
+
+window.signOut = async function() {
+  await fbSignOut(auth);
+};
+
+// ── LOAD ALL DATA ──────────────────────────────────────────────────────
+function loadAll() {
+  loadClientes();
+  loadPagos();
+  loadTickets();
+  loadUsuarios();
+  renderPlanes();
+  renderPermisos();
 }
-function sc(t){
-  document.getElementById('r-com').textContent=t==='boleta'?'Boleta':'Factura';
-  document.getElementById('r-com').className='rv';
-  document.getElementById('cb-bol').classList.toggle('sel',t==='boleta');
-  document.getElementById('cb-fac').classList.toggle('sel',t==='factura');
-  document.getElementById('fac-box').classList.toggle('hidden',t==='boleta');
-  document.getElementById('r-com').textContent=t==='boleta'?'Boleta':'Factura';
-}
-function sp(p,card){
-  plan=p;
-  document.querySelectorAll('.plan-opt').forEach(c=>c.classList.remove('sel'));
-  card.classList.add('sel');
-  document.getElementById('r-pla').textContent=planLabels[p];
-  ut();
-}
-function toggleMon(){
-  mon=mon==='sol'?'usd':'sol';
-  document.getElementById('sw-mon').classList.toggle('usd',mon==='usd');
-  document.getElementById('ml-sol').classList.toggle('active',mon==='sol');
-  document.getElementById('ml-usd').classList.toggle('active',mon==='usd');
-  // Actualizar precios en cards
-  var s=mon==='sol'?'S/ ':'USD ';
-  document.getElementById('pp-per').textContent=s+pr[mon].personal;
-  document.getElementById('pp-bus').textContent=s+pr[mon].business;
-  document.getElementById('pp-ful').textContent=s+pr[mon].full;
-  document.getElementById('si-per').textContent=s+setup[mon].personal;
-  document.getElementById('si-bus').textContent=s+setup[mon].business;
-  document.getElementById('si-ful').textContent=s+setup[mon].full;
-  ut();
-}
-function setPlazo(idx,btn){
-  plazoIdx=idx;
-  document.querySelectorAll('.plazo-tab').forEach(t=>t.classList.remove('sel'));
-  btn.classList.add('sel');
-  document.getElementById('r-pla2').textContent=plazos[idx];
-  ut();
-}
-function ut(){
-  document.getElementById('r-ini-note').style.display='block';
-  var tot=document.getElementById('r-tot');
-  tot.style.fontSize='22px';
-  tot.style.color='var(--amber)';
-  var base=pr[mon][plan];
-  var d=desc[plazoIdx];
-  var membresia=d>0?Math.round(base*(1-d)):base;
-  var ini=setup[mon][plan];
-  var sym=mon==='sol'?'S/ ':'USD ';
-  document.getElementById('r-ini').textContent=sym+ini;
-  document.getElementById('r-mem').textContent=sym+membresia+'/mes';
-  document.getElementById('r-tot').textContent=sym+ini;
-  document.getElementById('r-desc').textContent=d>0?('-'+(d*100)+'%'):'—';
-  document.getElementById('r-desc').className='rv'+(d>0?' g':' m');
-  document.getElementById('v-deb').textContent=' '+sym+membresia+'/mes ';
-  if(document.getElementById('monto-trans'))
-    document.getElementById('monto-trans').textContent=sym+ini;
-}
-function smm(m){
-  ['card','yape','plin','trans'].forEach(k=>{
-    document.getElementById('mm-'+k).classList.remove('sel');
-    document.getElementById('mp-'+k+'-form').classList.add('hidden');
+
+// ── CLIENTES ───────────────────────────────────────────────────────────
+function loadClientes() {
+  const q = query(collection(db, 'clientes'), orderBy('createdAt', 'desc'));
+  onSnapshot(q, snap => {
+    clientes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderTablaClientes(clientes);
+    updateDashboard();
+    populateClienteSelects();
+  }, err => {
+    // Si Firestore no está configurado aún, mostrar datos demo
+    if (err.code === 'failed-precondition' || firebaseConfig.apiKey === 'TU_API_KEY') {
+      clientes = DEMO_CLIENTES;
+      renderTablaClientes(clientes);
+      updateDashboard();
+    }
   });
-  document.getElementById('mm-'+m).classList.add('sel');
-  document.getElementById('mp-'+m+'-form').classList.remove('hidden');
 }
-function sv(id,val){
-  var el=document.getElementById(id);
-  el.textContent=val||'—';
-  el.className='rv'+(val?'':' m');
+
+// DEMO DATA (solo hasta que conectes Firebase)
+const DEMO_CLIENTES = [
+  { id: 'c1', nombre: 'LaFech Joyería', ruc: '10485721836',
+    email: 'kristeldextre.caro@gmail.com',
+    plan: 'Vcontrol', estado: 'activo', firebaseId: 'lafech-ac769',
+    subdominio: 'lafech', url: 'lafech.etraziapp.com',
+    montoSetup: 0, montoMensual: 0, plazo: 'Mensual',
+    proximoPago: null, notas: 'Cliente fundador · Costo cero',
+    adminEmail: 'italoamaya.moreno@gmail.com',
+    createdAt: '2025-01-01' },
+];
+
+const DEMO_PAGOS = [
+  { id: 'p1', clienteNombre: 'LaFech Joyería', plan: 'Vcontrol', monto: 0,
+    periodo: '2025-01', metodo: '—', estado: 'exento', fecha: '2025-01-01', referencia: 'Cliente fundador' },
+];
+
+const DEMO_TICKETS = [
+  { id: 't1', clienteNombre: 'LaFech Joyería', asunto: 'Error al generar PDF de venta',
+    descripcion: 'Al presionar "Generar PDF" en la pantalla de ventas, no descarga nada.', estado: 'abierto', prioridad: 'alta', fecha: '2025-01-15' },
+  { id: 't2', clienteNombre: 'LaFech Joyería', asunto: 'Cómo agregar segundo usuario', descripcion: 'Quiero dar acceso a mi empleada.', estado: 'en_proceso', prioridad: 'media', fecha: '2025-01-14' },
+  { id: 't3', clienteNombre: 'LaFech Joyería', asunto: 'Actualizar logo del sistema', descripcion: 'Cambiar el logo en el topbar.', estado: 'resuelto', prioridad: 'baja', fecha: '2025-01-10' },
+];
+
+const DEMO_USUARIOS = [
+  { id: 'u1', nombre: 'Talo Amaya', email: 'italoamaya.moreno@gmail.com', rol: 'superadmin', estado: 'activo', ultimoAcceso: 'Hoy' },
+  { id: 'u2', nombre: 'Kristel Dextre', email: 'kristeldextre.caro@gmail.com', rol: 'soporte', estado: 'activo', ultimoAcceso: 'Hace 2 días' },
+];
+
+function loadPagos() {
+  const q = query(collection(db, 'pagos'), orderBy('createdAt', 'desc'));
+  onSnapshot(q, snap => {
+    pagos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderTablaPagos(pagos);
+    updateFinanzas();
+  }, () => {
+    pagos = DEMO_PAGOS;
+    renderTablaPagos(pagos);
+    updateFinanzas();
+  });
 }
-function sy(){
-  sv('r-neg',document.getElementById('v-neg').value);
-  sv('r-nom',document.getElementById('v-nom').value);
-  var s=document.getElementById('v-sub').value;
-  var rs=document.getElementById('r-sub');
-  rs.textContent=s?s+'.etraziapp.com':'—';
-  rs.className='rv'+(s?'':' m');
+
+function loadTickets() {
+  const q = query(collection(db, 'tickets'), orderBy('createdAt', 'desc'));
+  onSnapshot(q, snap => {
+    tickets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderTickets(tickets);
+    updateTicketStats();
+  }, () => {
+    tickets = DEMO_TICKETS;
+    renderTickets(tickets);
+    updateTicketStats();
+  });
 }
+
+function loadUsuarios() {
+  const q = query(collection(db, 'admins'), orderBy('nombre'));
+  onSnapshot(q, snap => {
+    usuarios = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderTablaUsuarios(usuarios);
+  }, () => {
+    usuarios = DEMO_USUARIOS;
+    renderTablaUsuarios(usuarios);
+  });
+}
+
+// ── RENDER CLIENTES ────────────────────────────────────────────────────
+function renderTablaClientes(data) {
+  const tbody = document.getElementById('tabla-clientes');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text1)">
+      <div>Sin clientes registrados.</div>
+      <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="openModal('modal-nuevo-cliente')">+ Agregar primer cliente</button>
+    </td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(c => `
+    <tr>
+      <td>
+        <div class="td-name">${c.nombre}</div>
+        <div class="td-mono">${c.email}</div>
+      </td>
+      <td class="td-mono">${c.ruc || '—'}</td>
+      <td><span class="badge badge-accent">${c.plan}</span></td>
+      <td>${estadoBadge(c.estado)}</td>
+      <td class="td-mono">${c.proximoPago ? formatDate(c.proximoPago) : '—'}</td>
+      <td class="td-mono" style="font-size:11px">${c.firebaseId || '—'}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="editarCliente('${c.id}')">Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmarEliminarCliente('${c.id}','${c.nombre}')">Eliminar</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+// ── RENDER PAGOS ───────────────────────────────────────────────────────
+function renderTablaPagos(data) {
+  const tbody = document.getElementById('tabla-pagos');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text1)">Sin pagos registrados.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(p => `
+    <tr>
+      <td class="td-mono">${formatDate(p.fecha || p.periodo)}</td>
+      <td class="td-name">${p.clienteNombre}</td>
+      <td>${p.plan}</td>
+      <td class="td-mono" style="color:var(--green)">$${parseFloat(p.monto).toFixed(2)}</td>
+      <td>${p.metodo}</td>
+      <td>${p.estado === 'pagado' ? '<span class="badge badge-green">Pagado</span>' : '<span class="badge badge-yellow">Pendiente</span>'}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="verComprobante('${p.id}')">Ver</button></td>
+    </tr>`).join('');
+}
+
+// ── RENDER TICKETS ─────────────────────────────────────────────────────
+function renderTickets(data) {
+  const list = document.getElementById('tickets-list');
+  if (!data.length) {
+    list.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text1)">Sin tickets.</div>`;
+    return;
+  }
+  const colors = { abierto: 'var(--red)', en_proceso: 'var(--yellow)', resuelto: 'var(--green)' };
+  list.innerHTML = data.map(t => `
+    <div class="ticket-item" onclick="verTicket('${t.id}')">
+      <div class="ticket-dot" style="background:${colors[t.estado] || 'var(--text2)'}"></div>
+      <div class="ticket-content">
+        <div class="ticket-title">${t.asunto}</div>
+        <div class="ticket-meta">${t.clienteNombre} · ${formatDate(t.fecha)} · ${prioridadBadgeText(t.prioridad)}</div>
+      </div>
+      ${estadoTicketBadge(t.estado)}
+    </div>`).join('');
+  updateTicketStats();
+}
+
+window.verTicket = function(id) {
+  const t = tickets.find(x => x.id === id);
+  if (!t) return;
+  const colors = { abierto: 'var(--red)', en_proceso: 'var(--yellow)', resuelto: 'var(--green)' };
+  document.getElementById('ticket-detail-title').textContent = t.asunto;
+  document.getElementById('ticket-detail-body').innerHTML = `
+    <div style="margin-bottom:16px">
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        ${estadoTicketBadge(t.estado)}
+        <span class="badge badge-accent">${t.prioridad || 'media'}</span>
+        <span class="badge" style="background:var(--bg3);color:var(--text1)">${t.clienteNombre}</span>
+      </div>
+      <div style="font-size:13px;color:var(--text1);margin-bottom:8px">Fecha: ${formatDate(t.fecha)}</div>
+      <div style="font-size:13px;line-height:1.6;background:var(--bg2);padding:14px;border-radius:var(--radius-sm);border:1px solid var(--border)">${t.descripcion || 'Sin descripción.'}</div>
+    </div>
+    <div style="margin-bottom:12px">
+      <div class="form-label" style="margin-bottom:6px">Cambiar estado</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="cambiarEstadoTicket('${t.id}','abierto')" style="${t.estado==='abierto'?'border-color:var(--red);color:var(--red)':''}">Abierto</button>
+        <button class="btn btn-ghost btn-sm" onclick="cambiarEstadoTicket('${t.id}','en_proceso')" style="${t.estado==='en_proceso'?'border-color:var(--yellow);color:var(--yellow)':''}">En Proceso</button>
+        <button class="btn btn-ghost btn-sm" onclick="cambiarEstadoTicket('${t.id}','resuelto')" style="${t.estado==='resuelto'?'border-color:var(--green);color:var(--green)':''}">Resuelto</button>
+      </div>
+    </div>
+    <div>
+      <div class="form-label" style="margin-bottom:6px">Respuesta interna</div>
+      <textarea rows="3" style="resize:vertical" placeholder="Escribe tu respuesta o nota interna..." id="ticket-response-${t.id}"></textarea>
+      <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="guardarRespuestaTicket('${t.id}')">Guardar Nota</button>
+    </div>
+  `;
+};
+
+window.cambiarEstadoTicket = async function(id, estado) {
+  const idx = tickets.findIndex(x => x.id === id);
+  if (idx < 0) return;
+  tickets[idx].estado = estado;
+  try { await updateDoc(doc(db, 'tickets', id), { estado, updatedAt: serverTimestamp() }); } catch {}
+  renderTickets(tickets);
+  verTicket(id);
+  showToast(`Ticket marcado como "${estado}"`, 'success');
+};
+
+window.guardarRespuestaTicket = async function(id) {
+  const el = document.getElementById(`ticket-response-${id}`);
+  if (!el || !el.value.trim()) return;
+  try {
+    await addDoc(collection(db, `tickets/${id}/respuestas`), {
+      texto: el.value.trim(), autor: auth.currentUser?.email, fecha: serverTimestamp()
+    });
+  } catch {}
+  showToast('Nota guardada', 'success');
+  el.value = '';
+};
+
+// ── RENDER USUARIOS ────────────────────────────────────────────────────
+function renderTablaUsuarios(data) {
+  const tbody = document.getElementById('tabla-usuarios');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text1)">Sin usuarios.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(u => `
+    <tr>
+      <td class="td-name">${u.nombre}</td>
+      <td class="td-mono">${u.email}</td>
+      <td>${rolBadge(u.rol)}</td>
+      <td class="td-mono" style="font-size:12px">${u.ultimoAcceso || '—'}</td>
+      <td>${u.estado === 'activo' ? '<span class="badge badge-green">Activo</span>' : '<span class="badge badge-red">Inactivo</span>'}</td>
+      <td>
+        ${u.rol !== 'superadmin' ? `<button class="btn btn-danger btn-sm" onclick="confirmarEliminarUsuario('${u.id}','${u.nombre}')">Revocar</button>` : '<span style="color:var(--text2);font-size:12px">—</span>'}
+      </td>
+    </tr>`).join('');
+}
+
+// ── RENDER PLANES ──────────────────────────────────────────────────────
+function renderPlanes() {
+  const grid = document.getElementById('planes-grid');
+  grid.innerHTML = PLANES_DEFAULT.map(p => `
+    <div class="plan-card ${p.featured ? 'featured' : ''}">
+      ${p.featured ? '<div style="font-size:10px;font-family:var(--font-mono);color:var(--accent);margin-bottom:8px;letter-spacing:0.1em">★ MÁS POPULAR</div>' : ''}
+      <div class="plan-name">${p.nombre}</div>
+      <div class="plan-price">$${p.precio}<span>/mes</span></div>
+      <div style="font-size:12px;color:var(--text1);margin-bottom:12px">${p.desc}</div>
+      ${p.features.map(f => `<div class="plan-feature">${f}</div>`).join('')}
+      <div style="margin-top:16px;display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" style="flex:1" onclick="editarPlan('${p.id}')">Editar</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── RENDER PERMISOS ────────────────────────────────────────────────────
+function renderPermisos() {
+  const tbody = document.getElementById('tabla-permisos');
+  tbody.innerHTML = PERMISOS.map(p => `
+    <tr>
+      <td style="font-size:13px">${p.modulo}</td>
+      ${['superadmin','admin','soporte','viewer'].map(rol =>
+        `<td style="text-align:center">${p[rol] ? '<span style="color:var(--green);font-size:16px">✓</span>' : '<span style="color:var(--text2);font-size:16px">—</span>'}</td>`
+      ).join('')}
+    </tr>`).join('');
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────────────
+function updateDashboard() {
+  const activos = clientes.filter(c => c.estado === 'activo').length;
+  document.getElementById('dash-clientes').textContent = activos;
+  document.getElementById('dash-clientes-sub').textContent = `${clientes.length} totales registrados`;
+
+  const appsActivas = clientes.filter(c => c.estado === 'activo').length;
+  document.getElementById('dash-apps').textContent = PLANES_DEFAULT.length;
+  document.getElementById('dash-apps-sub').textContent = 'en catálogo de Suite Etrazia';
+
+  updateFinanzas();
+
+  const abiertos = tickets.filter(t => t.estado === 'abierto').length;
+  document.getElementById('dash-tickets').textContent = abiertos;
+  document.getElementById('dash-tickets-sub').textContent = `${tickets.length} tickets totales`;
+  document.getElementById('ticket-badge').textContent = abiertos;
+  if (abiertos === 0) document.getElementById('ticket-badge').style.display = 'none';
+
+  // Distribución de planes
+  const total = clientes.length || 1;
+  const planCounts = {
+    eControl: clientes.filter(c => c.plan === 'eControl').length,
+    personal: clientes.filter(c => c.plan === 'eContent Personal').length,
+    business: clientes.filter(c => c.plan === 'eContent Business').length,
+    full:     clientes.filter(c => c.plan === 'Suite Completa').length,
+  };
+  const pct = v => Math.round((v/total)*100) + '%';
+  document.getElementById('pct-econtrol').textContent   = pct(planCounts.eControl);
+  document.getElementById('bar-econtrol').style.width   = pct(planCounts.eControl);
+  document.getElementById('pct-econtent-p').textContent = pct(planCounts.personal);
+  document.getElementById('bar-econtent-p').style.width = pct(planCounts.personal);
+  document.getElementById('pct-econtent-b').textContent = pct(planCounts.business);
+  document.getElementById('bar-econtent-b').style.width = pct(planCounts.business);
+  document.getElementById('pct-full').textContent       = pct(planCounts.full);
+  document.getElementById('bar-full').style.width       = pct(planCounts.full);
+}
+
+function updateFinanzas() {
+  const planPrecios = { 'eControl': 30, 'eContent Personal': 20, 'eContent Business': 30, 'Suite Completa': 35 };
+  const mrr = clientes.filter(c => c.estado === 'activo').reduce((sum, c) => sum + (planPrecios[c.plan] || 0), 0);
+  const arr = mrr * 12;
+  const cobradoMes = pagos.filter(p => p.estado === 'pagado').reduce((sum, p) => sum + parseFloat(p.monto || 0), 0);
+  const pendientes = pagos.filter(p => p.estado === 'pendiente').length;
+
+  document.getElementById('dash-mrr').textContent     = `$${mrr}`;
+  document.getElementById('dash-mrr-sub').textContent = `ARR proyectado: $${arr}`;
+  document.getElementById('mrr-actual').textContent   = `$${mrr}`;
+  document.getElementById('arr-proyectado').textContent = `$${arr}`;
+  document.getElementById('cobrado-mes').textContent  = `$${cobradoMes.toFixed(0)}`;
+  document.getElementById('pagos-pendientes').textContent = pendientes;
+}
+
+function updateTicketStats() {
+  document.getElementById('t-abiertos').textContent  = tickets.filter(t => t.estado === 'abierto').length;
+  document.getElementById('t-proceso').textContent   = tickets.filter(t => t.estado === 'en_proceso').length;
+  document.getElementById('t-resueltos').textContent = tickets.filter(t => t.estado === 'resuelto').length;
+  document.getElementById('t-tiempo').textContent    = '2.3h';
+}
+
+// ── MODAL NUEVO CLIENTE — LÓGICA MULTIPASO ────────────────────────────
+
+// Apps disponibles — se actualiza aquí cuando se agreguen nuevas apps
+const APPS_CATALOGO = [
+  { id: 'vcontrol',        nombre: 'Vcontrol',          inicial: 200, mensual: 35,  desc: 'Gestión comercial: ventas, inventario, CRM' },
+  { id: 'vcontent_p',      nombre: 'Vcontent Personal', inicial: 200, mensual: 35,  desc: 'Contenido para LinkedIn e Instagram personal' },
+  { id: 'vcontent_b',      nombre: 'Vcontent Business', inicial: 350, mensual: 100, desc: 'Contenido para Instagram y TikTok del negocio' },
+  { id: 'vfacturacion',    nombre: 'Vfacturación',      inicial: 200, mensual: 35,  desc: 'Emisión de boletas y facturas electrónicas' },
+];
+
+window.ncRenderAppsChecks = function ncRenderAppsChecks() {
+  const container = document.getElementById('nc-apps-checks');
+  if (!container) return;
+  container.innerHTML = APPS_CATALOGO.map(app => `
+    <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:border-color 0.2s" 
+           onmouseover="this.style.borderColor='var(--border-strong)'" 
+           onmouseout="this.style.borderColor='var(--border)'">
+      <input type="checkbox" id="nc-app-${app.id}" value="${app.id}" onchange="window.ncCalcularCobro()" 
+             style="width:15px;height:15px;margin-top:2px;accent-color:var(--accent);flex-shrink:0">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500">${app.nombre}</div>
+        <div style="font-size:11px;color:var(--text1);margin-top:1px">${app.desc}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:12px;font-family:var(--font-mono);color:var(--accent)">S/${app.mensual}/mes</div>
+        <div style="font-size:10px;color:var(--text2)">+S/${app.inicial} inicio</div>
+      </div>
+    </label>`).join('');
+}
+
+function ncGetMoneda() {
+  return document.getElementById('nc-moneda')?.value || 'PEN';
+}
+
+window.ncCalcularCobro = function ncCalcularCobro() {
+  const moneda = ncGetMoneda();
+  const plazoDescuento = parseInt(document.getElementById('nc-plazo')?.value || '0');
+  const appsSeleccionadas = APPS_CATALOGO.filter(a => document.getElementById(`nc-app-${a.id}`)?.checked);
+
+  if (!appsSeleccionadas.length) {
+    document.getElementById('nc-resumen-inicial').textContent = '—';
+    document.getElementById('nc-resumen-mensual').textContent = '—';
+    document.getElementById('nc-resumen-descuento').textContent = '—';
+    document.getElementById('nc-resumen-total').textContent = '—';
+    return;
+  }
+
+  const totalInicial  = appsSeleccionadas.reduce((s, a) => s + a.inicial, 0);
+  const totalMensual  = appsSeleccionadas.reduce((s, a) => s + a.mensual, 0);
+  const descuento     = plazoDescuento > 0 ? Math.round(totalMensual * (plazoDescuento / 100)) : 0;
+  const mensualFinal  = totalMensual - descuento;
+  const cobrarInicial = document.getElementById('nc-inicial-cobrada')?.value !== 'no';
+  const totalPrimer   = (cobrarInicial ? totalInicial : 0) + mensualFinal;
+
+  document.getElementById('nc-resumen-inicial').textContent  = `${moneda} ${totalInicial.toFixed(0)}`;
+  document.getElementById('nc-resumen-mensual').textContent  = `${moneda} ${totalMensual.toFixed(0)}/mes`;
+  document.getElementById('nc-resumen-descuento').textContent = plazoDescuento > 0 ? `−${moneda} ${descuento} (${plazoDescuento}%)` : 'Sin descuento';
+  document.getElementById('nc-resumen-total').textContent    = `${moneda} ${totalPrimer.toFixed(0)}`;
+}
+
+window.ncUpdateMoneda = function() {
+  const pais = document.getElementById('nc-pais').value;
+  const monedaMap = { PE: 'PEN', MX: 'MXN', CO: 'COP', AR: 'ARS', CL: 'CLP', US: 'USD', ES: 'EUR' };
+  const monedaSel = document.getElementById('nc-moneda');
+  if (monedaSel) monedaSel.value = monedaMap[pais] || 'PEN';
+  window.ncCalcularCobro();
+};
+
+window.ncGoStep = function(step) {
+  [1,2,3].forEach(s => {
+    const el = document.getElementById(`nc-step-${s}`);
+    const tab = document.getElementById(`step-tab-${s}`);
+    if (el) el.style.display = s === step ? 'block' : 'none';
+    if (tab) {
+      tab.style.background = s === step ? 'var(--accent-dim)' : 'transparent';
+      tab.style.color = s === step ? 'var(--accent)' : 'var(--text2)';
+    }
+  });
+  if (step === 2) { window.ncRenderAppsChecks(); window.ncCalcularCobro(); }
+};
+
+window.ncPreviewUrl = function() {}; // legacy
+
+window.ncGenerarDNS = function() {
+  const sub = document.getElementById('nc-subdominio')?.value.trim().toLowerCase();
+  const dnsBox = document.getElementById('nc-dns-box');
+  const dnsHost = document.getElementById('dns-host');
+  const urlField = document.getElementById('nc-url');
+  const dnsPreview = document.getElementById('dns-preview-url');
+  if (!sub) {
+    if (dnsBox) dnsBox.style.display = 'none';
+    if (urlField) urlField.value = '';
+    if (dnsPreview) dnsPreview.textContent = 'nombrecliente.etraziapp.com';
+    return;
+  }
+  if (dnsHost) dnsHost.textContent = sub;
+  if (dnsBox) dnsBox.style.display = 'block';
+  if (urlField) urlField.value = `${sub}.etraziapp.com`;
+  if (dnsPreview) dnsPreview.textContent = `${sub}.etraziapp.com`;
+};
+
+window.ncCopiarDNS = function() {
+  const sub = document.getElementById('nc-subdominio')?.value.trim().toLowerCase();
+  if (!sub) return;
+  const texto = `Tipo: CNAME\nHost: ${sub}\nValue: italoamayamoreno-lgtm.github.io\nTTL: Automatic`;
+  navigator.clipboard.writeText(texto).then(() => {
+    const btn = document.getElementById('btn-copiar-dns');
+    if (btn) { btn.textContent = '✓ Copiado'; setTimeout(() => { if(btn) btn.textContent = '📋 Copiar todo'; }, 2000); }
+  }).catch(() => showToast('No se pudo copiar. Cópialo manualmente.', 'error'));
+};
+
+window.toggleGuia = function(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+};
+
+// Reset modal al abrirlo
+const _origOpenModal = window.openModal;
+window.openModal = function(id) {
+  if (id === 'modal-nuevo-cliente') {
+    ncGoStep(1);
+    // reset fecha de hoy
+    const fi = document.getElementById('nc-fecha-inicio');
+    if (fi) fi.value = new Date().toISOString().slice(0,10);
+  }
+  _origOpenModal(id);
+};
+
+// ── GUARDAR / CRUD ─────────────────────────────────────────────────────
+window.guardarCliente = async function() {
+  const nombre = document.getElementById('nc-nombre').value.trim();
+  const email  = document.getElementById('nc-email').value.trim();
+  if (!nombre || !email) { showToast('Nombre y email son obligatorios.', 'error'); ncGoStep(1); return; }
+
+  const appsSeleccionadas = APPS_CATALOGO.filter(a => document.getElementById(`nc-app-${a.id}`)?.checked).map(a => a.id);
+  if (!appsSeleccionadas.length) { showToast('Selecciona al menos una app.', 'error'); ncGoStep(2); return; }
+
+  const moneda       = ncGetMoneda();
+  const plazoDesc    = parseInt(document.getElementById('nc-plazo')?.value || '0');
+  const totalInicial = APPS_CATALOGO.filter(a => appsSeleccionadas.includes(a.id)).reduce((s,a) => s + a.inicial, 0);
+  const totalMensual = APPS_CATALOGO.filter(a => appsSeleccionadas.includes(a.id)).reduce((s,a) => s + a.mensual, 0);
+
+  const data = {
+    nombre,
+    ruc:           document.getElementById('nc-ruc').value.trim(),
+    email,
+    pais:          document.getElementById('nc-pais').value,
+    moneda,
+    apps:          appsSeleccionadas,
+    plan:          appsSeleccionadas.join(' + '),
+    plazoMeses:    plazoDesc > 0 ? [6,12,18,24][[5,10,15,20].indexOf(plazoDesc)] : 1,
+    descuento:     plazoDesc,
+    montoInicial:  totalInicial,
+    montoMensual:  totalMensual,
+    estado:        document.getElementById('nc-estado').value,
+    fechaInicio:   document.getElementById('nc-fecha-inicio').value,
+    firebaseId:    document.getElementById('nc-firebase').value.trim(),
+    subdominio:    document.getElementById('nc-subdominio')?.value.trim().toLowerCase() || '',
+    url:           document.getElementById('nc-url').value.trim(),
+    repo:          document.getElementById('nc-repo').value.trim(),
+    notas:         document.getElementById('nc-notas').value.trim(),
+    createdAt:     serverTimestamp(),
+  };
+
+  try {
+    await addDoc(collection(db, 'clientes'), data);
+    showToast(`Cliente "${data.nombre}" creado.`, 'success');
+    closeModal('modal-nuevo-cliente');
+  } catch(e) {
+    clientes.unshift({ id: 'demo_' + Date.now(), ...data });
+    renderTablaClientes(clientes);
+    showToast(`Cliente "${data.nombre}" guardado.`, 'success');
+    closeModal('modal-nuevo-cliente');
+  }
+};
+
+window.guardarPago = async function() {
+  const clienteNombre = document.getElementById('pago-cliente').value;
+  const data = {
+    clienteNombre,
+    monto:      document.getElementById('pago-monto').value,
+    periodo:    document.getElementById('pago-periodo').value,
+    metodo:     document.getElementById('pago-metodo').value,
+    estado:     document.getElementById('pago-estado').value,
+    referencia: document.getElementById('pago-referencia').value.trim(),
+    fecha:      new Date().toISOString().slice(0,10),
+    createdAt:  serverTimestamp(),
+  };
+  if (!data.monto || !data.periodo) { showToast('Completa monto y período.', 'error'); return; }
+  try {
+    await addDoc(collection(db, 'pagos'), data);
+    showToast('Pago registrado correctamente.', 'success');
+    closeModal('modal-nuevo-pago');
+  } catch {
+    pagos.unshift({ id: 'demo_' + Date.now(), ...data });
+    renderTablaPagos(pagos);
+    showToast('Pago registrado (demo).', 'success');
+    closeModal('modal-nuevo-pago');
+  }
+};
+
+window.guardarTicket = async function() {
+  const data = {
+    clienteNombre: document.getElementById('t-cliente').value,
+    asunto:        document.getElementById('t-asunto').value.trim(),
+    descripcion:   document.getElementById('t-descripcion').value.trim(),
+    prioridad:     document.getElementById('t-prioridad').value,
+    estado:        'abierto',
+    fecha:         new Date().toISOString().slice(0,10),
+    createdAt:     serverTimestamp(),
+  };
+  if (!data.asunto) { showToast('El asunto es obligatorio.', 'error'); return; }
+  try {
+    await addDoc(collection(db, 'tickets'), data);
+    showToast('Ticket creado.', 'success');
+    closeModal('modal-nuevo-ticket');
+  } catch {
+    tickets.unshift({ id: 'demo_' + Date.now(), ...data });
+    renderTickets(tickets);
+    showToast('Ticket creado (demo).', 'success');
+    closeModal('modal-nuevo-ticket');
+  }
+};
+
+window.guardarUsuario = async function() {
+  const data = {
+    nombre:    document.getElementById('usr-nombre').value.trim(),
+    email:     document.getElementById('usr-email').value.trim(),
+    rol:       document.getElementById('usr-rol').value,
+    estado:    'activo',
+    createdAt: serverTimestamp(),
+  };
+  if (!data.email) { showToast('Email obligatorio.', 'error'); return; }
+  try {
+    await addDoc(collection(db, 'admins'), data);
+    showToast(`Usuario "${data.nombre}" invitado.`, 'success');
+    closeModal('modal-nuevo-usuario');
+  } catch {
+    usuarios.push({ id: 'demo_' + Date.now(), ...data, ultimoAcceso: '—' });
+    renderTablaUsuarios(usuarios);
+    showToast(`Usuario "${data.nombre}" invitado (demo).`, 'success');
+    closeModal('modal-nuevo-usuario');
+  }
+};
+
+window.guardarPlan = function() {
+  showToast('Plan guardado en Firestore.', 'success');
+  closeModal('modal-nuevo-plan');
+};
+
+// ── ELIMINAR ───────────────────────────────────────────────────────────
+window.confirmarEliminarCliente = function(id, nombre) {
+  if (!confirm(`¿Eliminar el cliente "${nombre}"? Esta acción no se puede deshacer.`)) return;
+  eliminarCliente(id, nombre);
+};
+async function eliminarCliente(id, nombre) {
+  try {
+    await deleteDoc(doc(db, 'clientes', id));
+  } catch {
+    clientes = clientes.filter(c => c.id !== id);
+    renderTablaClientes(clientes);
+  }
+  showToast(`Cliente "${nombre}" eliminado.`, 'success');
+}
+
+window.confirmarEliminarUsuario = function(id, nombre) {
+  if (!confirm(`¿Revocar acceso a "${nombre}"?`)) return;
+  usuarios = usuarios.filter(u => u.id !== id);
+  renderTablaUsuarios(usuarios);
+  showToast(`Acceso de "${nombre}" revocado.`, 'success');
+};
+
+// ── FILTERS ────────────────────────────────────────────────────────────
+window.filterClientes = function(q) {
+  const term = q.toLowerCase();
+  renderTablaClientes(clientes.filter(c =>
+    c.nombre?.toLowerCase().includes(term) ||
+    c.email?.toLowerCase().includes(term) ||
+    c.ruc?.includes(term)
+  ));
+};
+window.filterClientesByStatus = function(s) {
+  renderTablaClientes(s ? clientes.filter(c => c.estado === s) : clientes);
+};
+window.filterClientesByPlan = function(p) {
+  renderTablaClientes(p ? clientes.filter(c => c.plan === p) : clientes);
+};
+window.filterTickets = function(s) {
+  renderTickets(s ? tickets.filter(t => t.estado === s) : tickets);
+};
+window.filterPagosByMes = function() {};
+
+// ── POPULATE SELECTS ───────────────────────────────────────────────────
+function populateClienteSelects() {
+  ['pago-cliente','t-cliente'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = `<option value="">Seleccionar...</option>` +
+      clientes.map(c => `<option value="${c.nombre}" ${c.nombre===current?'selected':''}>${c.nombre}</option>`).join('');
+  });
+}
+
+// ── NAVIGATION ─────────────────────────────────────────────────────────
+window.navigate = function(view, el) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  if (el) el.classList.add('active');
+  const titles = { dashboard: 'Dashboard', clientes: 'Clientes (Tenants)', apps: 'Apps y Planes',
+    facturacion: 'Facturación y Pagos', usuarios: 'Usuarios y Permisos', soporte: 'Soporte / Tickets' };
+  document.getElementById('topbar-title').textContent = titles[view] || view;
+};
+
+window.refreshDashboard = function() {
+  showToast('Datos actualizados.', 'info');
+  updateDashboard();
+};
+
+window.toggleSidebar = function() {
+  const sb = document.getElementById('sidebar');
+  const ic = document.getElementById('toggle-icon');
+  sb.classList.toggle('collapsed');
+  ic.style.transform = sb.classList.contains('collapsed') ? 'rotate(180deg)' : '';
+};
+
+// ── MODAL ──────────────────────────────────────────────────────────────
+window.openModal = function(id) {
+  document.getElementById(id).classList.add('open');
+};
+window.closeModal = function(id) {
+  document.getElementById(id).classList.remove('open');
+};
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ── TOAST ──────────────────────────────────────────────────────────────
+window.showToast = function(msg, type = 'info') {
+  const icons = { success: '✓', error: '✕', info: 'ℹ' };
+  const tc = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span class="toast-icon">${icons[type]}</span><span>${msg}</span>`;
+  tc.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+};
+
+// ── UTILS ──────────────────────────────────────────────────────────────
+function estadoBadge(e) {
+  const m = { activo: 'badge-green', trial: 'badge-blue', inactivo: 'badge-red' };
+  return `<span class="badge ${m[e] || 'badge-accent'}">${e || '—'}</span>`;
+}
+function estadoTicketBadge(e) {
+  const m = { abierto: 'badge-red', en_proceso: 'badge-yellow', resuelto: 'badge-green' };
+  const l = { abierto: 'Abierto', en_proceso: 'En Proceso', resuelto: 'Resuelto' };
+  return `<span class="badge ${m[e] || 'badge-accent'}" style="flex-shrink:0">${l[e] || e}</span>`;
+}
+function rolBadge(r) {
+  const m = { superadmin: 'badge-accent', admin: 'badge-blue', soporte: 'badge-green', viewer: '' };
+  return `<span class="badge ${m[r] || ''}" style="${!m[r]?'background:var(--bg3);color:var(--text1)':''}">${r}</span>`;
+}
+function prioridadBadgeText(p) {
+  const m = { alta: '🔴', critica: '🚨', media: '🟡', baja: '🟢' };
+  return `${m[p] || ''} ${p || 'media'}`;
+}
+function formatDate(d) {
+  if (!d) return '—';
+  try { return new Date(d + (d.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }); } catch { return d; }
+}
+function updateTopbarDate() {
+  document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('es-PE', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+window.editarCliente = (id) => showToast('Editar cliente: próximamente.', 'info');
+window.editarPlan = (id) => showToast('Editar plan: próximamente.', 'info');
+window.verComprobante = (id) => showToast('Ver comprobante: próximamente.', 'info');
+
 </script>
 </body>
 </html>
