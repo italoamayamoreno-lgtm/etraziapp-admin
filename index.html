@@ -501,11 +501,39 @@
     .grid-4 { grid-template-columns: 1fr 1fr; }
     .grid-3 { grid-template-columns: 1fr 1fr; }
   }
+  .mobile-menu-btn { display: none; }
+  .sidebar-overlay { display: none; }
   @media (max-width: 600px) {
     #sidebar { position: fixed; z-index: 20; height: 100vh; transform: translateX(-100%); transition: transform var(--transition); }
     #sidebar.mobile-open { transform: translateX(0); }
+    #sidebar.collapsed { width: var(--sidebar-w); min-width: var(--sidebar-w); }
     .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
     #content { padding: 16px; }
+    .sidebar-toggle-btn { display: none; }
+    .mobile-menu-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      color: var(--text0);
+      cursor: pointer;
+      border-radius: 6px;
+      margin-right: 4px;
+    }
+    .mobile-menu-btn:hover { background: var(--bg3); }
+    .sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 19;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition);
+    }
+    .sidebar-overlay.visible { opacity: 1; pointer-events: auto; }
   }
 
   /* ═══ SECTION HEADER ══════════════════════════════════════════════════ */
@@ -645,10 +673,16 @@
     </div>
   </aside>
 
+  <!-- OVERLAY MOBILE -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+
   <!-- MAIN -->
   <main id="main">
     <!-- TOPBAR -->
     <header id="topbar">
+      <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" title="Abrir menú" aria-label="Abrir menú">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
       <div class="topbar-title" id="topbar-title">Dashboard</div>
       <div class="topbar-actions">
         <span class="topbar-badge" id="topbar-date"></span>
@@ -2300,6 +2334,13 @@ window.navigate = function(view, el) {
     facturacion: 'Facturación y Pagos', usuarios: 'Usuarios y Permisos', soporte: 'Soporte / Tickets',
     consultor: 'Consultor Virtual EtraziApp' };
   document.getElementById('topbar-title').textContent = titles[view] || view;
+  // Cerrar menú mobile al elegir una sección
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  if (sb.classList.contains('mobile-open')) {
+    sb.classList.remove('mobile-open');
+    ov.classList.remove('visible');
+  }
 };
 
 window.refreshDashboard = function() {
@@ -2312,6 +2353,13 @@ window.toggleSidebar = function() {
   const ic = document.getElementById('toggle-icon');
   sb.classList.toggle('collapsed');
   ic.style.transform = sb.classList.contains('collapsed') ? 'rotate(180deg)' : '';
+};
+
+window.toggleMobileSidebar = function() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  sb.classList.toggle('mobile-open');
+  ov.classList.toggle('visible');
 };
 
 // ── MODAL ──────────────────────────────────────────────────────────────
