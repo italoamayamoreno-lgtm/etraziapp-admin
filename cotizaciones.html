@@ -200,7 +200,6 @@
     padding: 24px;
   }
   .cot-preview-logo { font-family: var(--font-head); font-size: 18px; font-weight: 800; letter-spacing: 0.1em; color: var(--text0); margin-bottom: 2px; }
-  .cot-preview-logo span { color: var(--accent); }
   .cot-preview-tagline { font-size: 9px; letter-spacing: 0.2em; color: var(--text1); text-transform: uppercase; font-family: var(--font-mono); }
   .cot-preview-meta { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 16px; }
   .cot-preview-num { font-family: var(--font-mono); font-size: 11px; color: var(--accent); }
@@ -410,7 +409,7 @@
                   </div>
                   <div class="form-group">
                     <label class="form-label">Empresa</label>
-                    <input type="text" id="f-empresa" placeholder="ej. Sarcástica Store" oninput="renderPreview()">
+                    <input type="text" id="f-empresa" placeholder="ej. Nombre de la empresa" oninput="renderPreview()">
                   </div>
                 </div>
                 <div class="form-row">
@@ -455,7 +454,6 @@
                     <button class="btn btn-ghost btn-sm" onclick="usarTemplate('academy')">⚡ Academy</button>
                     <button class="btn btn-ghost btn-sm" onclick="usarTemplate('ventures')">⚡ Ventures</button>
                     <button class="btn btn-ghost btn-sm" onclick="usarTemplate('apps')">⚡ Apps</button>
-                    <button class="btn btn-ghost btn-sm" onclick="usarTemplate('sarcastica')">🎯 Sarcástica</button>
                   </div>
                 </div>
 
@@ -479,13 +477,17 @@
                 </div>
               </div>
               <div class="card-body">
-                <div class="form-row">
+                <div class="form-row-3">
                   <div class="form-group">
-                    <label class="form-label">Descuento setup (%)</label>
+                    <label class="form-label">Descuento servicios (%)</label>
+                    <input type="number" id="f-descuento-oneshot" placeholder="0" min="0" max="100" value="0" oninput="renderPreview()">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Descuento setup Apps (%)</label>
                     <input type="number" id="f-descuento-setup" placeholder="0" min="0" max="100" value="0" oninput="renderPreview()">
                   </div>
                   <div class="form-group">
-                    <label class="form-label">Descuento mensual (%)</label>
+                    <label class="form-label">Descuento mensual Apps (%)</label>
                     <input type="number" id="f-descuento-mes" placeholder="0" min="0" max="100" value="0" oninput="renderPreview()">
                   </div>
                 </div>
@@ -551,7 +553,7 @@
             <div style="font-family:var(--font-head);font-size:24px;font-weight:700;color:var(--blue)" id="stat-enviadas">0</div>
           </div>
           <div style="background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;border-top:2px solid var(--yellow)">
-            <div style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text1);margin-bottom:8px">Setup Total</div>
+            <div style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text1);margin-bottom:8px">Facturado (aprobadas)</div>
             <div style="font-family:var(--font-head);font-size:24px;font-weight:700;color:var(--yellow)" id="stat-setup">S/ 0</div>
           </div>
         </div>
@@ -569,8 +571,8 @@
                   <th>Cliente</th>
                   <th>Empresa</th>
                   <th>Vertical(es)</th>
-                  <th>Setup</th>
-                  <th>Mensual</th>
+                  <th>Pago único</th>
+                  <th>Mensual Apps</th>
                   <th>Estado</th>
                   <th>Fecha</th>
                   <th></th>
@@ -642,29 +644,24 @@ const VERTICALES = {
 // ── TEMPLATES RÁPIDOS ───────────────────────────────────────────────────
 const TEMPLATES = {
   consulting: [
-    { vertical: 'consulting', nombre: 'Diagnóstico Estratégico', desc: 'Diagnóstico completo de procesos, modelo de negocio y hoja de ruta de transformación.', setup: 1200, mensual: 0 },
-    { vertical: 'consulting', nombre: 'Acompañamiento Estratégico', desc: 'Sesiones mensuales de consultoría, OKRs, seguimiento y reporte ejecutivo.', setup: 0, mensual: 600 },
+    { vertical: 'consulting', nombre: 'Diagnóstico Estratégico', desc: 'Diagnóstico completo de procesos, modelo de negocio y hoja de ruta de transformación.', oneshot: 1200 },
+    { vertical: 'consulting', nombre: 'Acompañamiento Estratégico', desc: 'Programa de consultoría con sesiones, OKRs, seguimiento y reporte ejecutivo.', oneshot: 2400 },
   ],
   talent: [
-    { vertical: 'talent', nombre: 'Búsqueda y Selección', desc: 'Proceso completo de reclutamiento para 1 posición (brief, sourcing, entrevistas, terna final).', setup: 800, mensual: 0 },
-    { vertical: 'talent', nombre: 'Assessment de Equipo', desc: 'Evaluación de competencias y cultura para equipos de hasta 10 personas.', setup: 600, mensual: 0 },
+    { vertical: 'talent', nombre: 'Búsqueda y Selección', desc: 'Proceso completo de reclutamiento para 1 posición (brief, sourcing, entrevistas, terna final).', oneshot: 800 },
+    { vertical: 'talent', nombre: 'Assessment de Equipo', desc: 'Evaluación de competencias y cultura para equipos de hasta 10 personas.', oneshot: 600 },
   ],
   academy: [
-    { vertical: 'academy', nombre: 'Programa In-Company', desc: 'Diseño e implementación de programa de capacitación personalizado (8 sesiones).', setup: 2500, mensual: 0 },
-    { vertical: 'academy', nombre: 'Acceso Academy Digital', desc: 'Acceso ilimitado a plataforma de cursos Etrazia Academy con cert. internacional.', setup: 200, mensual: 150 },
+    { vertical: 'academy', nombre: 'Programa In-Company', desc: 'Diseño e implementación de programa de capacitación personalizado (8 sesiones).', oneshot: 2500 },
+    { vertical: 'academy', nombre: 'Acceso Academy Digital', desc: 'Acceso a plataforma de cursos Etrazia Academy con certificación internacional.', oneshot: 350 },
   ],
   ventures: [
-    { vertical: 'ventures', nombre: 'Mentorship Startup', desc: 'Acompañamiento mensual en validación de modelo, pitch y acceso a red de inversores.', setup: 0, mensual: 800 },
-    { vertical: 'ventures', nombre: 'Due Diligence Comercial', desc: 'Análisis de mercado, competencia y viabilidad comercial de proyecto/startup.', setup: 1500, mensual: 0 },
+    { vertical: 'ventures', nombre: 'Mentorship Startup', desc: 'Acompañamiento en validación de modelo, pitch y acceso a red de inversores.', oneshot: 1800 },
+    { vertical: 'ventures', nombre: 'Due Diligence Comercial', desc: 'Análisis de mercado, competencia y viabilidad comercial de proyecto/startup.', oneshot: 1500 },
   ],
   apps: [
     { vertical: 'apps', nombre: 'Vcontrol', desc: 'Sistema de inventario, ventas y CRM. Setup incluye personalización de marca y onboarding.', setup: 600, mensual: 150 },
     { vertical: 'apps', nombre: 'Vruta', desc: 'Optimización de rutas de reparto con seguimiento en tiempo real y reporte por conductor.', setup: 400, mensual: 150 },
-  ],
-  sarcastica: [
-    { vertical: 'apps', nombre: 'Vcontrol', desc: 'Control de inventario a nivel de insumo crudo, ventas, órdenes personalizadas y CRM.', setup: 600, mensual: 150 },
-    { vertical: 'apps', nombre: 'Vruta', desc: 'Optimización de rutas de despacho para pedidos online y tienda física.', setup: 400, mensual: 150 },
-    { vertical: 'apps', nombre: 'Shopify Integration', desc: 'Integración Vcontrol ↔ Shopify: sincronización de stock, pedidos y fulfillment.', setup: 800, mensual: 80 },
   ],
 };
 
@@ -720,7 +717,7 @@ window.agregarItem = function(data = {}) {
     <button class="item-del" onclick="eliminarItem('${id}')" title="Eliminar">✕</button>
     <div class="form-group">
       <label class="form-label">Vertical</label>
-      <select onchange="renderPreview()" data-field="vertical">
+      <select onchange="actualizarPreciosItem('${id}'); renderPreview()" data-field="vertical">
         ${Object.entries(VERTICALES).map(([k,v]) => `<option value="${k}" ${data.vertical===k?'selected':''}>${v.label}</option>`).join('')}
       </select>
     </div>
@@ -732,25 +729,55 @@ window.agregarItem = function(data = {}) {
       <label class="form-label">Descripción</label>
       <textarea rows="2" placeholder="Qué incluye este servicio..." oninput="renderPreview()" data-field="desc" style="resize:vertical">${data.desc||''}</textarea>
     </div>
-    <div class="item-prices">
-      <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Setup / Implementación (S/)</label>
-        <div class="price-input-wrap">
-          <span class="price-prefix">S/</span>
-          <input type="number" min="0" step="50" placeholder="0" value="${data.setup||''}" oninput="renderPreview()" data-field="setup">
-        </div>
-      </div>
-      <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Mensualidad (S/)</label>
-        <div class="price-input-wrap">
-          <span class="price-prefix">S/</span>
-          <input type="number" min="0" step="50" placeholder="0" value="${data.mensual||''}" oninput="renderPreview()" data-field="mensual">
-        </div>
-      </div>
-    </div>
+    <div class="item-price-block" data-price-block></div>
   `;
   container.appendChild(div);
+  actualizarPreciosItem(id, data);
   renderPreview();
+};
+
+// ── BLOQUE DE PRECIOS DINÁMICO ────────────────────────────────────────────
+// Apps = setup + mensualidad (suscripción). Las demás verticales = pago único (one-shot).
+window.actualizarPreciosItem = function(id, data = {}) {
+  const card = document.getElementById(id);
+  if (!card) return;
+  const vertical = card.querySelector('[data-field=vertical]').value;
+  const block = card.querySelector('[data-price-block]');
+  const esApps = vertical === 'apps';
+
+  // Preservar valores ya ingresados si los hay (al cambiar de vertical sin perder lo escrito)
+  const prevOneshot = card.querySelector('[data-field=oneshot]')?.value;
+  const prevSetup   = card.querySelector('[data-field=setup]')?.value;
+  const prevMensual = card.querySelector('[data-field=mensual]')?.value;
+
+  if (esApps) {
+    block.innerHTML = `
+      <div class="item-prices">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Setup / Implementación (S/)</label>
+          <div class="price-input-wrap">
+            <span class="price-prefix">S/</span>
+            <input type="number" min="0" step="50" placeholder="0" value="${data.setup ?? prevSetup ?? ''}" oninput="renderPreview()" data-field="setup">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Mensualidad (S/)</label>
+          <div class="price-input-wrap">
+            <span class="price-prefix">S/</span>
+            <input type="number" min="0" step="50" placeholder="0" value="${data.mensual ?? prevMensual ?? ''}" oninput="renderPreview()" data-field="mensual">
+          </div>
+        </div>
+      </div>`;
+  } else {
+    block.innerHTML = `
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Precio del servicio — pago único (S/)</label>
+        <div class="price-input-wrap">
+          <span class="price-prefix">S/</span>
+          <input type="number" min="0" step="50" placeholder="0" value="${data.oneshot ?? prevOneshot ?? ''}" oninput="renderPreview()" data-field="oneshot">
+        </div>
+      </div>`;
+  }
 };
 
 window.eliminarItem = function(id) {
@@ -772,13 +799,19 @@ window.usarTemplate = function(key) {
 // ── LEER ITEMS ───────────────────────────────────────────────────────────
 function leerItems() {
   const cards = document.querySelectorAll('.item-servicio');
-  return Array.from(cards).map(card => ({
-    vertical: card.querySelector('[data-field=vertical]')?.value || 'apps',
-    nombre:   card.querySelector('[data-field=nombre]')?.value || '',
-    desc:     card.querySelector('[data-field=desc]')?.value || '',
-    setup:    parseFloat(card.querySelector('[data-field=setup]')?.value) || 0,
-    mensual:  parseFloat(card.querySelector('[data-field=mensual]')?.value) || 0,
-  }));
+  return Array.from(cards).map(card => {
+    const vertical = card.querySelector('[data-field=vertical]')?.value || 'apps';
+    const esApps = vertical === 'apps';
+    return {
+      vertical,
+      nombre:   card.querySelector('[data-field=nombre]')?.value || '',
+      desc:     card.querySelector('[data-field=desc]')?.value || '',
+      esApps,
+      setup:    esApps ? (parseFloat(card.querySelector('[data-field=setup]')?.value) || 0) : 0,
+      mensual:  esApps ? (parseFloat(card.querySelector('[data-field=mensual]')?.value) || 0) : 0,
+      oneshot:  esApps ? 0 : (parseFloat(card.querySelector('[data-field=oneshot]')?.value) || 0),
+    };
+  });
 }
 
 // ── NUMERACIÓN ───────────────────────────────────────────────────────────
@@ -793,15 +826,18 @@ window.renderPreview = function() {
   const empresa  = document.getElementById('f-empresa')?.value || '';
   const notas    = document.getElementById('f-notas')?.value || '';
   const vigencia = document.getElementById('f-vigencia')?.value || '15';
-  const descSetup = parseFloat(document.getElementById('f-descuento-setup')?.value) || 0;
-  const descMes   = parseFloat(document.getElementById('f-descuento-mes')?.value) || 0;
+  const descOneshot = parseFloat(document.getElementById('f-descuento-oneshot')?.value) || 0;
+  const descSetup   = parseFloat(document.getElementById('f-descuento-setup')?.value) || 0;
+  const descMes     = parseFloat(document.getElementById('f-descuento-mes')?.value) || 0;
   const items    = leerItems();
 
-  const totalSetup  = items.reduce((a, i) => a + i.setup, 0);
-  const totalMes    = items.reduce((a, i) => a + i.mensual, 0);
-  const setupFinal  = totalSetup  * (1 - descSetup / 100);
-  const mesFinal    = totalMes    * (1 - descMes   / 100);
-  const numCot      = generarNumero();
+  const totalOneshot = items.reduce((a, i) => a + i.oneshot, 0);
+  const totalSetup   = items.reduce((a, i) => a + i.setup, 0);
+  const totalMes     = items.reduce((a, i) => a + i.mensual, 0);
+  const oneshotFinal = totalOneshot * (1 - descOneshot / 100);
+  const setupFinal   = totalSetup   * (1 - descSetup / 100);
+  const mesFinal     = totalMes     * (1 - descMes   / 100);
+  const numCot       = generarNumero();
   document.getElementById('preview-num').textContent = numCot;
 
   const fechaHoy = new Date().toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' });
@@ -809,6 +845,7 @@ window.renderPreview = function() {
 
   const itemsHTML = items.length ? items.map(i => {
     const v = VERTICALES[i.vertical];
+    const sinPrecio = i.esApps ? (!i.setup && !i.mensual) : !i.oneshot;
     return `
       <div class="cot-preview-item">
         <div class="cot-pi-header">
@@ -818,9 +855,13 @@ window.renderPreview = function() {
             ${i.desc ? `<div class="cot-pi-desc">${i.desc}</div>` : ''}
           </div>
           <div class="cot-pi-precios">
-            ${i.setup ? `<div class="cot-pi-setup">Setup: S/ ${i.setup.toLocaleString()}</div>` : ''}
-            ${i.mensual ? `<div class="cot-pi-mensual">S/ ${i.mensual.toLocaleString()}/mes</div>` : ''}
-            ${!i.setup && !i.mensual ? `<div class="cot-pi-setup" style="color:var(--text2)">Por cotizar</div>` : ''}
+            ${i.esApps ? `
+              ${i.setup ? `<div class="cot-pi-setup">Setup: S/ ${i.setup.toLocaleString()}</div>` : ''}
+              ${i.mensual ? `<div class="cot-pi-mensual">S/ ${i.mensual.toLocaleString()}/mes</div>` : ''}
+            ` : `
+              ${i.oneshot ? `<div class="cot-pi-mensual" style="color:var(--accent)">S/ ${i.oneshot.toLocaleString()}</div>` : ''}
+            `}
+            ${sinPrecio ? `<div class="cot-pi-setup" style="color:var(--text2)">Por cotizar</div>` : ''}
           </div>
         </div>
       </div>`;
@@ -830,8 +871,8 @@ window.renderPreview = function() {
     <div class="cot-preview-header">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <div class="cot-preview-logo">ETRA<span>ZIA</span></div>
-          <div class="cot-preview-tagline">Vende donde quieras. Nosotros ponemos el cerebro.</div>
+          <div class="cot-preview-logo">ETRAZIA</div>
+          <div class="cot-preview-tagline">Consultoría, talento, formación e infraestructura digital</div>
         </div>
         <div style="text-align:right">
           <div style="font-size:10px;font-family:var(--font-mono);color:var(--text1)">PROPUESTA COMERCIAL</div>
@@ -857,16 +898,16 @@ window.renderPreview = function() {
 
     <div class="cot-preview-totales">
       ${items.length > 1 ? `
-        <div class="cot-total-row">
-          <span>Subtotal setup</span>
-          <span>S/ ${totalSetup.toLocaleString()}</span>
-        </div>
-        ${totalMes ? `<div class="cot-total-row"><span>Subtotal mensual</span><span>S/ ${totalMes.toLocaleString()}/mes</span></div>` : ''}
+        ${totalOneshot ? `<div class="cot-total-row"><span>Subtotal servicios (pago único)</span><span>S/ ${totalOneshot.toLocaleString()}</span></div>` : ''}
+        ${totalSetup ? `<div class="cot-total-row"><span>Subtotal setup Apps</span><span>S/ ${totalSetup.toLocaleString()}</span></div>` : ''}
+        ${totalMes ? `<div class="cot-total-row"><span>Subtotal mensual Apps</span><span>S/ ${totalMes.toLocaleString()}/mes</span></div>` : ''}
       ` : ''}
-      ${descSetup > 0 ? `<div class="cot-total-row" style="color:var(--green)"><span>Descuento setup (${descSetup}%)</span><span>-S/ ${(totalSetup - setupFinal).toLocaleString()}</span></div>` : ''}
-      ${descMes > 0 ? `<div class="cot-total-row" style="color:var(--green)"><span>Descuento mensual (${descMes}%)</span><span>-S/ ${(totalMes - mesFinal).toLocaleString()}/mes</span></div>` : ''}
-      ${setupFinal > 0 ? `<div class="cot-total-row grand"><span>TOTAL SETUP / IMPLEMENTACIÓN</span><span>S/ ${setupFinal.toLocaleString('es-PE',{minimumFractionDigits:0})}</span></div>` : ''}
-      ${mesFinal > 0 ? `<div class="cot-total-row mensual" style="margin-top:6px"><span>MENSUALIDAD TOTAL</span><span>S/ ${mesFinal.toLocaleString('es-PE',{minimumFractionDigits:0})}/mes</span></div>` : ''}
+      ${descOneshot > 0 ? `<div class="cot-total-row" style="color:var(--green)"><span>Descuento (${descOneshot}%)</span><span>-S/ ${(totalOneshot - oneshotFinal).toLocaleString()}</span></div>` : ''}
+      ${descSetup > 0 ? `<div class="cot-total-row" style="color:var(--green)"><span>Descuento setup Apps (${descSetup}%)</span><span>-S/ ${(totalSetup - setupFinal).toLocaleString()}</span></div>` : ''}
+      ${descMes > 0 ? `<div class="cot-total-row" style="color:var(--green)"><span>Descuento mensual Apps (${descMes}%)</span><span>-S/ ${(totalMes - mesFinal).toLocaleString()}/mes</span></div>` : ''}
+      ${oneshotFinal > 0 ? `<div class="cot-total-row grand"><span>TOTAL SERVICIOS</span><span>S/ ${oneshotFinal.toLocaleString('es-PE',{minimumFractionDigits:0})}</span></div>` : ''}
+      ${setupFinal > 0 ? `<div class="cot-total-row grand" style="${oneshotFinal>0?'border-top:none;padding-top:0;margin-top:0':''}"><span>TOTAL SETUP APPS</span><span>S/ ${setupFinal.toLocaleString('es-PE',{minimumFractionDigits:0})}</span></div>` : ''}
+      ${mesFinal > 0 ? `<div class="cot-total-row mensual" style="margin-top:6px"><span>MENSUALIDAD APPS</span><span>S/ ${mesFinal.toLocaleString('es-PE',{minimumFractionDigits:0})}/mes</span></div>` : ''}
     </div>
 
     ${notas ? `<div class="cot-preview-notas">📋 ${notas}</div>` : ''}
@@ -884,11 +925,13 @@ window.guardarCotizacion = async function() {
   const empresa = document.getElementById('f-empresa').value.trim();
   if (!nombre) { showToast('Ingresa el nombre del cliente.', 'error'); return; }
 
-  const items     = leerItems();
-  const descSetup = parseFloat(document.getElementById('f-descuento-setup').value) || 0;
-  const descMes   = parseFloat(document.getElementById('f-descuento-mes').value) || 0;
-  const totalSetup = items.reduce((a,i) => a + i.setup, 0);
-  const totalMes   = items.reduce((a,i) => a + i.mensual, 0);
+  const items        = leerItems();
+  const descOneshot  = parseFloat(document.getElementById('f-descuento-oneshot').value) || 0;
+  const descSetup    = parseFloat(document.getElementById('f-descuento-setup').value) || 0;
+  const descMes      = parseFloat(document.getElementById('f-descuento-mes').value) || 0;
+  const totalOneshot = items.reduce((a,i) => a + i.oneshot, 0);
+  const totalSetup   = items.reduce((a,i) => a + i.setup, 0);
+  const totalMes     = items.reduce((a,i) => a + i.mensual, 0);
 
   const data = {
     numero:    generarNumero(),
@@ -899,12 +942,15 @@ window.guardarCotizacion = async function() {
     vigencia:  document.getElementById('f-vigencia').value,
     estado:    document.getElementById('f-estado').value,
     notas:     document.getElementById('f-notas').value.trim(),
-    descuentoSetup: descSetup,
-    descuentoMes:   descMes,
+    descuentoOneshot: descOneshot,
+    descuentoSetup:   descSetup,
+    descuentoMes:     descMes,
+    totalOneshot,
     totalSetup,
     totalMes,
-    setupFinal: totalSetup * (1 - descSetup / 100),
-    mesFinal:   totalMes   * (1 - descMes   / 100),
+    oneshotFinal: totalOneshot * (1 - descOneshot / 100),
+    setupFinal:   totalSetup   * (1 - descSetup   / 100),
+    mesFinal:     totalMes     * (1 - descMes     / 100),
     verticales: [...new Set(items.map(i => i.vertical))],
     items,
     fecha:     new Date().toISOString().slice(0, 10),
@@ -963,7 +1009,7 @@ function renderHistorial(data) {
       <td class="td-name">${c.nombre}</td>
       <td style="color:var(--text1)">${c.empresa||'—'}</td>
       <td style="font-size:12px;color:var(--text1)">${verts||'—'}</td>
-      <td class="td-mono" style="color:var(--accent)">${c.setupFinal ? 'S/ '+Math.round(c.setupFinal).toLocaleString() : '—'}</td>
+      <td class="td-mono" style="color:var(--accent)">${(c.oneshotFinal||c.setupFinal) ? 'S/ '+Math.round((c.oneshotFinal||0)+(c.setupFinal||0)).toLocaleString() : '—'}</td>
       <td class="td-mono" style="color:var(--green)">${c.mesFinal ? 'S/ '+Math.round(c.mesFinal).toLocaleString()+'/mes' : '—'}</td>
       <td><span class="${cls.join(' ')}">${estadoLabel[c.estado]||c.estado}</span></td>
       <td class="td-mono">${formatDate(c.fecha)}</td>
@@ -976,8 +1022,8 @@ function actualizarStats() {
   document.getElementById('stat-total').textContent = cotizaciones.length;
   document.getElementById('stat-aprobadas').textContent = cotizaciones.filter(c => c.estado === 'aprobada').length;
   document.getElementById('stat-enviadas').textContent = cotizaciones.filter(c => c.estado === 'enviada').length;
-  const setupT = cotizaciones.filter(c => c.estado === 'aprobada').reduce((a,c) => a + (c.setupFinal||0), 0);
-  document.getElementById('stat-setup').textContent = 'S/ ' + Math.round(setupT).toLocaleString();
+  const facturado = cotizaciones.filter(c => c.estado === 'aprobada').reduce((a,c) => a + (c.oneshotFinal||0) + (c.setupFinal||0), 0);
+  document.getElementById('stat-setup').textContent = 'S/ ' + Math.round(facturado).toLocaleString();
 }
 
 window.filtrarHistorial = function(q) {
@@ -1006,8 +1052,12 @@ window.verCotizacion = function(id) {
           ${i.desc?`<div style="font-size:12px;color:var(--text1);margin-top:4px">${i.desc}</div>`:''}
         </div>
         <div style="text-align:right;flex-shrink:0">
-          ${i.setup?`<div style="font-size:11px;color:var(--text1)">Setup: S/ ${i.setup.toLocaleString()}</div>`:''}
-          ${i.mensual?`<div style="font-size:13px;color:var(--green);font-family:var(--font-mono)">S/ ${i.mensual.toLocaleString()}/mes</div>`:''}
+          ${i.esApps ? `
+            ${i.setup?`<div style="font-size:11px;color:var(--text1)">Setup: S/ ${i.setup.toLocaleString()}</div>`:''}
+            ${i.mensual?`<div style="font-size:13px;color:var(--green);font-family:var(--font-mono)">S/ ${i.mensual.toLocaleString()}/mes</div>`:''}
+          ` : `
+            ${i.oneshot?`<div style="font-size:13px;color:var(--accent);font-family:var(--font-mono)">S/ ${i.oneshot.toLocaleString()}</div>`:''}
+          `}
         </div>
       </div>
     </div>`;
@@ -1022,8 +1072,9 @@ window.verCotizacion = function(id) {
     </div>
     <div style="margin-bottom:16px">${itemsHTML}</div>
     <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:14px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
-      <div style="font-family:var(--font-head);font-size:13px;font-weight:600">TOTAL SETUP<br><span style="color:var(--accent);font-size:18px">S/ ${Math.round(c.setupFinal||0).toLocaleString()}</span></div>
-      ${c.mesFinal ? `<div style="font-family:var(--font-head);font-size:13px;font-weight:600">MENSUALIDAD<br><span style="color:var(--green);font-size:18px">S/ ${Math.round(c.mesFinal).toLocaleString()}/mes</span></div>` : ''}
+      ${c.oneshotFinal ? `<div style="font-family:var(--font-head);font-size:13px;font-weight:600">TOTAL SERVICIOS<br><span style="color:var(--accent);font-size:18px">S/ ${Math.round(c.oneshotFinal).toLocaleString()}</span></div>` : ''}
+      ${c.setupFinal ? `<div style="font-family:var(--font-head);font-size:13px;font-weight:600">SETUP APPS<br><span style="color:var(--accent);font-size:18px">S/ ${Math.round(c.setupFinal).toLocaleString()}</span></div>` : ''}
+      ${c.mesFinal ? `<div style="font-family:var(--font-head);font-size:13px;font-weight:600">MENSUALIDAD APPS<br><span style="color:var(--green);font-size:18px">S/ ${Math.round(c.mesFinal).toLocaleString()}/mes</span></div>` : ''}
     </div>
     ${c.notas ? `<div style="margin-top:12px;padding:12px;background:var(--accent-glow);border-radius:var(--radius-sm);font-size:12px;color:var(--text1);font-style:italic">📋 ${c.notas}</div>` : ''}
     <div style="margin-top:16px">
@@ -1070,8 +1121,9 @@ window.duplicarCotizacion = function(c) {
   document.getElementById('f-email').value    = c.email || '';
   document.getElementById('f-telefono').value = c.telefono || '';
   document.getElementById('f-notas').value    = c.notas || '';
-  document.getElementById('f-descuento-setup').value = c.descuentoSetup || 0;
-  document.getElementById('f-descuento-mes').value   = c.descuentoMes || 0;
+  document.getElementById('f-descuento-oneshot').value = c.descuentoOneshot || 0;
+  document.getElementById('f-descuento-setup').value   = c.descuentoSetup || 0;
+  document.getElementById('f-descuento-mes').value     = c.descuentoMes || 0;
   document.getElementById('items-container').innerHTML = '';
   itemCounter = 0;
   (c.items || []).forEach(i => agregarItem(i));
@@ -1085,8 +1137,9 @@ window.resetForm = function() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  document.getElementById('f-descuento-setup').value = 0;
-  document.getElementById('f-descuento-mes').value   = 0;
+  document.getElementById('f-descuento-oneshot').value = 0;
+  document.getElementById('f-descuento-setup').value   = 0;
+  document.getElementById('f-descuento-mes').value     = 0;
   document.getElementById('f-estado').value = 'borrador';
   document.getElementById('items-container').innerHTML = '';
   itemCounter = 0;
