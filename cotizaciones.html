@@ -256,6 +256,82 @@
   .est-aprobada  { background: var(--green-bg); color: var(--green); }
   .est-rechazada { background: var(--red-bg); color: var(--red); }
 
+  /* ═══ PRESENTACIÓN POR VERTICAL ══════════════════════════════════════ */
+  .pres-vertical-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .pres-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--bg1);
+    color: var(--text1);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .pres-tab:hover { border-color: var(--border-strong); color: var(--text0); }
+  .pres-tab.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .pres-tab-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+  .pres-doc-wrap {
+    max-width: 820px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .pres-page-label {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 8px;
+  }
+  .pres-page-shell {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    aspect-ratio: 1 / 1.414; /* proporción A4 */
+  }
+  .pres-page-shell .cover-page,
+  .pres-page-shell .doc-page {
+    min-height: 0;
+    height: 100%;
+    page-break-after: auto;
+  }
+
+  /* PÁGINA 2 — Experiencia / fortalezas */
+  .doc-page { background: #0B1120; color: #f0ede6; padding: 48px 52px; box-sizing: border-box; display: flex; flex-direction: column; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .doc-eyebrow { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; margin-bottom: 10px; }
+  .doc-title { font-family: var(--font-head); font-weight: 800; font-size: 25px; letter-spacing: -0.5px; line-height: 1.25; margin-bottom: 20px; }
+  .doc-lead { font-size: 12.5px; line-height: 1.75; color: #c9c6bf; margin-bottom: 14px; }
+  .doc-lead b { color: #f0ede6; }
+  .doc-strengths { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px; }
+  .doc-strength { background: #111827; border: 1px solid rgba(184,115,51,0.14); border-radius: 10px; padding: 16px; }
+  .doc-strength-icon { font-size: 18px; margin-bottom: 8px; }
+  .doc-strength-title { font-family: var(--font-head); font-weight: 700; font-size: 12.5px; margin-bottom: 5px; }
+  .doc-strength-desc { font-size: 11px; line-height: 1.55; color: #a09d96; }
+  .doc-quote { margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(184,115,51,0.15); font-size: 12px; font-style: italic; color: #c9c6bf; }
+  .doc-quote b { color: var(--accent-color, #B87333); font-style: normal; }
+
+  /* PÁGINA 3 — Framework de fases */
+  .doc-phases { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+  .doc-phase { display: grid; grid-template-columns: 36px 1fr; gap: 14px; }
+  .doc-phase-num { width: 36px; height: 36px; border-radius: 50%; background: #111827; border: 1.5px solid var(--accent-color, #B87333); color: var(--accent-color, #B87333); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 700; font-size: 13px; flex-shrink: 0; }
+  .doc-phase-body { padding-bottom: 4px; border-bottom: 1px solid rgba(184,115,51,0.1); padding-top: 2px; }
+  .doc-phase:last-child .doc-phase-body { border-bottom: none; }
+  .doc-phase-title { font-family: var(--font-head); font-weight: 700; font-size: 12.5px; margin-bottom: 4px; }
+  .doc-phase-desc { font-size: 11px; line-height: 1.55; color: #a09d96; }
+
   /* ═══ PORTADA — solo en pantalla de impresión ═══════════════════════ */
   .print-only { display: none; }
 
@@ -457,6 +533,24 @@
       box-sizing: border-box;
     }
     .cot-preview-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #0B1120 !important; }
+
+    /* Vista Presentación — cada "shell" se convierte en una hoja real a tamaño completo */
+    .pres-doc-wrap { max-width: none !important; gap: 0 !important; }
+    .pres-page-label { display: none !important; }
+    .pres-page-shell {
+      border: none !important;
+      border-radius: 0 !important;
+      aspect-ratio: auto !important;
+      width: 100% !important;
+      min-height: 100vh !important;
+      page-break-after: always !important;
+    }
+    .pres-page-shell:last-child { page-break-after: auto !important; }
+    .pres-page-shell .cover-page,
+    .pres-page-shell .doc-page {
+      height: auto !important;
+      min-height: 100vh !important;
+    }
   }
   @page { margin: 0; }
 </style>
@@ -514,6 +608,10 @@
       <div class="nav-item active" onclick="navigate('cotizador', this)">
         <div class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
         <span class="nav-label">Nueva Cotización</span>
+      </div>
+      <div class="nav-item" onclick="navigate('presentacion', this)">
+        <div class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></div>
+        <span class="nav-label">Presentación</span>
       </div>
       <div class="nav-item" onclick="navigate('historial', this)">
         <div class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 0 .5-3"/><polyline points="3 3 3 8 8 8"/></svg></div>
@@ -714,6 +812,26 @@
               <!-- Renderizado dinámico -->
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- ──────────── PRESENTACIÓN POR VERTICAL ──────────── -->
+      <div class="view" id="view-presentacion">
+        <div class="section-header mb-4 no-print">
+          <div>
+            <div class="section-title">Documento de Presentación</div>
+            <div class="section-sub">Material fijo para primer contacto, antes de cotizar. No editable — mismo contenido para todos los clientes.</div>
+          </div>
+          <button class="btn btn-blue btn-sm no-print" onclick="imprimirPresentacion()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Imprimir / PDF
+          </button>
+        </div>
+
+        <div class="pres-vertical-tabs no-print" id="pres-tabs"></div>
+
+        <div class="pres-doc-wrap">
+          <div id="pres-preview"></div>
         </div>
       </div>
 
@@ -1029,6 +1147,144 @@ const PILARES_INFO = [
   { icon: '🌱', nombre: 'Humana', desc: 'Detrás de cada negocio hay personas — las ponemos siempre al centro.' },
 ];
 
+// ── DOCUMENTOS DE PRESENTACIÓN POR VERTICAL (contenido fijo, no editable) ──
+const PRESENTACIONES = {
+  consulting: {
+    label: 'Etrazia Consulting',
+    color: '#4a9eff',
+    eyebrow: 'Por qué Consulting',
+    titulo: 'Decisiones que dejan de depender del instinto y empiezan a depender de evidencia.',
+    lead: [
+      'La mayoría de negocios no fracasan por falta de esfuerzo — fracasan porque nadie se detiene a mirar el sistema completo antes de actuar. Nosotros sí lo hacemos. <b>Cada propuesta de Etrazia Consulting nace de un diagnóstico real</b>, no de una plantilla genérica que ya usamos con otro cliente.',
+      'Venimos de liderar transformación digital y estrategia comercial dentro de organizaciones grandes — telecomunicaciones, banca, retail — donde una mala decisión cuesta millones, no solo tiempo. Esa disciplina la trajimos a Etrazia: <b>no entregamos un PDF con recomendaciones bonitas, entregamos una hoja de ruta que tu equipo puede ejecutar el lunes siguiente.</b>',
+    ],
+    fortalezas: [
+      { icon: '🔍', titulo: 'Diagnóstico basado en datos', desc: 'No partimos de supuestos. Levantamos información real de tu operación antes de proponer nada.' },
+      { icon: '🗺️', titulo: 'Hoja de ruta ejecutable', desc: 'Cada recomendación viene con pasos concretos, responsables y plazos — no solo ideas.' },
+      { icon: '📊', titulo: 'Visión de negocio, no solo de proceso', desc: 'Conectamos cada mejora operativa con el impacto real en ingresos y rentabilidad.' },
+      { icon: '🤝', titulo: 'Acompañamiento, no solo entrega', desc: 'Seguimos presentes después del diagnóstico para asegurar que la implementación funcione.' },
+    ],
+    quote: 'Hemos liderado iniciativas que llevaron la captación digital de <b>S/600K a S/14MM mensuales</b> en el sector bancario, y crecimientos de hasta <b>+256% en ventas digitales</b> en ecosistemas e-commerce. Ese mismo criterio es el que aplicamos a cada cliente, sin importar el tamaño.',
+    fasesTitulo: 'Cómo trabajamos un proyecto de Consulting',
+    fases: [
+      { titulo: 'Primer contacto', desc: 'Reunión inicial para entender tu contexto, objetivos y restricciones reales — sin compromiso ni costo.' },
+      { titulo: 'Levantamiento de información', desc: 'Entrevistas, revisión de procesos y datos existentes para construir un diagnóstico fundamentado, no asumido.' },
+      { titulo: 'Diagnóstico y hoja de ruta', desc: 'Entregamos un documento claro con hallazgos, prioridades y un plan de acción accionable por etapas.' },
+      { titulo: 'Validación conjunta', desc: 'Revisamos contigo cada recomendación antes de avanzar, ajustando según tu realidad operativa y presupuesto.' },
+      { titulo: 'Acompañamiento en ejecución', desc: 'Sesiones de seguimiento para asegurar que la implementación avance según lo planeado.' },
+      { titulo: 'Cierre y medición de impacto', desc: 'Evaluamos resultados frente a los objetivos iniciales y dejamos definido el siguiente paso de crecimiento.' },
+    ],
+  },
+
+  talent: {
+    label: 'Etrazia Talent',
+    color: '#3ecf70',
+    eyebrow: 'Por qué Talent',
+    titulo: 'Contratar bien no es cuestión de suerte. Es un proceso que se puede hacer con criterio.',
+    lead: [
+      'La mayoría de procesos de selección fallan por el mismo motivo: se busca un CV que calce, no una persona que encaje con el equipo y el momento del negocio. En Etrazia Talent partimos al revés — <b>primero entendemos tu cultura, tu ritmo y lo que realmente necesitas resolver</b>, y recién ahí empezamos a buscar.',
+      'No trabajamos con bases de datos genéricas ni procesos en cadena. Cada búsqueda se diseña a la medida del rol y de la etapa en la que está tu empresa, porque <b>contratar a la persona equivocada cuesta mucho más que el tiempo que toma encontrar a la correcta.</b>',
+    ],
+    fortalezas: [
+      { icon: '🎯', titulo: 'Búsqueda a la medida', desc: 'No reciclamos perfiles de otros procesos — cada búsqueda parte de tu necesidad específica.' },
+      { icon: '🧩', titulo: 'Foco en encaje cultural', desc: 'Evaluamos competencias técnicas y también cómo la persona encajará con tu equipo real.' },
+      { icon: '⏱️', titulo: 'Procesos ágiles', desc: 'Ternas finales en plazos claros, sin que eso signifique sacrificar calidad en la evaluación.' },
+      { icon: '🔁', titulo: 'Acompañamiento post-contratación', desc: 'No desaparecemos al firmar — damos seguimiento a la adaptación de la persona en sus primeras semanas.' },
+    ],
+    quote: 'Aplicamos los mismos estándares de evaluación que usamos en procesos de transformación organizacional dentro de empresas grandes — pero con la <b>agilidad de un equipo que conoce de cerca a cada cliente</b>, no la de una agencia que solo cruza CVs.',
+    fasesTitulo: 'Cómo trabajamos un proceso de Talent',
+    fases: [
+      { titulo: 'Primer contacto', desc: 'Conversamos sobre el rol, el equipo al que se integrará y los objetivos del negocio detrás de la contratación.' },
+      { titulo: 'Brief y perfil de búsqueda', desc: 'Definimos juntos competencias, experiencia y rasgos de encaje cultural específicos para el puesto.' },
+      { titulo: 'Sourcing y primer filtro', desc: 'Búsqueda activa y evaluación inicial de candidatos frente al perfil definido.' },
+      { titulo: 'Entrevistas y evaluación', desc: 'Entrevistas estructuradas y, según el rol, pruebas o assessments complementarios.' },
+      { titulo: 'Presentación de terna final', desc: 'Te entregamos los candidatos mejor calificados con un análisis comparativo claro para decidir.' },
+      { titulo: 'Seguimiento post-contratación', desc: 'Acompañamos las primeras semanas de la persona contratada para asegurar una integración exitosa.' },
+    ],
+  },
+
+  academy: {
+    label: 'Etrazia Academy',
+    color: '#f5c542',
+    eyebrow: 'Por qué Academy',
+    titulo: 'Un equipo capacitado no es un gasto. Es la diferencia entre ejecutar bien o ejecutar a medias.',
+    lead: [
+      'La formación corporativa suele fallar porque se diseña genérica: el mismo contenido para cualquier empresa, dictado por alguien que nunca pisó tu operación. En Etrazia Academy hacemos lo contrario — <b>diseñamos cada programa a partir de los retos reales de tu equipo</b>, con instructores que entienden de negocio, no solo de teoría.',
+      'Nuestros programas están respaldados con <b>certificación reconocida internacionalmente</b>, lo que da a tu equipo una credencial que vale más allá del entrenamiento puntual — y a ti, la certeza de que la inversión en formación realmente se traduce en mejor desempeño.',
+    ],
+    fortalezas: [
+      { icon: '🎯', titulo: 'Contenido a la medida', desc: 'Cada programa se diseña según los retos reales de tu equipo, no con un temario genérico.' },
+      { icon: '🏆', titulo: 'Certificación internacional', desc: 'Tus colaboradores se forman con respaldo reconocido fuera de la empresa, no solo un diploma interno.' },
+      { icon: '🧠', titulo: 'Instructores con experiencia de negocio', desc: 'Formamos con quienes han ejecutado en terreno, no solo enseñado teoría en aula.' },
+      { icon: '📈', titulo: 'Medición de impacto', desc: 'Definimos indicadores claros para saber si la capacitación realmente cambió el desempeño del equipo.' },
+    ],
+    quote: 'El mismo criterio de <b>transformación digital y agilidad</b> que aplicamos liderando equipos en sectores como banca y telecomunicaciones es el que llevamos a cada programa de formación — para que tu equipo no solo aprenda, sino que ejecute mejor al día siguiente.',
+    fasesTitulo: 'Cómo trabajamos un programa de Academy',
+    fases: [
+      { titulo: 'Primer contacto', desc: 'Conversamos sobre los retos de desempeño que buscas resolver con la capacitación.' },
+      { titulo: 'Diagnóstico de necesidades', desc: 'Identificamos brechas reales de competencias en el equipo, no solo temas "de moda" para capacitar.' },
+      { titulo: 'Diseño del programa', desc: 'Construimos el temario, formato (presencial, virtual o híbrido) y cronograma a la medida.' },
+      { titulo: 'Ejecución de sesiones', desc: 'Dictamos el programa con foco práctico, conectando cada tema con la realidad de tu operación.' },
+      { titulo: 'Evaluación de aprendizaje', desc: 'Medimos comprensión y aplicación práctica, no solo asistencia.' },
+      { titulo: 'Seguimiento post-programa', desc: 'Revisamos con el equipo cómo se está aplicando lo aprendido semanas después de finalizado el programa.' },
+    ],
+  },
+
+  ventures: {
+    label: 'Etrazia Ventures',
+    color: '#c084fc',
+    eyebrow: 'Por qué Ventures',
+    titulo: 'Validar antes de invertir. Esa es la diferencia entre una idea y un negocio.',
+    lead: [
+      'La mayoría de emprendimientos no fracasan por falta de pasión — fracasan porque se construyen sobre supuestos nunca validados. En Etrazia Ventures acompañamos a founders con <b>la misma rigurosidad con la que un inversionista evaluaría el negocio</b>, antes de que el mercado lo haga por las malas.',
+      'No somos una incubadora que entrega plantillas de pitch deck. Trabajamos contigo en validar el modelo, encontrar el primer mercado real y conectar con la red de contactos correcta — <b>porque conocemos tanto el lado del founder como el del que decide invertir.</b>',
+    ],
+    fortalezas: [
+      { icon: '🔬', titulo: 'Validación antes que inversión', desc: 'Te ayudamos a probar supuestos del modelo de negocio antes de gastar tiempo y capital en lo equivocado.' },
+      { icon: '🌐', titulo: 'Red de contactos real', desc: 'Conexión con inversionistas y aliados estratégicos, no solo asesoría teórica.' },
+      { icon: '📐', titulo: 'Criterio de inversionista', desc: 'Evaluamos tu negocio con la misma exigencia con la que lo haría quien va a poner el capital.' },
+      { icon: '🚦', titulo: 'Decisiones basadas en mercado', desc: 'Análisis de competencia y viabilidad comercial real, no solo entusiasmo del founder.' },
+    ],
+    quote: 'Entendemos cómo escalar negocios desde dentro de grandes organizaciones — con resultados como <b>+250% en ventas online durante contextos críticos de mercado</b> — y traemos esa misma capacidad de ejecución a startups que recién están encontrando su tracción.',
+    fasesTitulo: 'Cómo trabajamos con un proyecto de Ventures',
+    fases: [
+      { titulo: 'Primer contacto', desc: 'Conversamos sobre tu idea o negocio actual, etapa de desarrollo y principales dudas o bloqueos.' },
+      { titulo: 'Diagnóstico de modelo', desc: 'Revisamos el modelo de negocio, mercado objetivo y supuestos clave que sostienen la propuesta.' },
+      { titulo: 'Validación comercial', desc: 'Diseñamos pruebas rápidas y de bajo costo para confirmar si el mercado realmente responde como se espera.' },
+      { titulo: 'Ajuste de estrategia', desc: 'Refinamos propuesta de valor, pricing o canal de venta según lo aprendido en la validación.' },
+      { titulo: 'Preparación para inversión', desc: 'Si el negocio está listo, trabajamos pitch, métricas y narrativa para conversaciones con inversionistas.' },
+      { titulo: 'Acompañamiento continuo', desc: 'Seguimos como aliados en decisiones clave de crecimiento, no solo en el lanzamiento inicial.' },
+    ],
+  },
+
+  apps: {
+    label: 'EtraziApp',
+    color: '#f0594a',
+    eyebrow: 'Por qué Apps',
+    titulo: 'Tecnología que se adapta a cómo ya vendes, no al revés.',
+    lead: [
+      'La mayoría de sistemas de gestión obligan a la empresa a cambiar su forma de trabajar para encajar en el software. Nosotros construimos al revés: <b>la tecnología se adapta a tu operación real</b>, no la operación a un sistema rígido pensado para "todos los negocios".',
+      'EtraziApp nació resolviendo un problema concreto de un cliente real, no como un producto genérico de escritorio. Por eso cada implementación — inventario, rutas, fidelización — se ajusta a tu flujo de trabajo actual, <b>con soporte directo de quienes construyeron el sistema</b>, no un call center tercerizado.',
+    ],
+    fortalezas: [
+      { icon: '⚙️', titulo: 'Personalización real', desc: 'No es un sistema genérico — se configura según tu operación, productos y forma de vender.' },
+      { icon: '🚀', titulo: 'Implementación rápida', desc: 'Setup y onboarding pensados para que empieces a operar en días, no meses.' },
+      { icon: '📞', titulo: 'Soporte directo del equipo creador', desc: 'Hablas con quienes construyeron el sistema, no con un ticket perdido en una cola genérica.' },
+      { icon: '🔗', titulo: 'Integraciones con tu ecosistema', desc: 'Conectamos con plataformas que ya usas (e-commerce, pagos, logística) en vez de obligarte a migrar todo.' },
+    ],
+    quote: 'EtraziApp es la forma en que llevamos a la práctica nuestra filosofía: <b>vende donde quieras, nosotros ponemos el cerebro detrás del control de inventario, las rutas y la fidelización</b> — para que tu equipo se enfoque en vender, no en pelear con hojas de cálculo.',
+    fasesTitulo: 'Cómo trabajamos una implementación de Apps',
+    fases: [
+      { titulo: 'Primer contacto', desc: 'Conversamos sobre tu operación actual: cómo vendes, qué controlas hoy y dónde están los cuellos de botella.' },
+      { titulo: 'Levantamiento de requerimiento', desc: 'Mapeamos procesos reales (inventario, ventas, rutas, fidelización) para definir el alcance exacto del sistema.' },
+      { titulo: 'Configuración y personalización', desc: 'Adaptamos el sistema a tu marca, catálogo y flujo de trabajo específico — no una plantilla estándar.' },
+      { titulo: 'Onboarding del equipo', desc: 'Capacitamos a tu equipo en el uso real del sistema, con casos de tu propia operación.' },
+      { titulo: 'Salida en vivo', desc: 'Activamos el sistema en producción con acompañamiento cercano durante los primeros días de uso.' },
+      { titulo: 'Soporte y mejora continua', desc: 'Seguimos disponibles para ajustes, nuevas funcionalidades y soporte directo según crece tu operación.' },
+    ],
+  },
+};
+
 // ── PORTADAS DE IMPRESIÓN (fijas en toda cotización) ───────────────────
 function renderPortadas() {
   const año = new Date().getFullYear();
@@ -1104,6 +1360,109 @@ function renderPortadas() {
 window.imprimirCotizacion = function() {
   renderPortadas();
   // Pequeño delay para asegurar que el DOM se pinte antes de abrir el diálogo de impresión
+  setTimeout(() => window.print(), 50);
+};
+
+// ── DOCUMENTO DE PRESENTACIÓN POR VERTICAL ───────────────────────────────
+let verticalPresentacionActiva = 'consulting';
+
+function renderTabsPresentacion() {
+  const tabs = document.getElementById('pres-tabs');
+  tabs.innerHTML = Object.entries(PRESENTACIONES).map(([key, v]) => `
+    <div class="pres-tab ${key === verticalPresentacionActiva ? 'active' : ''}" onclick="seleccionarVerticalPresentacion('${key}')">
+      <span class="pres-tab-dot" style="background:${v.color}"></span>
+      ${v.label}
+    </div>
+  `).join('');
+}
+
+window.seleccionarVerticalPresentacion = function(key) {
+  verticalPresentacionActiva = key;
+  renderTabsPresentacion();
+  renderDocumentoPresentacion();
+};
+
+function paginaPortadaHTML(año, color) {
+  return `
+    <div class="cover-page cover-1">
+      <div class="cover-1-year-top">${año}</div>
+      <div class="cover-1-mark">
+        <svg width="56" height="56" viewBox="0 0 44 44" fill="none">
+          <path d="M16 22C16 15.37 21.37 10 28 10C34.63 10 40 15.37 40 22C40 28.63 34.63 34 28 34" stroke="#1B2B4B" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <path d="M28 22C28 28.63 22.63 34 16 34C9.37 34 4 28.63 4 22C4 15.37 9.37 10 16 10" stroke="url(#presLg)" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <rect x="17.5" y="17.5" width="9" height="9" rx="1.5" fill="#D97706" transform="rotate(45 22 22)"/>
+          <defs><linearGradient id="presLg" x1="28" y1="10" x2="4" y2="34" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#B87333"/><stop offset="100%" stop-color="#D97706"/></linearGradient></defs>
+        </svg>
+      </div>
+      <div class="cover-1-logo">ETRAZIA</div>
+      <div class="cover-1-phrase">"No somos una consultora.<br>Somos un ecosistema."</div>
+      <div class="cover-1-year-bottom">PROPUESTA COMERCIAL · ${año}</div>
+    </div>`;
+}
+
+function renderDocumentoPresentacion() {
+  const v = PRESENTACIONES[verticalPresentacionActiva];
+  const año = new Date().getFullYear();
+
+  const fortalezasHTML = v.fortalezas.map(f => `
+    <div class="doc-strength">
+      <div class="doc-strength-icon">${f.icon}</div>
+      <div class="doc-strength-title">${f.titulo}</div>
+      <div class="doc-strength-desc">${f.desc}</div>
+    </div>`).join('');
+
+  const fasesHTML = v.fases.map((f, i) => `
+    <div class="doc-phase">
+      <div class="doc-phase-num">${String(i + 1).padStart(2, '0')}</div>
+      <div class="doc-phase-body">
+        <div class="doc-phase-title">${f.titulo}</div>
+        <div class="doc-phase-desc">${f.desc}</div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('pres-preview').innerHTML = `
+    <div class="pres-doc-wrap">
+
+      <div>
+        <div class="pres-page-label">Página 1 — Carátula</div>
+        <div class="pres-page-shell">${paginaPortadaHTML(año, v.color)}</div>
+      </div>
+
+      <div>
+        <div class="pres-page-label">Página 2 — Experiencia y fortalezas</div>
+        <div class="pres-page-shell">
+          <div class="doc-page" style="--accent-color:${v.color}">
+            <div class="doc-eyebrow" style="color:${v.color}">${v.eyebrow}</div>
+            <div class="doc-title">${v.titulo}</div>
+            ${v.lead.map(p => `<div class="doc-lead">${p}</div>`).join('')}
+            <div class="doc-strengths">${fortalezasHTML}</div>
+            <div class="doc-quote" style="border-top-color:${v.color}33">${v.quote}</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="pres-page-label">Página 3 — Framework de trabajo</div>
+        <div class="pres-page-shell">
+          <div class="doc-page" style="--accent-color:${v.color}">
+            <div class="doc-eyebrow" style="color:${v.color}">Cómo trabajamos</div>
+            <div class="doc-title">${v.fasesTitulo}</div>
+            <div class="doc-lead">Un proceso claro, desde el primer contacto hasta el acompañamiento posterior a la entrega — para que sepas exactamente qué esperar en cada etapa.</div>
+            <div class="doc-phases">${fasesHTML}</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="pres-page-label">Página 4 — Carátula de cierre</div>
+        <div class="pres-page-shell">${paginaPortadaHTML(año, v.color)}</div>
+      </div>
+
+    </div>
+  `;
+}
+
+window.imprimirPresentacion = function() {
   setTimeout(() => window.print(), 50);
 };
 
@@ -1456,14 +1815,21 @@ window.resetForm = function() {
 };
 
 // ── NAVIGATION ───────────────────────────────────────────────────────────
+let presentacionInicializada = false;
 window.navigate = function(view, el) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const vEl = document.getElementById('view-' + view);
   if (vEl) vEl.classList.add('active');
   if (el) el.classList.add('active');
-  const titles = { cotizador: 'Nueva Cotización', historial: 'Cotizaciones' };
+  const titles = { cotizador: 'Nueva Cotización', historial: 'Cotizaciones', presentacion: 'Documento de Presentación' };
   document.getElementById('topbar-title').textContent = titles[view] || view;
+
+  if (view === 'presentacion' && !presentacionInicializada) {
+    presentacionInicializada = true;
+    renderTabsPresentacion();
+    renderDocumentoPresentacion();
+  }
 };
 
 // ── UTILS ────────────────────────────────────────────────────────────────
