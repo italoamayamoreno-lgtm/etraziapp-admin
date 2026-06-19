@@ -236,6 +236,8 @@
     gap: 16px;
     flex-shrink: 0;
     background: var(--bg1);
+    position: relative;
+    z-index: 21;
   }
   .topbar-title { font-family: var(--font-head); font-size: 15px; font-weight: 600; flex: 1; }
   .topbar-actions { display: flex; align-items: center; gap: 8px; }
@@ -680,8 +682,8 @@
   <main id="main">
     <!-- TOPBAR -->
     <header id="topbar">
-      <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" title="Abrir menú" aria-label="Abrir menú">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileSidebar()" title="Abrir menú" aria-label="Abrir menú">
+        <svg id="mobile-menu-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <div class="topbar-title" id="topbar-title">Dashboard</div>
       <div class="topbar-actions">
@@ -2340,6 +2342,10 @@ window.navigate = function(view, el) {
   if (sb.classList.contains('mobile-open')) {
     sb.classList.remove('mobile-open');
     ov.classList.remove('visible');
+    const btn = document.getElementById('mobile-menu-btn');
+    const icon = document.getElementById('mobile-menu-icon');
+    if (btn) { btn.title = 'Abrir menú'; btn.setAttribute('aria-label', 'Abrir menú'); }
+    if (icon) { icon.innerHTML = '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>'; }
   }
 };
 
@@ -2358,8 +2364,20 @@ window.toggleSidebar = function() {
 window.toggleMobileSidebar = function() {
   const sb = document.getElementById('sidebar');
   const ov = document.getElementById('sidebar-overlay');
+  const btn = document.getElementById('mobile-menu-btn');
+  const icon = document.getElementById('mobile-menu-icon');
   sb.classList.toggle('mobile-open');
   ov.classList.toggle('visible');
+  const isOpen = sb.classList.contains('mobile-open');
+  if (btn) {
+    btn.title = isOpen ? 'Cerrar menú' : 'Abrir menú';
+    btn.setAttribute('aria-label', isOpen ? 'Cerrar menú' : 'Abrir menú');
+  }
+  if (icon) {
+    icon.innerHTML = isOpen
+      ? '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
+      : '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>';
+  }
 };
 
 // ── MODAL ──────────────────────────────────────────────────────────────
