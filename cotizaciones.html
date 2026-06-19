@@ -77,10 +77,32 @@
 
   /* MAIN */
   #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-  #topbar { height: var(--topbar-h); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 16px; flex-shrink: 0; background: var(--bg1); }
+  #topbar { height: var(--topbar-h); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 16px; flex-shrink: 0; background: var(--bg1); position: relative; z-index: 21; }
   .topbar-title { font-family: var(--font-head); font-size: 15px; font-weight: 600; flex: 1; }
   .topbar-actions { display: flex; align-items: center; gap: 8px; }
   .topbar-badge { font-size: 11px; font-family: var(--font-mono); color: var(--text1); background: var(--bg3); padding: 3px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+
+  /* MOBILE NAV */
+  .mobile-menu-btn { display: none; }
+  .sidebar-overlay { display: none; }
+  @media (max-width: 600px) {
+    #sidebar { position: fixed; z-index: 20; height: 100vh; top: 0; left: 0; transform: translateX(-100%); transition: transform var(--transition); }
+    #sidebar.mobile-open { transform: translateX(0); }
+    #sidebar.collapsed { width: var(--sidebar-w); min-width: var(--sidebar-w); }
+    #content { padding: 16px; }
+    .sidebar-toggle-btn { display: none; }
+    .mobile-menu-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border: none; background: transparent;
+      color: var(--text0); cursor: pointer; border-radius: 6px; margin-right: 4px;
+    }
+    .mobile-menu-btn:hover { background: var(--bg3); }
+    .sidebar-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 19;
+      opacity: 0; pointer-events: none; transition: opacity var(--transition);
+    }
+    .sidebar-overlay.visible { opacity: 1; pointer-events: auto; }
+  }
 
   /* CONTENT */
   #content { flex: 1; overflow-y: auto; padding: 24px; }
@@ -633,9 +655,15 @@
     </div>
   </aside>
 
+  <!-- OVERLAY MOBILE -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+
   <!-- MAIN -->
   <main id="main">
     <header id="topbar">
+      <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileSidebar()" title="Abrir menú" aria-label="Abrir menú">
+        <svg id="mobile-menu-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
       <div class="topbar-title" id="topbar-title">Nueva Cotización</div>
       <div class="topbar-actions no-print">
         <span class="topbar-badge" id="topbar-date"></span>
@@ -1830,6 +1858,18 @@ window.navigate = function(view, el) {
     renderTabsPresentacion();
     renderDocumentoPresentacion();
   }
+
+  // Cerrar menú mobile al elegir una sección
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  if (sb.classList.contains('mobile-open')) {
+    sb.classList.remove('mobile-open');
+    ov.classList.remove('visible');
+    const btn = document.getElementById('mobile-menu-btn');
+    const icon = document.getElementById('mobile-menu-icon');
+    if (btn) { btn.title = 'Abrir menú'; btn.setAttribute('aria-label', 'Abrir menú'); }
+    if (icon) { icon.innerHTML = '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>'; }
+  }
 };
 
 // ── UTILS ────────────────────────────────────────────────────────────────
@@ -1838,6 +1878,25 @@ window.toggleSidebar = function() {
   const ic = document.getElementById('toggle-icon');
   sb.classList.toggle('collapsed');
   ic.style.transform = sb.classList.contains('collapsed') ? 'rotate(180deg)' : '';
+};
+
+window.toggleMobileSidebar = function() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  const btn = document.getElementById('mobile-menu-btn');
+  const icon = document.getElementById('mobile-menu-icon');
+  sb.classList.toggle('mobile-open');
+  ov.classList.toggle('visible');
+  const isOpen = sb.classList.contains('mobile-open');
+  if (btn) {
+    btn.title = isOpen ? 'Cerrar menú' : 'Abrir menú';
+    btn.setAttribute('aria-label', isOpen ? 'Cerrar menú' : 'Abrir menú');
+  }
+  if (icon) {
+    icon.innerHTML = isOpen
+      ? '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
+      : '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>';
+  }
 };
 window.openModal  = id => document.getElementById(id).classList.add('open');
 window.closeModal = id => document.getElementById(id).classList.remove('open');
