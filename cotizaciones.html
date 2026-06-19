@@ -256,7 +256,187 @@
   .est-aprobada  { background: var(--green-bg); color: var(--green); }
   .est-rechazada { background: var(--red-bg); color: var(--red); }
 
-  /* PRINT */
+  /* ═══ PORTADA — solo en pantalla de impresión ═══════════════════════ */
+  .print-only { display: none; }
+
+  .cover-page {
+    width: 100%;
+    min-height: 100vh;
+    background: #0B1120;
+    color: #f0ede6;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    page-break-after: always;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* PÁGINA 1 — Portada */
+  .cover-1 {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    padding: 60px 40px;
+  }
+  .cover-1-year-top {
+    position: absolute;
+    top: 48px; left: 0; right: 0;
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.3em;
+    color: #B87333;
+  }
+  .cover-1-logo {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 48px;
+    letter-spacing: 0.12em;
+    color: #f0ede6;
+    margin-bottom: 28px;
+  }
+  .cover-1-mark { margin-bottom: 32px; }
+  .cover-1-phrase {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 22px;
+    color: #B87333;
+    max-width: 520px;
+    line-height: 1.5;
+  }
+  .cover-1-year-bottom {
+    position: absolute;
+    bottom: 48px; left: 0; right: 0;
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.3em;
+    color: #5c5a55;
+  }
+
+  /* PÁGINA 2 — Presentación */
+  .cover-2 { padding: 56px 52px; }
+  .cover-2-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: #B87333;
+    margin-bottom: 10px;
+  }
+  .cover-2-title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 26px;
+    letter-spacing: -0.5px;
+    margin-bottom: 18px;
+    line-height: 1.25;
+  }
+  .cover-2-lead {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #c9c6bf;
+    margin-bottom: 10px;
+    max-width: 100%;
+  }
+  .cover-2-lead b { color: #f0ede6; }
+  .cover-2-section-title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #B87333;
+    margin: 26px 0 14px;
+  }
+  .cover-2-verticals {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .cover-2-v-card {
+    background: #111827;
+    border: 1px solid rgba(184,115,51,0.18);
+    border-radius: 10px;
+    padding: 14px 10px;
+    text-align: center;
+  }
+  .cover-2-v-icon { font-size: 20px; margin-bottom: 8px; }
+  .cover-2-v-name {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    margin-bottom: 4px;
+    color: #f0ede6;
+  }
+  .cover-2-v-desc {
+    font-size: 9.5px;
+    line-height: 1.4;
+    color: #a09d96;
+  }
+  .cover-2-pillars {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .cover-2-pillar {
+    background: #111827;
+    border: 1px solid rgba(184,115,51,0.1);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .cover-2-pillar-name {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: #f0ede6;
+    margin-bottom: 4px;
+  }
+  .cover-2-pillar-name span { color: #B87333; margin-right: 6px; }
+  .cover-2-pillar-desc {
+    font-size: 10.5px;
+    line-height: 1.5;
+    color: #a09d96;
+  }
+  .cover-2-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .cover-2-stat {
+    background: #111827;
+    border-top: 2px solid #B87333;
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .cover-2-stat-num {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 19px;
+    color: #B87333;
+  }
+  .cover-2-stat-label {
+    font-size: 9.5px;
+    color: #a09d96;
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+  .cover-2-footer {
+    margin-top: auto;
+    padding-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    color: #5c5a55;
+  }
+
+  /* ═══ IMPRESIÓN ══════════════════════════════════════════════════════ */
   @media print {
     #sidebar, #topbar, .no-print, #view-historial, .topbar-actions { display: none !important; }
     #app { display: block !important; }
@@ -265,12 +445,20 @@
     .view.active { display: block !important; }
     .cotizador-grid { grid-template-columns: 1fr !important; }
     .panel-form { display: none !important; }
-    .cot-preview { border: none !important; }
-    .cot-preview-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    html, body { overflow: visible !important; height: auto !important; background: white !important; }
-    .cot-preview { background: white !important; color: #0B1120 !important; }
-    .cot-preview-header { background: #0B1120 !important; }
+    html, body { overflow: visible !important; height: auto !important; background: #0B1120 !important; }
+
+    .print-only { display: block !important; }
+
+    .cot-preview {
+      border: none !important;
+      background: #0B1120 !important;
+      color: #f0ede6 !important;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .cot-preview-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #0B1120 !important; }
   }
+  @page { margin: 0; }
 </style>
 </head>
 <body>
@@ -378,7 +566,7 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.28-3.88"/></svg>
               Limpiar
             </button>
-            <button class="btn btn-blue btn-sm no-print" onclick="window.print()">
+            <button class="btn btn-blue btn-sm no-print" onclick="imprimirCotizacion()">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
               Imprimir / PDF
             </button>
@@ -518,6 +706,10 @@
               <span>PREVISUALIZACIÓN EN VIVO</span>
               <span id="preview-num" style="color:var(--accent)">COT-001</span>
             </div>
+
+            <!-- PÁGINAS DE PORTADA — solo visibles al imprimir/exportar PDF, fijas en toda cotización -->
+            <div id="print-cover-pages" class="print-only"></div>
+
             <div class="cot-preview" id="cotizacion-preview">
               <!-- Renderizado dinámico -->
             </div>
@@ -821,6 +1013,100 @@ function generarNumero() {
 }
 
 // ── RENDER PREVIEW ───────────────────────────────────────────────────────
+// ── CONTENIDO FIJO ETRAZIA ─────────────────────────────────────────────
+const VERTICALES_INFO = [
+  { icon: '🎯', nombre: 'Consulting', desc: 'Diagnóstico y estrategia que convierten decisiones en resultados medibles.' },
+  { icon: '🤝', nombre: 'Talent', desc: 'Encontramos y formamos a las personas correctas para cada etapa del negocio.' },
+  { icon: '🎓', nombre: 'Academy', desc: 'Formación certificada que transforma equipos en ventaja competitiva real.' },
+  { icon: '🚀', nombre: 'Ventures', desc: 'Acompañamos founders a validar, lanzar y escalar con criterio de inversionista.' },
+  { icon: '⚙️', nombre: 'Apps', desc: 'Tecnología propia que automatiza ventas, inventario y operación diaria.' },
+];
+
+const PILARES_INFO = [
+  { icon: '🎯', nombre: 'Estratégica', desc: 'Cada recomendación nace de datos y visión de largo plazo, no de intuición.' },
+  { icon: '🤝', nombre: 'Confiable', desc: 'Acompañamos cada etapa del proyecto con criterio técnico, sin vender humo.' },
+  { icon: '⚡', nombre: 'Moderna', desc: 'Integramos tecnología e innovación en cada solución que entregamos.' },
+  { icon: '🌱', nombre: 'Humana', desc: 'Detrás de cada negocio hay personas — las ponemos siempre al centro.' },
+];
+
+// ── PORTADAS DE IMPRESIÓN (fijas en toda cotización) ───────────────────
+function renderPortadas() {
+  const año = new Date().getFullYear();
+
+  const verticalsHTML = VERTICALES_INFO.map(v => `
+    <div class="cover-2-v-card">
+      <div class="cover-2-v-icon">${v.icon}</div>
+      <div class="cover-2-v-name">${v.nombre}</div>
+      <div class="cover-2-v-desc">${v.desc}</div>
+    </div>`).join('');
+
+  const pilaresHTML = PILARES_INFO.map(p => `
+    <div class="cover-2-pillar">
+      <div class="cover-2-pillar-name"><span>${p.icon}</span>${p.nombre}</div>
+      <div class="cover-2-pillar-desc">${p.desc}</div>
+    </div>`).join('');
+
+  document.getElementById('print-cover-pages').innerHTML = `
+    <!-- PÁGINA 1 — PORTADA -->
+    <div class="cover-page cover-1">
+      <div class="cover-1-year-top">${año}</div>
+      <div class="cover-1-mark">
+        <svg width="56" height="56" viewBox="0 0 44 44" fill="none">
+          <path d="M16 22C16 15.37 21.37 10 28 10C34.63 10 40 15.37 40 22C40 28.63 34.63 34 28 34" stroke="#1B2B4B" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <path d="M28 22C28 28.63 22.63 34 16 34C9.37 34 4 28.63 4 22C4 15.37 9.37 10 16 10" stroke="url(#coverlg)" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <rect x="17.5" y="17.5" width="9" height="9" rx="1.5" fill="#D97706" transform="rotate(45 22 22)"/>
+          <defs><linearGradient id="coverlg" x1="28" y1="10" x2="4" y2="34" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#B87333"/><stop offset="100%" stop-color="#D97706"/></linearGradient></defs>
+        </svg>
+      </div>
+      <div class="cover-1-logo">ETRAZIA</div>
+      <div class="cover-1-phrase">"No somos una consultora.<br>Somos un ecosistema."</div>
+      <div class="cover-1-year-bottom">PROPUESTA COMERCIAL · ${año}</div>
+    </div>
+
+    <!-- PÁGINA 2 — PRESENTACIÓN -->
+    <div class="cover-page cover-2">
+      <div class="cover-2-eyebrow">Quiénes somos</div>
+      <div class="cover-2-title">Un ecosistema completo para construir, no solo asesorar.</div>
+      <div class="cover-2-lead">Etrazia nace para resolver un problema real: las empresas no necesitan más consultores que entreguen un PDF y desaparezcan. Necesitan un equipo que <b>piense la estrategia, forme al talento, capacite a los equipos, valide nuevas ideas y construya la tecnología</b> que sostiene todo eso — bajo una sola relación de confianza.</div>
+      <div class="cover-2-lead">Por eso integramos cinco frentes que normalmente trabajan separados — <b>consultoría, talento, formación, emprendimiento y tecnología</b> — en un mismo equipo que ya conoce tu negocio. Cuando entras en contacto con Etrazia, el resultado es simple: <b>tranquilidad</b>. La certeza de que no tienes que construir solo.</div>
+
+      <div class="cover-2-section-title">Nuestras verticales</div>
+      <div class="cover-2-verticals">${verticalsHTML}</div>
+
+      <div class="cover-2-section-title">Cómo trabajamos</div>
+      <div class="cover-2-pillars">${pilaresHTML}</div>
+
+      <div class="cover-2-section-title">Resultados que respaldan el enfoque</div>
+      <div class="cover-2-stats">
+        <div class="cover-2-stat">
+          <div class="cover-2-stat-num">+256%</div>
+          <div class="cover-2-stat-label">Crecimiento en ventas digitales liderando ecosistemas e-commerce en telecomunicaciones</div>
+        </div>
+        <div class="cover-2-stat">
+          <div class="cover-2-stat-num">S/14MM</div>
+          <div class="cover-2-stat-label">Captación digital mensual generada en el sector bancario, escalada desde S/ 600K</div>
+        </div>
+        <div class="cover-2-stat">
+          <div class="cover-2-stat-num">+250%</div>
+          <div class="cover-2-stat-label">Crecimiento en ventas online logrado en el sector retail durante la pandemia</div>
+        </div>
+      </div>
+
+      <div class="cover-2-footer">
+        <span>etrazia.com · +51 922 339 690</span>
+        <span>italo.amaya@etrazia.com</span>
+      </div>
+    </div>
+  `;
+}
+
+// ── IMPRIMIR / EXPORTAR PDF ──────────────────────────────────────────────
+window.imprimirCotizacion = function() {
+  renderPortadas();
+  // Pequeño delay para asegurar que el DOM se pinte antes de abrir el diálogo de impresión
+  setTimeout(() => window.print(), 50);
+};
+
 window.renderPreview = function() {
   const nombre   = document.getElementById('f-nombre')?.value || '—';
   const empresa  = document.getElementById('f-empresa')?.value || '';
@@ -961,11 +1247,12 @@ window.guardarCotizacion = async function() {
     await addDoc(collection(db, 'cotizaciones'), data);
     showToast(`Cotización ${data.numero} guardada en Firestore.`, 'success');
     resetForm();
-  } catch {
-    // Demo fallback
+  } catch (err) {
+    console.error('Error guardando en Firestore:', err);
+    // Demo fallback — solo en memoria, se pierde al recargar
     cotizaciones.unshift({ id: 'demo_' + Date.now(), ...data });
     renderHistorial();
-    showToast(`Cotización ${data.numero} guardada (modo demo).`, 'success');
+    showToast(`No se pudo guardar en Firestore (${err.code || err.message}). Guardada solo en esta sesión.`, 'error');
     resetForm();
   }
 };
@@ -977,7 +1264,9 @@ function loadCotizaciones() {
     cotizaciones = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderHistorial();
     actualizarStats();
-  }, () => {
+  }, err => {
+    console.error('Error escuchando cotizaciones en Firestore:', err);
+    showToast(`No se pudo conectar a Firestore (${err.code || err.message}). Mostrando solo datos de esta sesión.`, 'error');
     renderHistorial();
     actualizarStats();
   });
@@ -1096,7 +1385,18 @@ window.cambiarEstadoCot = async function(id, estado) {
   const idx = cotizaciones.findIndex(x => x.id === id);
   if (idx < 0) return;
   cotizaciones[idx].estado = estado;
-  try { await updateDoc(doc(db, 'cotizaciones', id), { estado }); } catch {}
+  if (!id.startsWith('demo_')) {
+    try {
+      await updateDoc(doc(db, 'cotizaciones', id), { estado });
+    } catch (err) {
+      console.error('Error actualizando estado en Firestore:', err);
+      showToast(`Estado actualizado solo en esta sesión (${err.code || err.message}).`, 'error');
+      renderHistorial();
+      actualizarStats();
+      closeModal('modal-ver-cot');
+      return;
+    }
+  }
   renderHistorial();
   actualizarStats();
   closeModal('modal-ver-cot');
@@ -1105,7 +1405,15 @@ window.cambiarEstadoCot = async function(id, estado) {
 
 window.eliminarCotizacion = async function(id, numero) {
   if (!confirm(`¿Eliminar cotización ${numero}? Esta acción no se puede deshacer.`)) return;
-  try { await deleteDoc(doc(db, 'cotizaciones', id)); } catch {}
+  if (!id.startsWith('demo_')) {
+    try {
+      await deleteDoc(doc(db, 'cotizaciones', id));
+    } catch (err) {
+      console.error('Error eliminando en Firestore:', err);
+      showToast(`No se pudo eliminar en Firestore (${err.code || err.message}).`, 'error');
+      return;
+    }
+  }
   cotizaciones = cotizaciones.filter(c => c.id !== id);
   renderHistorial();
   actualizarStats();
