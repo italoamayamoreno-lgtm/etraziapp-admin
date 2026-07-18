@@ -621,12 +621,6 @@
         </div>
         <span class="nav-label">Clientes (Tenants)</span>
       </div>
-      <div class="nav-item" data-view="apps" onclick="navigate('apps', this)">
-        <div class="nav-icon">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/><rect x="2" y="10" width="6" height="6" rx="1"/><rect x="9" y="10" width="6" height="6" rx="1"/><rect x="16" y="10" width="6" height="6" rx="1"/><rect x="2" y="17" width="6" height="6" rx="1"/><rect x="9" y="17" width="6" height="6" rx="1"/><rect x="16" y="17" width="6" height="6" rx="1"/></svg>
-        </div>
-        <span class="nav-label">Apps y Planes</span>
-      </div>
       <div class="nav-section-label">Finanzas</div>
       <div class="nav-item" data-view="facturacion" onclick="navigate('facturacion', this)">
         <div class="nav-icon">
@@ -1605,7 +1599,7 @@ const firebaseConfig = {
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
-  getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut as fbSignOut
+  getAuth, setPersistence, browserLocalPersistence, signInWithEmailAndPassword, onAuthStateChanged, signOut as fbSignOut
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc,
@@ -1615,6 +1609,7 @@ import {
 // ── INIT ───────────────────────────────────────────────────────────────
 const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+setPersistence(auth, browserLocalPersistence).catch(() => {});
 const db   = getFirestore(app);
 
 // ── ESTADO GLOBAL ──────────────────────────────────────────────────────
