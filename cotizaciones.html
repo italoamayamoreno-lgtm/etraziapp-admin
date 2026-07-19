@@ -322,13 +322,27 @@
     border-radius: var(--radius-lg);
     overflow: hidden;
     border: 1px solid var(--border);
-    aspect-ratio: 16 / 9; /* formato real del deck institucional */
+    aspect-ratio: 16 / 9; /* formato real de los PDF maestros — verticales e institucional */
+    background: #0B1120;
   }
-  .pres-page-shell .cover-page,
-  .pres-page-shell .doc-page {
-    min-height: 0;
+  .pres-page-shell img {
+    display: block;
+    width: 100%;
     height: 100%;
-    page-break-after: auto;
+    object-fit: contain; /* nunca recorta la página, aunque el contenedor varíe 1px */
+  }
+  .pres-page-error {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text2);
+    background: #0B1120;
   }
 
   /* PÁGINA 2 — Experiencia / fortalezas */
@@ -592,25 +606,27 @@
     }
     .cot-preview-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #0B1120 !important; }
 
-    /* Vista Presentación — cada "shell" se convierte en una hoja real a tamaño completo */
+    /* Vista Presentación — cada página-imagen se convierte en una hoja real a tamaño completo */
     .pres-doc-wrap { max-width: none !important; gap: 0 !important; }
     .pres-page-label { display: none !important; }
     .pres-page-shell {
       border: none !important;
       border-radius: 0 !important;
-      aspect-ratio: auto !important;
       width: 100% !important;
-      min-height: 100vh !important;
+      height: 100vh !important;
+      min-height: 0 !important;
       page-break-after: always !important;
+      page-break-inside: avoid !important;
     }
     .pres-page-shell:last-child { page-break-after: auto !important; }
-    .pres-page-shell .cover-page,
-    .pres-page-shell .doc-page {
-      height: auto !important;
-      min-height: 100vh !important;
+    .pres-page-shell img {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain !important; /* red de seguridad: si el navegador ignora el @page de abajo, jamás se recorta */
     }
   }
-  @page { margin: 0; }
+  /* Hoja a 16:9 para que cada imagen (el PDF real) llene la página sin bordes ni deformación al exportar/imprimir */
+  @page { size: 338.66mm 190.5mm; margin: 0; }
 </style>
 </head>
 <body>
@@ -1223,414 +1239,22 @@ function generarNumero() {
 }
 
 // ── RENDER PREVIEW ───────────────────────────────────────────────────────
-// ── CONTENIDO FIJO ETRAZIA ─────────────────────────────────────────────
-const VERTICALES_INFO = [
-  { icon: '🎯', nombre: 'Consulting', desc: 'Diagnóstico y estrategia que convierten decisiones en resultados medibles.' },
-  { icon: '🤝', nombre: 'Talent', desc: 'Encontramos y formamos a las personas correctas para cada etapa del negocio.' },
-  { icon: '🎓', nombre: 'Academy', desc: 'Formación certificada que transforma equipos en ventaja competitiva real.' },
-  { icon: '🚀', nombre: 'Ventures', desc: 'Acompañamos founders a validar, lanzar y escalar con criterio de inversionista.' },
-  { icon: '⚙️', nombre: 'Apps', desc: 'Tecnología propia que automatiza ventas, inventario y operación diaria.' },
-];
 
-const PILARES_INFO = [
-  { icon: '🎯', nombre: 'Estratégica', desc: 'Cada recomendación nace de datos y visión de largo plazo, no de intuición.' },
-  { icon: '🤝', nombre: 'Confiable', desc: 'Acompañamos cada etapa del proyecto con criterio técnico, sin vender humo.' },
-  { icon: '⚡', nombre: 'Moderna', desc: 'Integramos tecnología e innovación en cada solución que entregamos.' },
-  { icon: '🌱', nombre: 'Humana', desc: 'Detrás de cada negocio hay personas — las ponemos siempre al centro.' },
-];
-
-// ── DOCUMENTOS DE PRESENTACIÓN POR VERTICAL (contenido fijo, no editable) ──
+// ── DOCUMENTOS DE PRESENTACIÓN (páginas = imágenes 1:1 de los PDF maestros) ──
+// Fuente de verdad: los PDF que Talo sube al repo, ya NO se reconstruye el
+// contenido en HTML/CSS. Cada carpeta contiene pg-01.jpg … pg-NN.jpg
+// exportados directamente del PDF, así que tipografía/colores/layout son
+// siempre exactamente los del documento original.
+// Ruta relativa (repo, sibling de este archivo): presentaciones/<carpeta>/pg-NN.jpg
 const PRESENTACIONES = {
-  consulting: {
-    label: 'Etrazia Consulting', color: '#4a9eff',
-    numero: '01',
-    tagline: 'Del diagnóstico a la ventaja competitiva.',
-    parrafo: 'Convertimos la estrategia en decisiones y resultados medibles — y las capacidades quedan instaladas en tu organización.',
-    chips: ['Estrategia', 'Transformación', 'Datos', 'PMO'],
-    logros: [
-      { titulo: 'Diagnóstico estratégico', desc: 'Análisis de situación, oportunidades y prioridades con visión de largo plazo.', stat: 'Hasta 15% del EBITDA en oportunidades identificadas' },
-      { titulo: 'Planificación & OKRs', desc: 'Objetivos claros, medibles y ejecutables por toda la organización.', stat: '+15% a +25% de crecimiento en ingresos' },
-      { titulo: 'Gestión del cambio', desc: 'Acompañamos a las personas para que la transformación se sostenga.', stat: '6x más probabilidad de cumplir los objetivos' },
-      { titulo: 'Transformación organizacional', desc: 'Rediseño de procesos, estructura y modelo operativo.', stat: '−20% a −40% de costos operativos' },
-      { titulo: 'Decisiones basadas en datos', desc: 'Tableros e indicadores que impactan directamente al negocio.', stat: '+20% de mejora en el margen EBITDA' },
-      { titulo: 'PMO & gobierno', desc: 'Gobierno de portafolio y seguimiento continuo de la ejecución.', stat: 'Hasta 5x el ROI del programa' },
-    ],
-  },
-  talent: {
-    label: 'Etrazia Talent', color: '#3ecf70',
-    numero: '02',
-    tagline: 'El talento correcto, en el momento exacto.',
-    parrafo: 'Construimos equipos y estructuras capaces de sostener el crecimiento — y una cultura que los retiene.',
-    chips: ['Atracción', 'Estructura', 'Desempeño', 'Cultura'],
-    logros: [
-      { titulo: 'Atracción & selección', desc: 'Talento clave identificado y evaluado con rigor.', stat: 'Hasta 40% menos costo de contratación' },
-      { titulo: 'Diseño organizacional', desc: 'Estructuras y roles claros, alineados a la estrategia.', stat: '+20% de productividad organizacional' },
-      { titulo: 'Evaluación de desempeño', desc: 'Modelos de medición y feedback que elevan el rendimiento.', stat: 'Hasta +25% de productividad por equipo' },
-      { titulo: 'Cultura de alto rendimiento', desc: 'Equipos motivados, alineados y con propósito.', stat: 'Hasta −50% de rotación de talento clave' },
-      { titulo: 'Planes de desarrollo', desc: 'Rutas de crecimiento y sucesión para el talento clave.', stat: '3x más talento interno listo para liderar' },
-      { titulo: 'Employer branding', desc: 'Una marca empleadora que atrae a los mejores.', stat: 'Hasta 4x más postulantes calificados' },
-    ],
-  },
-  academy: {
-    label: 'Etrazia Academy', color: '#f5c542',
-    numero: '03',
-    tagline: 'Aprender haciendo, crecer sin techo.',
-    parrafo: 'Programas y cursos que potencian las habilidades y competencias de tus equipos — con y sin certificación internacional.',
-    chips: ['Liderazgo', 'Agilidad', 'Servicio CX', 'Herramientas tech'],
-    logros: [
-      { titulo: 'Liderazgo & habilidades blandas', desc: 'Líderes que inspiran, comunican y deciden mejor.', stat: 'Hasta +35% de desempeño de los equipos' },
-      { titulo: 'Teambuilding & conflictos', desc: 'Equipos cohesionados que colaboran y resuelven.', stat: 'Hasta −45% de conflictos que frenan la operación' },
-      { titulo: 'Agilidad & innovación', desc: 'Frameworks para entregar valor más rápido.', stat: 'Entregas hasta 3x más rápidas' },
-      { titulo: 'Escuelas de servicio CX', desc: 'Cultura de experiencia al cliente de punta a punta.', stat: '+20 a +30 pts de satisfacción del cliente (NPS)' },
-      { titulo: 'Herramientas tecnológicas', desc: 'Power BI, Office y más, aplicados al día a día.', stat: 'Hasta −60% de tiempo en reportes manuales' },
-      { titulo: 'Formatos flexibles', desc: 'Presencial, virtual e In-Company, a tu medida.', stat: '95% de satisfacción de los participantes' },
-    ],
-  },
-  ventures: {
-    label: 'Etrazia Ventures', color: '#c084fc',
-    numero: '04',
-    tagline: 'De la idea al negocio que escala.',
-    parrafo: 'Acompañamos a emprendedores y nuevos negocios desde la validación hasta el crecimiento con respaldo.',
-    chips: ['Validación', 'Inversión', 'Estructura', 'Go-to-market'],
-    logros: [
-      { titulo: 'Validación de modelo', desc: 'Probamos la idea antes de invertir a ciegas.', stat: 'Hasta 80% menos riesgo de fracaso' },
-      { titulo: 'Pitch para inversión', desc: 'Narrativa y números listos para levantar capital.', stat: 'Hasta 3x más probabilidad de levantar capital' },
-      { titulo: 'Estructura societaria', desc: 'Bases legales y societarias sólidas para escalar.', stat: 'Estructura lista para due diligence en semanas' },
-      { titulo: 'Aceleración go-to-market', desc: 'Del lanzamiento a los primeros clientes, rápido.', stat: 'Hasta −60% de time-to-market' },
-      { titulo: 'Modelo financiero', desc: 'Proyecciones y unit economics que convencen.', stat: 'Márgenes y unit economics claros desde el día 1' },
-      { titulo: 'Acompañamiento', desc: 'Mentoría continua en cada etapa del crecimiento.', stat: 'Hasta +60% de probabilidad de superar el año 1' },
-    ],
-  },
-  apps: {
-    label: 'EtraziApp', color: '#f0594a',
-    numero: '05',
-    tagline: 'Digitaliza tu operación, sin IT.',
-    parrafo: 'Soluciones SaaS propias — Vcontrol y Vruta — que ponen a operar a los pequeños negocios sin servidores ni complejidad.',
-    chips: ['SaaS propio', 'Sin servidores', 'Rápido', 'Escalable'],
-    logros: [
-      { titulo: 'Vcontrol', desc: 'Control de operación, inventario y gestión en un solo lugar.', stat: 'Hasta −70% de tiempo en tareas administrativas' },
-      { titulo: 'Vruta', desc: 'Optimización de rutas y logística para tu negocio.', stat: 'Hasta −30% de costos logísticos' },
-      { titulo: 'Cero infraestructura', desc: 'Sin IT, sin servidores, sin fricciones.', stat: 'S/0 de inversión en servidores o IT' },
-      { titulo: 'Operativa en 1 semana', desc: 'De la contratación al uso real en pocos días.', stat: 'Operando en días, no en meses como un ERP tradicional' },
-      { titulo: 'Escalable', desc: 'Crece con tu negocio, sin sobresaltos.', stat: 'Escala 10x sin cambiar de sistema ni de proveedor' },
-      { titulo: 'Soporte cercano', desc: 'Acompañamiento humano durante la adopción.', stat: 'Hasta 95% de adopción diaria por el equipo' },
-    ],
-  },
+  consulting: { label: 'Etrazia Consulting', color: '#4a9eff', carpeta: 'consulting', paginas: 10 },
+  talent:     { label: 'Etrazia Talent',     color: '#3ecf70', carpeta: 'talent',     paginas: 10 },
+  academy:    { label: 'Etrazia Academy',    color: '#f5c542', carpeta: 'academy',    paginas: 10 },
+  ventures:   { label: 'Etrazia Ventures',   color: '#c084fc', carpeta: 'ventures',   paginas: 10 },
+  apps:       { label: 'EtraziApp',          color: '#f0594a', carpeta: 'apps',       paginas: 10 },
 };
 
-// ── CONTENIDO COMPARTIDO (idéntico en las 5 verticales) ──────────────────
-const ECOSISTEMA_VERTICALES = [
-  { num: '01', nombre: 'Consulting', desc: 'Estrategia y transformación con visión de largo plazo.' },
-  { num: '02', nombre: 'Talent', desc: 'El talento correcto, en el momento exacto.' },
-  { num: '03', nombre: 'Academy', desc: 'Programas que potencian las habilidades y competencias de tus equipos.' },
-  { num: '04', nombre: 'Ventures', desc: 'De la idea al negocio que escala.' },
-  { num: '05', nombre: 'Apps', desc: 'Tecnología SaaS propia, sin fricciones.' },
-];
-
-const VERTICALES_DETALLE = [
-  { nombre: 'Consulting', parrafo: 'Diagnóstico y planificación estratégica, gestión del cambio y transformación organizacional, y toma de decisiones basadas en datos que impactarán al negocio para posicionar a la compañía en la vanguardia del sector.', highlight: 'Hoja de ruta 12–24 meses' },
-  { nombre: 'Talent', parrafo: 'Atracción y selección de talento clave, diseño de estructuras organizacionales, evaluación de desempeño y cultura de alto rendimiento.', highlight: 'Equipos de alto desempeño' },
-  { nombre: 'Academy', parrafo: 'Escuela de capacidades a medida: liderazgo, teambuilding, manejo de conflictos y habilidades blandas; agilidad e innovación; escuelas de servicio con enfoque CX; y dominio de herramientas tecnológicas (Power BI, Office y más) — con y sin certificación internacional.', highlight: 'Equipos que rinden más' },
-  { nombre: 'Ventures', parrafo: 'Validación de modelo de negocio, pitch para inversión, estructura societaria y aceleración go-to-market para emprendedores.', highlight: 'De la idea al escalado' },
-  { nombre: 'Apps', parrafo: 'Soluciones SaaS propias — Vcontrol y Vruta — para digitalizar la operación de pequeños negocios sin IT ni servidores.', highlight: 'Operativa en 1 semana' },
-];
-
-const MODELO_TRABAJO = [
-  { titulo: 'Diagnóstico', desc: 'Análisis de situación, definición de OKRs y prioridades. De 12 semanas a un plan ejecutable.' },
-  { titulo: 'Co-construcción', desc: 'Diseñamos la solución contigo — procesos, estructura, tecnología y talento alineados.' },
-  { titulo: 'Ejecución', desc: 'Implementación bajo modelos Agile at Scale, con gobierno de portafolio y seguimiento continuo.' },
-  { titulo: 'Impacto medible', desc: 'Resultados en negocio: eficiencia, conversión, ingresos y capacidades que quedan instaladas.' },
-];
-
-const TRACK_RECORD = [
-  { num: '+256%', label: 'Crecimiento en ventas digitales liderando ecosistemas ecommerce en telecomunicaciones.' },
-  { num: 'S/14MM', label: 'Captación digital mensual en banca, escalada desde S/ 600K.' },
-  { num: '+250%', label: 'Crecimiento en ventas online en retail durante pandemia.' },
-  { num: '+40%', label: 'Mejora promedio en eficiencia operativa en proyectos de transformación.' },
-  { num: '380+', label: 'Iniciativas estratégicas lideradas dentro de hojas de ruta de transformación digital.' },
-  { num: '35→70%', label: 'Salto en satisfacción de clientes tras rediseño de experiencia y servicio.' },
-];
-
-const PROPUESTA_VALOR = [
-  { num: '01', titulo: 'Estratégica', desc: 'Decisiones basadas en datos y visión de largo plazo. Caminos claros, medibles y ejecutables.' },
-  { num: '02', titulo: 'Confiable', desc: 'Tu aliado en cada etapa. Estamos cuando más se necesita, con criterio y sin vender humo.' },
-  { num: '03', titulo: 'Moderna', desc: 'Tecnología e innovación en cada solución. El mundo no espera y nosotros tampoco.' },
-  { num: '04', titulo: 'Humana', desc: 'Nadie construye algo grande solo. Nos importan las personas detrás de cada negocio.' },
-];
-
-// ── DECK INSTITUCIONAL (6to botón) ───────────────────────────────────────
-const INSTITUCIONAL = {
-  verticalesBrief: [
-    { num: '01', nombre: 'Consulting', tagline: 'Decisiones que dejan de depender del instinto y empiezan a depender de evidencia.',
-      parrafo: 'Como consultora especialista en el liderazgo de transformaciones digitales, organizacionales y culturales, y en estrategia comercial dentro de organizaciones grandes — telecomunicaciones, banca, retail — sumamos eficiencia operativa, optimización y mejora de procesos, PMO y equipos ágiles. Cada propuesta nace de un diagnóstico real y entrega una hoja de ruta que el equipo puede ejecutar el lunes siguiente.',
-      items: [
-        { titulo: 'Diagnóstico basado en datos', desc: 'Levantamos información real de la operación antes de proponer nada.' },
-        { titulo: 'Hoja de ruta ejecutable', desc: 'Cada recomendación viene con pasos concretos, responsables y plazos.' },
-        { titulo: 'Visión de negocio', desc: 'Conectamos cada mejora operativa con el impacto real en ingresos.' },
-        { titulo: 'Acompañamiento en ejecución', desc: 'Seguimos presentes después del diagnóstico para asegurar resultados.' },
-      ],
-      highlight: 'De S/600K a S/14MM mensuales en captación digital (banca) · +256% en ventas digitales (e-commerce)' },
-    { num: '02', nombre: 'Talent', tagline: 'Contratar bien no es cuestión de suerte. Es un proceso que se puede hacer con criterio.',
-      parrafo: 'En Etrazia Talent partimos al revés: primero entendemos la cultura, el ritmo y lo que realmente se necesita resolver, y recién ahí empezamos a buscar. Cada búsqueda se diseña a la medida del rol y de la etapa de la empresa.',
-      items: [
-        { titulo: 'Búsqueda a la medida', desc: 'Cada búsqueda parte de la necesidad específica del cliente.' },
-        { titulo: 'Foco en encaje cultural', desc: 'Evaluamos competencias técnicas y encaje real con el equipo.' },
-        { titulo: 'Procesos ágiles', desc: 'Ternas finales en plazos claros, sin sacrificar calidad.' },
-        { titulo: 'Acompañamiento post-contratación', desc: 'Seguimiento a la adaptación en las primeras semanas.' },
-      ],
-      highlight: 'Mismos estándares de evaluación usados en procesos de transformación organizacional dentro de grandes empresas.' },
-    { num: '03', nombre: 'Academy', tagline: 'Un equipo capacitado no es un gasto. Es la diferencia entre ejecutar bien o ejecutar a medias.',
-      parrafo: 'En Etrazia Academy diseñamos cada programa a partir de los retos reales del equipo: liderazgo y gestión de equipos, comunicación efectiva y asertiva, inteligencia emocional, trabajo en equipo, resolución de conflictos, desarrollo personal y profesional, coaching ejecutivo y team building con actividades de integración. Instructores que entienden de negocio, no solo de teoría, y certificación reconocida internacionalmente.',
-      items: [
-        { titulo: 'Contenido a la medida', desc: 'Cada programa se diseña según los retos reales del equipo.' },
-        { titulo: 'Certificación internacional', desc: 'Respaldo reconocido fuera de la empresa, no solo un diploma interno.' },
-        { titulo: 'Instructores con experiencia de negocio', desc: 'Formamos con quienes han ejecutado en terreno.' },
-        { titulo: 'Medición de impacto', desc: 'Indicadores claros para saber si la capacitación cambió el desempeño.' },
-      ],
-      highlight: 'Del liderazgo y la inteligencia emocional al coaching ejecutivo y el desarrollo de competencias — el mismo criterio de transformación aplicado en banca y telecomunicaciones.' },
-    { num: '04', nombre: 'Ventures', tagline: 'Validar antes de invertir. Esa es la diferencia entre una idea y un negocio.',
-      parrafo: 'En Etrazia Ventures acompañamos a founders con la misma rigurosidad con la que un inversionista evaluaría el negocio — validando el modelo, encontrando el primer mercado real y conectando con la red de contactos correcta.',
-      items: [
-        { titulo: 'Validación antes que inversión', desc: 'Probamos supuestos del modelo antes de gastar tiempo y capital.' },
-        { titulo: 'Red de contactos real', desc: 'Conexión con inversionistas y aliados estratégicos.' },
-        { titulo: 'Criterio de inversionista', desc: 'Evaluamos el negocio con la misma exigencia de quien pone el capital.' },
-        { titulo: 'Decisiones basadas en mercado', desc: 'Análisis de competencia y viabilidad comercial real.' },
-      ],
-      highlight: '+250% en ventas online durante contextos críticos de mercado.' },
-    { num: '05', nombre: 'Apps', tagline: 'Tecnología que se adapta a cómo ya vendes, no al revés.',
-      parrafo: 'EtraziApp nació resolviendo un problema concreto de un cliente real. Cada implementación — inventario, rutas, fidelización — se ajusta al flujo de trabajo actual, con soporte directo de quienes construyeron el sistema.',
-      items: [
-        { titulo: 'Personalización real', desc: 'Se configura según la operación, productos y forma de vender.' },
-        { titulo: 'Implementación rápida', desc: 'Setup y onboarding pensados para operar en días, no meses.' },
-        { titulo: 'Soporte directo del equipo creador', desc: 'Se habla con quienes construyeron el sistema.' },
-        { titulo: 'Integraciones con el ecosistema', desc: 'Conectamos con plataformas que ya se usan hoy.' },
-      ],
-      highlight: 'Producto nacido de un caso real de cliente, no de una plantilla genérica de escritorio.' },
-  ],
-};
-
-// ── HELPERS DE RENDER ─────────────────────────────────────────────────────
-function paginaPortadaHTML(año, color) {
-  return `
-    <div class="cover-page cover-1">
-      <div class="cover-1-year-top">${año}</div>
-      <div class="cover-1-mark">
-        <svg width="56" height="56" viewBox="0 0 44 44" fill="none">
-          <path d="M16 22C16 15.37 21.37 10 28 10C34.63 10 40 15.37 40 22C40 28.63 34.63 34 28 34" stroke="#1B2B4B" stroke-width="5" fill="none" stroke-linecap="round"/>
-          <path d="M28 22C28 28.63 22.63 34 16 34C9.37 34 4 28.63 4 22C4 15.37 9.37 10 16 10" stroke="url(#presLg)" stroke-width="5" fill="none" stroke-linecap="round"/>
-          <rect x="17.5" y="17.5" width="9" height="9" rx="1.5" fill="#D97706" transform="rotate(45 22 22)"/>
-          <defs><linearGradient id="presLg" x1="28" y1="10" x2="4" y2="34" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#B87333"/><stop offset="100%" stop-color="#D97706"/></linearGradient></defs>
-        </svg>
-      </div>
-      <div class="cover-1-logo">ETRAZIA</div>
-      <div class="cover-1-phrase">"No somos una consultora.<br>Somos un ecosistema."</div>
-      <div class="cover-1-year-bottom">PROPUESTA COMERCIAL · ${año}</div>
-    </div>`;
-}
-
-function paginaEsenciaHTML(color) {
-  return `
-    <div class="doc-page" style="--accent-color:${color}">
-      <div class="doc-eyebrow" style="color:${color}">ESENCIA DE MARCA</div>
-      <div class="doc-title">No somos una consultora.<br>Somos un ecosistema.</div>
-      <div class="doc-lead">Integramos consultoría estratégica, talento, formación certificada, emprendimiento y tecnología propia bajo una misma visión: ayudar a personas y organizaciones a construir las capacidades que generan impacto real y trascendencia duradera.</div>
-      <div class="pdocx-pills" style="margin-top:auto;">
-        ${['Estratégica','Confiable','Moderna','Humana'].map(p => `<span class="pdocx-pill" style="border-color:${color}55;color:${color}">${p}</span>`).join('')}
-      </div>
-    </div>`;
-}
-
-function paginaEcosistemaHTML(color) {
-  return `
-    <div class="doc-page" style="--accent-color:${color}">
-      <div class="doc-eyebrow" style="color:${color}">EL ECOSISTEMA</div>
-      <div class="doc-title">Cinco verticales, un solo cerebro operativo.</div>
-      <div class="doc-lead">Cada vertical opera de manera independiente — y también se potencia con las demás. Esa es la diferencia entre contratar un servicio y activar un ecosistema.</div>
-      <div class="pdocx-grid-5" style="margin-top:14px;">
-        ${ECOSISTEMA_VERTICALES.map(v => `
-          <div class="pdocx-v-card">
-            <div class="pdocx-v-num" style="color:${color}">${v.num}</div>
-            <div class="pdocx-v-nombre">${v.nombre}</div>
-            <div class="pdocx-v-desc">${v.desc}</div>
-          </div>`).join('')}
-      </div>
-    </div>`;
-}
-
-function paginaVerticalesDetalleHTML(color) {
-  return `
-    <div class="doc-page" style="--accent-color:${color}">
-      <div class="doc-eyebrow" style="color:${color}">LAS 5 VERTICALES · EN DETALLE</div>
-      <div class="doc-title" style="font-size:20px;">Cada dimensión del crecimiento, cubierta.</div>
-      <div class="pdocx-detalle-list">
-        ${VERTICALES_DETALLE.map(v => `
-          <div class="pdocx-detalle-item">
-            <div class="pdocx-detalle-nombre" style="color:${color}">${v.nombre}</div>
-            <div class="pdocx-detalle-parrafo">${v.parrafo}</div>
-            <div class="pdocx-detalle-highlight">${v.highlight}</div>
-          </div>`).join('')}
-      </div>
-    </div>`;
-}
-
-function paginaModeloTrabajoHTML(color) {
-  return `
-    <div class="doc-page" style="--accent-color:${color}">
-      <div class="doc-eyebrow" style="color:${color}">MODELO DE TRABAJO</div>
-      <div class="doc-title">No solo diagnosticamos.<br>Ejecutamos contigo.</div>
-      <div class="pdocx-steps" style="margin-top:20px;">
-        ${MODELO_TRABAJO.map((s, i) => `
-          <div class="pdocx-step">
-            <div class="pdocx-step-num" style="border-color:${color};color:${color}">${String(i+1).padStart(2,'0')}</div>
-            <div class="pdocx-step-titulo">${s.titulo}</div>
-            <div class="pdocx-step-desc">${s.desc}</div>
-          </div>`).join('')}
-      </div>
-    </div>`;
-}
-
-function paginaTrackRecordHTML(color) {
-  return `
-    <div class="doc-page" style="--accent-color:${color}">
-      <div class="doc-eyebrow" style="color:${color}">IMPACTO · TRACK RECORD</div>
-      <div class="doc-title">Resultados que hablan por Etrazia.</div>
-      <div class="pdocx-stat-grid" style="margin-top:16px;">
-        ${TRACK_RECORD.map(t => `
-          <div class="pdocx-stat-item">
-            <div class="pdocx-stat-num" style="color:${color}">${t.num}</div>
-            <div class="pdocx-stat-label">${t.label}</div>
-          </div>`).join('')}
-      </div>
-    </div>`;
-}
-
-function paginaPropuestaValorHTML(color) {
-  return `
-    <div class="doc-page" style="--accent-color:${color}">
-      <div class="doc-eyebrow" style="color:${color}">PROPUESTA DE VALOR</div>
-      <div class="doc-title">Por qué las organizaciones eligen Etrazia.</div>
-      <div class="pdocx-value-list" style="margin-top:16px;">
-        ${PROPUESTA_VALOR.map(v => `
-          <div class="pdocx-value-item">
-            <span class="pdocx-value-num" style="color:${color}">${v.num}</span>
-            <div>
-              <div class="pdocx-value-titulo">${v.titulo}</div>
-              <div class="pdocx-value-desc">${v.desc}</div>
-            </div>
-          </div>`).join('')}
-      </div>
-    </div>`;
-}
-
-function paginaVerticalProfundidadHTML(v) {
-  return `
-    <div class="doc-page" style="--accent-color:${v.color}">
-      <div class="doc-eyebrow" style="color:${v.color}">LA VERTICAL · EN PROFUNDIDAD</div>
-      <div class="pdocx-big-num" style="color:${v.color}">${v.numero}<span style="color:#f0ede6;">${v.label.replace('Etrazia ','').replace('EtraziApp','Apps')}</span></div>
-      <div class="doc-title" style="color:${v.color}; font-size:18px; margin-top:6px;">${v.tagline}</div>
-      <div class="doc-lead" style="margin-top:10px;">${v.parrafo}</div>
-      <div class="pdocx-pills" style="margin-top:auto;">
-        ${v.chips.map(c => `<span class="pdocx-pill" style="border-color:${v.color}55;color:${v.color}">${c}</span>`).join('')}
-      </div>
-    </div>`;
-}
-
-function paginaQueLograsHTML(v) {
-  return `
-    <div class="doc-page" style="--accent-color:${v.color}">
-      <div class="doc-eyebrow" style="color:${v.color}">${v.label.toUpperCase()} · QUÉ LOGRAS CON ETRAZIA</div>
-      <div class="doc-title" style="font-size:19px;">Lo que logras al contratar a Etrazia.</div>
-      <div class="pdocx-logros-grid" style="margin-top:12px;">
-        ${v.logros.map(l => `
-          <div class="pdocx-logro-card">
-            <div class="pdocx-logro-titulo">${l.titulo}</div>
-            <div class="pdocx-logro-desc">${l.desc}</div>
-            <div class="pdocx-logro-stat" style="color:${v.color}">${l.stat}</div>
-          </div>`).join('')}
-      </div>
-    </div>`;
-}
-
-function paginaHablemosHTML() {
-  return `
-    <div class="doc-page" style="align-items:center; justify-content:center; text-align:center;">
-      <div class="doc-eyebrow" style="color:#B87333;">HABLEMOS</div>
-      <div class="doc-title" style="font-size:26px;">Hablemos de tu próximo nivel.</div>
-      <div class="doc-lead" style="max-width:420px; margin:0 auto 26px;">El primer paso es una conversación — sin compromisos, sin formularios interminables.</div>
-      <div class="pdocx-contact-grid">
-        <div><div class="pdocx-contact-k">Web</div><div class="pdocx-contact-v">etrazia.com</div></div>
-        <div><div class="pdocx-contact-k">Correo</div><div class="pdocx-contact-v">contacto@etrazia.com</div></div>
-        <div><div class="pdocx-contact-k">WhatsApp</div><div class="pdocx-contact-v">+51 922 339 690</div></div>
-        <div><div class="pdocx-contact-k">Sede</div><div class="pdocx-contact-v">Lima, Perú</div></div>
-      </div>
-    </div>`;
-}
-
-// ── DECK INSTITUCIONAL: páginas propias ──────────────────────────────────
-function paginaPortadaInstitucionalHTML() {
-  return `
-    <div class="cover-page cover-1" style="justify-content:flex-start; padding-top:70px; align-items:flex-start; text-align:left;">
-      <div style="font-family:var(--font-mono); font-size:11px; letter-spacing:0.25em; color:#B87333; margin-bottom:22px;">BUSINESS ECOSYSTEM · LIMA, PERÚ</div>
-      <div style="font-family:var(--font-head); font-weight:900; font-size:46px; color:#f0ede6; line-height:1;">ETRAZIA</div>
-      <div style="font-family:var(--font-head); font-weight:700; font-size:20px; color:#f0ede6; margin-top:16px;">Escala para <span style="color:#D97706;">trascender.</span></div>
-      <div style="font-size:13px; color:#a09d96; line-height:1.7; margin-top:18px; max-width:320px;">Construimos y te acompañamos en la implementación de la estrategia y la operación adecuada para las empresas que quieren trascender.</div>
-    </div>`;
-}
-
-function paginaQuienesSomosInstitucionalHTML() {
-  return `
-    <div class="doc-page" style="--accent-color:#B87333">
-      <div class="doc-eyebrow" style="color:#B87333">01 — QUIÉNES SOMOS</div>
-      <div class="doc-title" style="font-size:20px;">Una consultora construida para ejecutar, no solo diagnosticar.</div>
-      <div class="doc-lead">Etrazia es una firma peruana de consultoría de negocios y tecnología, construida sobre disciplina de transformación digital, organizacional y cultural, y estrategia comercial ejecutada dentro de organizaciones grandes — telecomunicaciones, banca y retail. También acompañamos el desarrollo de competencias de los profesionales: habilidades blandas, adaptabilidad y capacidad de ejecución en un entorno cambiante.</div>
-      <div class="pdocx-grid-5" style="margin-top:10px;">
-        ${ECOSISTEMA_VERTICALES.map(v => `
-          <div class="pdocx-v-card">
-            <div class="pdocx-v-nombre">${v.nombre}</div>
-            <div class="pdocx-v-desc">${v.desc}</div>
-          </div>`).join('')}
-      </div>
-      <div class="pdocx-stat-grid" style="margin-top:auto; grid-template-columns:repeat(3,1fr);">
-        <div class="pdocx-stat-item"><div class="pdocx-stat-num" style="color:#B87333">05</div><div class="pdocx-stat-label">Verticales integradas bajo un mismo criterio</div></div>
-        <div class="pdocx-stat-item"><div class="pdocx-stat-num" style="color:#B87333">12+</div><div class="pdocx-stat-label">Años de experiencia en estrategia y transformación</div></div>
-        <div class="pdocx-stat-item"><div class="pdocx-stat-num" style="color:#B87333">50+</div><div class="pdocx-stat-label">Proyectos simultáneos gestionados en portafolios previos</div></div>
-      </div>
-    </div>`;
-}
-
-function paginaVerticalBriefInstitucionalHTML(v) {
-  return `
-    <div class="doc-page" style="--accent-color:#B87333">
-      <div class="doc-eyebrow" style="color:#B87333">${v.num} — ${v.nombre.toUpperCase()}</div>
-      <div class="doc-title" style="font-size:18px;">${v.tagline}</div>
-      <div class="doc-lead">${v.parrafo}</div>
-      <div class="doc-strengths" style="margin-top:8px;">
-        ${v.items.map(it => `
-          <div class="doc-strength">
-            <div class="doc-strength-title">${it.titulo}</div>
-            <div class="doc-strength-desc">${it.desc}</div>
-          </div>`).join('')}
-      </div>
-      <div class="pdocx-inst-highlight">${v.highlight}</div>
-    </div>`;
-}
-
-function paginaCierreInstitucionalHTML() {
-  return `
-    <div class="cover-page cover-1" style="justify-content:center;">
-      <div class="cover-1-mark">
-        <svg width="48" height="48" viewBox="0 0 44 44" fill="none">
-          <path d="M16 22C16 15.37 21.37 10 28 10C34.63 10 40 15.37 40 22C40 28.63 34.63 34 28 34" stroke="#1B2B4B" stroke-width="5" fill="none" stroke-linecap="round"/>
-          <path d="M28 22C28 28.63 22.63 34 16 34C9.37 34 4 28.63 4 22C4 15.37 9.37 10 16 10" stroke="url(#instClose)" stroke-width="5" fill="none" stroke-linecap="round"/>
-          <rect x="17.5" y="17.5" width="9" height="9" rx="1.5" fill="#D97706" transform="rotate(45 22 22)"/>
-          <defs><linearGradient id="instClose" x1="28" y1="10" x2="4" y2="34" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#B87333"/><stop offset="100%" stop-color="#D97706"/></linearGradient></defs>
-        </svg>
-      </div>
-      <div class="cover-1-phrase" style="margin-top:18px;">Escala para trascender.</div>
-      <div style="font-size:12px; color:#B87333; margin-top:14px;">Consulting · Talent · Academy · Ventures · Apps</div>
-      <div style="font-size:11px; color:#a09d96; margin-top:20px;">contacto@etrazia.com · etrazia.com</div>
-    </div>`;
-}
+const INSTITUCIONAL = { carpeta: 'institucional', paginas: 8 };
 
 // ── TABS ──────────────────────────────────────────────────────────────────
 let verticalPresentacionActiva = 'consulting';
@@ -1657,37 +1281,36 @@ window.seleccionarVerticalPresentacion = function(key) {
   renderDocumentoPresentacion();
 };
 
+// Genera N <div class="pres-page-shell"> con la imagen real pg-01.jpg…pg-NN.jpg
+// de la carpeta indicada. Si una imagen no carga (ruta mal subida al repo),
+// se ve un aviso claro en vez de un hueco en blanco.
+function paginasImagenHTML(carpeta, total) {
+  let html = '';
+  for (let i = 1; i <= total; i++) {
+    const num = String(i).padStart(2, '0');
+    const ruta = `presentaciones/${carpeta}/pg-${num}.jpg`;
+    html += `
+      <div>
+        <div class="pres-page-label">Página ${i} / ${total}</div>
+        <div class="pres-page-shell">
+          <img src="${ruta}" alt="Página ${i}" loading="lazy"
+               onerror="this.onerror=null; this.parentElement.innerHTML = '&lt;div class=&quot;pres-page-error&quot;&gt;No se pudo cargar ${ruta}.&lt;br&gt;Verifica que el archivo exista en el repositorio.&lt;/div&gt;';">
+        </div>
+      </div>`;
+  }
+  return html;
+}
+
 function renderDocumentoPresentacion() {
-  const año = new Date().getFullYear();
+  const wrap = document.getElementById('pres-preview');
 
   if (verticalPresentacionActiva === 'institucional') {
-    document.getElementById('pres-preview').innerHTML = `
-      <div class="pres-doc-wrap">
-        <div><div class="pres-page-label">Página 1 — Portada</div><div class="pres-page-shell">${paginaPortadaInstitucionalHTML()}</div></div>
-        <div><div class="pres-page-label">Página 2 — Quiénes somos</div><div class="pres-page-shell">${paginaQuienesSomosInstitucionalHTML()}</div></div>
-        ${INSTITUCIONAL.verticalesBrief.map((v, i) => `
-          <div><div class="pres-page-label">Página ${i+3} — ${v.nombre}</div><div class="pres-page-shell">${paginaVerticalBriefInstitucionalHTML(v)}</div></div>
-        `).join('')}
-        <div><div class="pres-page-label">Página 8 — Cierre</div><div class="pres-page-shell">${paginaCierreInstitucionalHTML()}</div></div>
-      </div>`;
+    wrap.innerHTML = `<div class="pres-doc-wrap">${paginasImagenHTML(INSTITUCIONAL.carpeta, INSTITUCIONAL.paginas)}</div>`;
     return;
   }
 
   const v = PRESENTACIONES[verticalPresentacionActiva];
-
-  document.getElementById('pres-preview').innerHTML = `
-    <div class="pres-doc-wrap">
-      <div><div class="pres-page-label">Página 1 — Carátula</div><div class="pres-page-shell">${paginaPortadaHTML(año, v.color)}</div></div>
-      <div><div class="pres-page-label">Página 2 — Esencia de marca</div><div class="pres-page-shell">${paginaEsenciaHTML(v.color)}</div></div>
-      <div><div class="pres-page-label">Página 3 — El ecosistema</div><div class="pres-page-shell">${paginaEcosistemaHTML(v.color)}</div></div>
-      <div><div class="pres-page-label">Página 4 — Las 5 verticales en detalle</div><div class="pres-page-shell">${paginaVerticalesDetalleHTML(v.color)}</div></div>
-      <div><div class="pres-page-label">Página 5 — Modelo de trabajo</div><div class="pres-page-shell">${paginaModeloTrabajoHTML(v.color)}</div></div>
-      <div><div class="pres-page-label">Página 6 — Impacto · Track record</div><div class="pres-page-shell">${paginaTrackRecordHTML(v.color)}</div></div>
-      <div><div class="pres-page-label">Página 7 — Propuesta de valor</div><div class="pres-page-shell">${paginaPropuestaValorHTML(v.color)}</div></div>
-      <div><div class="pres-page-label">Página 8 — ${v.label} en profundidad</div><div class="pres-page-shell">${paginaVerticalProfundidadHTML(v)}</div></div>
-      <div><div class="pres-page-label">Página 9 — Qué logras con Etrazia</div><div class="pres-page-shell">${paginaQueLograsHTML(v)}</div></div>
-      <div><div class="pres-page-label">Página 10 — Hablemos</div><div class="pres-page-shell">${paginaHablemosHTML()}</div></div>
-    </div>`;
+  wrap.innerHTML = `<div class="pres-doc-wrap">${paginasImagenHTML(v.carpeta, v.paginas)}</div>`;
 }
 
 
