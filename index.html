@@ -1581,6 +1581,7 @@
               <option value="todos">Todos los juegos</option>
             </select>
             <button class="btn btn-ghost btn-sm" onclick="fetchLeads()">Actualizar</button>
+            <button class="btn btn-ghost btn-sm" onclick="openKeysModal()">⚙ Claves de acceso</button>
           </div>
           <div class="filter-bar" style="width:auto;">
             <button class="btn btn-danger btn-sm" id="btn-delete-selected" disabled onclick="deleteSelected()">Eliminar seleccionados (<span id="selected-count">0</span>)</button>
@@ -1588,6 +1589,8 @@
             <button class="btn btn-primary btn-sm" onclick="downloadCSV()">Descargar CSV</button>
           </div>
         </div>
+
+        <div id="keys-error-banner" style="display:none;background:#3a1f1f;border:1px solid #7a3030;color:#f5b5b5;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;"></div>
 
         <div class="grid-2 mb-4" id="stats-row" style="grid-template-columns:repeat(2,minmax(160px,220px));">
           <div class="stat-card accent">
@@ -1980,6 +1983,28 @@
         </div>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Claves de acceso a los Workers de Juegos -->
+<div class="modal-overlay" id="modal-keys">
+  <div class="modal" style="width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Claves de acceso · Juegos</div>
+      <button class="modal-close" onclick="closeModal('modal-keys')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12.5px;color:var(--text2);margin-bottom:18px;">
+        Cada juego tiene su propio Worker independiente — su clave (ADMIN_KEY) se guarda solo en este navegador.
+        Si una clave ya no funciona, vuelve a escribirla aquí.
+      </p>
+      <div id="keys-form-fields"></div>
+      <div id="keys-modal-error" style="display:none;color:#f5b5b5;font-size:12px;margin-bottom:12px;"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+        <button class="btn btn-ghost" onclick="closeModal('modal-keys')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveKeysModal()">Guardar y cargar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -3714,28 +3739,63 @@ let leadsCache = [];
 let currentFilter = 'todos';
 
 function ensureAdminKey() {
-  WORKERS.forEach(w => {
-    if (!w.adminKey) {
-      w.adminKey = prompt('Clave del Worker "' + (GAME_LABELS[w.id] || w.id) + '" (ADMIN_KEY) — se guarda solo en este navegador:') || '';
-      if (w.adminKey) localStorage.setItem(w.storageKey, w.adminKey);
-    }
-  });
+  const faltantes = WORKERS.filter(w => !w.adminKey);
+  if (faltantes.length > 0) {
+    openKeysModal();
+    return;
+  }
   fetchLeads();
 }
+
+window.openKeysModal = function() {
+  const container = document.getElementById('keys-form-fields');
+  container.innerHTML = WORKERS.map(w => `
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="form-label">${GAME_LABELS[w.id] || w.id}</label>
+      <input type="password" id="keyfield-${w.id}" placeholder="ADMIN_KEY" value="${w.adminKey ? w.adminKey.replace(/"/g, '&quot;') : ''}" autocomplete="off">
+    </div>
+  `).join('');
+  document.getElementById('keys-modal-error').style.display = 'none';
+  openModal('modal-keys');
+};
+
+window.saveKeysModal = function() {
+  let algunaVacia = false;
+  WORKERS.forEach(w => {
+    const val = document.getElementById('keyfield-' + w.id).value.trim();
+    if (!val) { algunaVacia = true; return; }
+    w.adminKey = val;
+    localStorage.setItem(w.storageKey, val);
+  });
+  if (algunaVacia) {
+    const err = document.getElementById('keys-modal-error');
+    err.textContent = 'Deja vacío solo el campo que no quieras cambiar — pero al menos una clave está vacía y ese juego no cargará datos hasta que la completes.';
+    err.style.display = 'block';
+  }
+  closeModal('modal-keys');
+  fetchLeads();
+};
 // ── DATA ─────────────────────────────────────────────────────────────
 window.fetchLeads = async function() {
   document.getElementById('loading').style.display = 'block';
   document.getElementById('leads-table').style.display = 'none';
   document.getElementById('empty-msg').style.display = 'none';
+  const banner = document.getElementById('keys-error-banner');
+  banner.style.display = 'none';
   try {
+    const fallidos = [];
     const results = await Promise.all(WORKERS.map(async (w) => {
-      if (!w.adminKey) return [];
+      if (!w.adminKey) { fallidos.push({ id: w.id, motivo: 'sin clave guardada' }); return []; }
       try {
         const res = await fetch(w.url + '/leads', { headers: { 'X-Admin-Key': w.adminKey } });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Error');
+        if (!res.ok) {
+          fallidos.push({ id: w.id, motivo: res.status === 401 ? 'clave incorrecta' : (data.error || 'error del servidor') });
+          return [];
+        }
         return data.leads || [];
       } catch (e) {
+        fallidos.push({ id: w.id, motivo: 'no se pudo conectar' });
         console.error('Error al cargar leads de "' + w.id + '":', e);
         return [];
       }
@@ -3743,6 +3803,12 @@ window.fetchLeads = async function() {
     leadsCache = results.flat();
     buildFilterOptions();
     renderLeads();
+    if (fallidos.length > 0) {
+      banner.innerHTML = '⚠ No se pudieron cargar los datos de: ' +
+        fallidos.map(f => `<strong>${GAME_LABELS[f.id] || f.id}</strong> (${f.motivo})`).join(', ') +
+        '. <a href="#" onclick="openKeysModal(); return false;" style="color:#f5b5b5;text-decoration:underline;">Revisar claves</a>';
+      banner.style.display = 'block';
+    }
   } catch (e) {
     document.getElementById('loading').textContent = 'Error al cargar leads.';
   }
