@@ -883,6 +883,12 @@
         </div>
         <span class="nav-label">Facturación</span>
       </div>
+      <div class="nav-item" data-view="calculadora" onclick="navigate('calculadora', this)">
+        <div class="nav-icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8.01" y2="11"/><line x1="12" y1="11" x2="12.01" y2="11"/><line x1="16" y1="11" x2="16.01" y2="11"/><line x1="8" y1="15" x2="8.01" y2="15"/><line x1="12" y1="15" x2="12.01" y2="15"/><line x1="16" y1="15" x2="16.01" y2="15"/></svg>
+        </div>
+        <span class="nav-label">Calculadora de facturas</span>
+      </div>
       <div class="nav-section-label">Sistema</div>
       <div class="nav-item" id="nav-cotizaciones-parent" data-view="cotizador">
         <div class="nav-icon">
@@ -1130,6 +1136,45 @@
               <thead><tr><th>Emisión</th><th>Cliente</th><th>Comprobante</th><th>Concepto</th><th>Monto</th><th>Estado</th><th>Cobro</th><th></th></tr></thead>
               <tbody id="tabla-facturas"></tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-calculadora">
+        <div class="section-header mb-6">
+          <div>
+            <div class="section-title">Calculadora de facturas</div>
+            <div class="section-sub">IGV y detracción: cuánto colocar en la factura y cuánto te paga el cliente</div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Datos</div></div>
+            <div class="card-body">
+              <div class="form-group"><label class="form-label">Partir de</label>
+                <select id="calc-modo" onchange="calcRender()"><option value="base">Precio sin IGV (lo cotizado)</option><option value="total">Total con IGV</option></select></div>
+              <div class="form-row">
+                <div class="form-group"><label class="form-label">Monto</label><input type="number" id="calc-monto" step="0.01" min="0" placeholder="2500" oninput="calcRender()"></div>
+                <div class="form-group"><label class="form-label">Moneda</label><select id="calc-moneda" onchange="calcRender()"><option value="PEN">Soles (S/)</option><option value="USD">Dólares (US$)</option></select></div>
+              </div>
+              <div class="form-group" id="calc-tc-wrap" style="display:none"><label class="form-label">Tipo de cambio SUNAT (S/ por US$)</label><input type="number" id="calc-tc" step="0.001" min="0" placeholder="3.750" oninput="calcRender()"></div>
+              <div class="form-group"><label class="form-label">Detracción</label>
+                <select id="calc-tasa" onchange="calcRender()">
+                  <option value="12">12% — Servicios en general (por defecto)</option>
+                  <option value="10">10%</option>
+                  <option value="4">4%</option>
+                  <option value="0">Sin detracción</option>
+                  <option value="otra">Otra tasa…</option>
+                </select></div>
+              <div class="form-group" id="calc-tasa-otra-wrap" style="display:none"><label class="form-label">Tasa de detracción (%)</label><input type="number" id="calc-tasa-otra" step="0.01" min="0" max="100" oninput="calcRender()"></div>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="calc-igv" checked style="width:auto" onchange="calcRender()"> Operación gravada con IGV (18%)</label>
+              <div style="margin-top:14px;font-size:11px;color:var(--text2);line-height:1.6">La tasa depende del tipo de servicio (Anexo 3 de la Res. 183-2004/SUNAT). Para servicios en general es 12%; confírmala con tu contador para cada servicio. La detracción aplica si el total supera S/ 700 y se redondea al sol.</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Resultado</div>
+              <div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" onclick="calcCopiar()">Copiar</button><button class="btn btn-primary btn-sm" onclick="calcRegistrar()">Registrar factura</button></div></div>
+            <div class="card-body" id="calc-result" style="padding:8px 16px"></div>
           </div>
         </div>
       </div>
@@ -2185,13 +2230,14 @@ window.navigate = function(view, el) {
 
   const titles = {
     dashboard: 'Dashboard', clientes: 'CRM · Clientes',
-    facturacion: 'Facturación', usuarios: 'Usuarios y Permisos',
+    facturacion: 'Facturación', calculadora: 'Calculadora de facturas', usuarios: 'Usuarios y Permisos',
     cotizador: 'Nueva Cotización', historial: 'Cotizaciones', presentacion: 'Documento de Presentación',
     juegos: 'Juegos',
   };
   document.getElementById('topbar-title').textContent = titles[view] || view;
 
   if (view === 'clientes' && el && typeof crmBack === 'function') crmBack();
+  if (view === 'calculadora' && typeof calcRender === 'function') calcRender();
 
   // Lazy-init: cada módulo carga sus datos/imágenes recién la primera vez que se abre su vista
   if (view === 'presentacion' && !presentacionInicializada) {
@@ -4019,7 +4065,7 @@ function filaFactura(cid, f) {
   return `<div class="crm-item">
     <div style="flex:1;min-width:0">
       <div style="font-size:13px;font-weight:500">${esc(f.numero || 'Sin número')} · ${esc(f.concepto)}</div>
-      <div class="td-mono" style="margin-top:4px">Emitida ${fmtFecha(f.fechaEmision)}${f.estado === 'pagada' ? ' · Cobrada ' + fmtFecha(f.fechaPago) : ''}</div>
+      <div class="td-mono" style="margin-top:4px">Emitida ${fmtFecha(f.fechaEmision)}${f.estado === 'pagada' ? ' · Cobrada ' + fmtFecha(f.fechaPago) : ''}${f.detraccion ? ` · Detracción ${f.detraccionPct || ''}%: S/ ${Number(f.detraccion).toLocaleString('es-PE')}` : ''}</div>
     </div>
     <div class="td-mono" style="font-size:13px;color:var(--text0)">${money(f.monto, f.moneda)}</div>
     <span class="badge ${e.cls}">${e.label}</span>
@@ -4027,7 +4073,7 @@ function filaFactura(cid, f) {
   </div>`;
 }
 window.crmFacCobrar = function (cid, fid) { return crmMutate(cid, 'facturas', fid, f => ({ ...f, estado: 'pagada', fechaPago: f.fechaPago || hoy() })); };
-window.crmFacturaForm = function (cid, fid) {
+window.crmFacturaForm = function (cid, fid, pre) {
   const c0 = cid ? getCli(cid) : null;
   const f = fid ? arr(c0, 'facturas').find(i => i.id === fid) : null;
   const campos = [];
@@ -4036,8 +4082,8 @@ window.crmFacturaForm = function (cid, fid) {
     { id: 'numero', label: 'N° de comprobante (SUNAT)', value: f?.numero, placeholder: 'F001-00001', half: true },
     { id: 'estado', label: 'Estado', type: 'select', options: opts(FAC_ESTADOS), value: f?.estado || 'pendiente', half: true },
     { id: 'concepto', label: 'Concepto', required: true, value: f?.concepto, placeholder: 'Ej: Taller de Habilidades Blandas' },
-    { id: 'monto', label: 'Monto (con IGV)', type: 'number', value: f?.monto, required: true, half: true },
-    { id: 'moneda', label: 'Moneda', type: 'select', options: [['PEN', 'Soles (S/)'], ['USD', 'Dólares (US$)']], value: f?.moneda || 'PEN', half: true },
+    { id: 'monto', label: 'Monto (con IGV)', type: 'number', value: f?.monto ?? pre?.monto, required: true, half: true },
+    { id: 'moneda', label: 'Moneda', type: 'select', options: [['PEN', 'Soles (S/)'], ['USD', 'Dólares (US$)']], value: f?.moneda || pre?.moneda || 'PEN', half: true },
     { id: 'fechaEmision', label: 'Fecha de emisión', type: 'date', value: f?.fechaEmision || hoy(), half: true },
     { id: 'fechaPago', label: 'Fecha de cobro', type: 'date', value: f?.fechaPago, half: true },
   );
@@ -4048,7 +4094,7 @@ window.crmFacturaForm = function (cid, fid) {
       const target = cid || v.cliente;
       const monto = Number(v.monto);
       if (Number.isNaN(monto) || monto < 0) { showToast('Monto inválido.', 'error'); return false; }
-      const item = { id: f?.id || uid(), numero: v.numero, concepto: v.concepto, monto, moneda: v.moneda, fechaEmision: v.fechaEmision, estado: v.estado, fechaPago: v.estado === 'pagada' ? (v.fechaPago || hoy()) : '' };
+      const item = { id: f?.id || uid(), numero: v.numero, concepto: v.concepto, monto, moneda: v.moneda, fechaEmision: v.fechaEmision, estado: v.estado, fechaPago: v.estado === 'pagada' ? (v.fechaPago || hoy()) : '', detraccion: f ? (f.detraccion || 0) : (pre?.detraccion || 0), detraccionPct: f ? (f.detraccionPct || 0) : (pre?.detraccionPct || 0) };
       return f ? crmMutate(target, 'facturas', f.id, () => item) : crmPush(target, 'facturas', item);
     },
   });
@@ -4078,7 +4124,7 @@ function renderFacturacion() {
       <td class="td-mono">${fmtFecha(f.fechaEmision)}</td>
       <td><a href="#" onclick="event.preventDefault();crmGo('${f.cid}')" style="color:var(--text0)">${esc(f.cliente)}</a></td>
       <td class="td-mono">${esc(f.numero) || '—'}</td>
-      <td style="font-size:12px;color:var(--text1)">${esc(f.concepto)}</td>
+      <td style="font-size:12px;color:var(--text1)">${esc(f.concepto)}${f.detraccion ? `<div class="td-mono">Detracción ${f.detraccionPct || ''}%: S/ ${Number(f.detraccion).toLocaleString('es-PE')}</div>` : ''}</td>
       <td class="td-mono">${money(f.monto, f.moneda)}</td>
       <td><span class="badge ${e.cls}">${e.label}</span></td>
       <td class="td-mono">${f.estado === 'pagada' ? fmtFecha(f.fechaPago) : '—'}</td>
@@ -4183,6 +4229,74 @@ window.crmSeed = async function () {
 
 window.crmFiltrar = crmRender;
 window.facFiltrar = renderFacturacion;
+
+
+// ── CALCULADORA DE FACTURAS (IGV + detracción) ──────────────────────────
+const IGV_TASA = 18;
+const DETRACCION_MIN = 700; // S/ — la detracción aplica si el total supera este monto
+let calcUltimo = null;
+const r2 = x => Math.round((x + Number.EPSILON) * 100) / 100;
+
+window.calcRender = function () {
+  const g = id => document.getElementById(id);
+  const modo = g('calc-modo').value;
+  const monto = parseFloat(g('calc-monto').value) || 0;
+  const moneda = g('calc-moneda').value;
+  const tc = parseFloat(g('calc-tc').value) || 0;
+  const igvOn = g('calc-igv').checked;
+  let tasa = g('calc-tasa').value;
+  g('calc-tc-wrap').style.display = moneda === 'USD' ? 'block' : 'none';
+  g('calc-tasa-otra-wrap').style.display = tasa === 'otra' ? 'block' : 'none';
+  tasa = tasa === 'otra' ? (parseFloat(g('calc-tasa-otra').value) || 0) : parseFloat(tasa);
+
+  let base, igv, total;
+  if (modo === 'base') { base = monto; igv = igvOn ? r2(base * IGV_TASA / 100) : 0; total = r2(base + igv); }
+  else { total = monto; base = igvOn ? r2(total / (1 + IGV_TASA / 100)) : total; igv = r2(total - base); }
+
+  const out = g('calc-result');
+  if (!monto) { out.innerHTML = vacio('Ingresa un monto para calcular.'); calcUltimo = null; return; }
+
+  const sim = moneda === 'USD' ? 'US$' : 'S/';
+  const fm = n => sim + ' ' + n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fs = n => 'S/ ' + n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  let det = 0, aviso = '', neto = total, totalPEN = total;
+  if (moneda === 'USD') {
+    if (!tc) aviso = 'Ingresa el tipo de cambio (SUNAT, venta del día anterior) para calcular la detracción en soles.';
+    totalPEN = r2(total * tc);
+  }
+  const aplica = tasa > 0 && totalPEN > DETRACCION_MIN && !aviso;
+  if (aplica) det = Math.round(totalPEN * tasa / 100); // la detracción se redondea al sol
+  if (tasa > 0 && totalPEN <= DETRACCION_MIN && !aviso) aviso = `No aplica detracción: el total no supera S/ ${DETRACCION_MIN}.`;
+  const detEnMoneda = moneda === 'USD' && tc ? r2(det / tc) : det;
+  neto = r2(total - detEnMoneda);
+
+  calcUltimo = { base, igv, total, moneda, det, tasa: aplica ? tasa : 0 };
+  const fila = (l, v, strong, color) => `<div class="crm-kv" style="${strong ? 'font-weight:600;font-size:15px' : ''}"><span style="${strong ? '' : 'color:var(--text1)'}">${l}</span><span class="td-mono" style="${color ? 'color:' + color : ''};${strong ? 'font-size:15px' : ''}">${v}</span></div>`;
+  out.innerHTML = `
+    ${fila('Precio sin IGV (base imponible)', fm(base))}
+    ${fila(igvOn ? `IGV ${IGV_TASA}%` : 'IGV (no aplica)', fm(igv))}
+    ${fila('TOTAL A COLOCAR EN LA FACTURA', fm(total), true, 'var(--accent)')}
+    <div style="height:10px"></div>
+    ${aplica ? `
+      ${fila(`Detracción ${tasa}% (sobre el total${moneda === 'USD' ? ', en soles' : ''})`, fs(det), false, 'var(--yellow)')}
+      ${fila('El cliente deposita en tu cuenta de detracciones (Banco de la Nación)', moneda === 'USD' ? fs(det) : fm(det))}
+      ${fila('El cliente te paga en tu cuenta bancaria normal', fm(neto), true, 'var(--green)')}
+      <div style="margin-top:12px;padding:12px;background:var(--bg2);border-radius:var(--radius-sm);font-size:12px;color:var(--text1);line-height:1.6">
+        <strong style="color:var(--text0)">Leyenda para la factura:</strong> “Operación sujeta al Sistema de Pago de Obligaciones Tributarias – Detracción ${tasa}%”, con tu N° de cuenta de detracciones del Banco de la Nación.
+      </div>` : `<div style="padding:12px;background:var(--bg2);border-radius:var(--radius-sm);font-size:12px;color:var(--text1)">${esc(aviso || 'Sin detracción: el cliente te paga el total completo.')}</div>`}
+    ${aplica ? '' : ''}`;
+};
+window.calcCopiar = async function () {
+  if (!calcUltimo) { showToast('Primero ingresa un monto.', 'error'); return; }
+  const c = calcUltimo, sim = c.moneda === 'USD' ? 'US$' : 'S/';
+  const n = x => x.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const txt = `Base imponible: ${sim} ${n(c.base)}\nIGV: ${sim} ${n(c.igv)}\nTotal factura: ${sim} ${n(c.total)}` + (c.det ? `\nDetracción ${c.tasa}%: S/ ${n(c.det)}\nPago al proveedor: ${sim} ${n(r2(c.total - (c.moneda === 'USD' ? 0 : c.det)))}` : '');
+  try { await navigator.clipboard.writeText(txt); showToast('Resumen copiado.', 'success'); } catch { showToast('No se pudo copiar.', 'error'); }
+};
+window.calcRegistrar = function () {
+  if (!calcUltimo) { showToast('Primero ingresa un monto.', 'error'); return; }
+  crmFacturaForm(null, null, { monto: calcUltimo.total, moneda: calcUltimo.moneda, detraccion: calcUltimo.det, detraccionPct: calcUltimo.tasa });
+};
 
 </script>
 </body>
