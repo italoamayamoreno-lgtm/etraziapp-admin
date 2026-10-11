@@ -775,6 +775,16 @@
   }
   /* Hoja a 16:9 para que cada imagen (el PDF real) llene la página sin bordes ni deformación al exportar/imprimir */
   @page { size: 338.66mm 190.5mm; margin: 0; }
+  /* ═══ CRM ═══════════════════════════════════════════════════════════ */
+  .crm-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 18px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+  .crm-tab { background: var(--bg3); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 7px 14px; font-size: 13px; cursor: pointer; font-family: var(--font-body); transition: all var(--transition); }
+  .crm-tab:hover { color: var(--text0); }
+  .crm-tab.active { border-color: var(--accent); color: var(--accent); }
+  .crm-count { font-family: var(--font-mono); font-size: 10px; background: var(--bg2); border-radius: 99px; padding: 1px 7px; margin-left: 4px; }
+  .crm-item { display: flex; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .crm-item:last-child { border-bottom: none; }
+  .crm-kv { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  @media (max-width: 700px) { .crm-item { flex-wrap: wrap; } }
 </style>
 </head>
 <body>
@@ -864,14 +874,14 @@
         <div class="nav-icon">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg>
         </div>
-        <span class="nav-label">Clientes (Tenants)</span>
+        <span class="nav-label">CRM · Clientes</span>
       </div>
       <div class="nav-section-label">Finanzas</div>
       <div class="nav-item" data-view="facturacion" onclick="navigate('facturacion', this)">
         <div class="nav-icon">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
         </div>
-        <span class="nav-label">Facturación y Pagos</span>
+        <span class="nav-label">Facturación</span>
       </div>
       <div class="nav-section-label">Sistema</div>
       <div class="nav-item" id="nav-cotizaciones-parent" data-view="cotizador">
@@ -901,13 +911,6 @@
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/><circle cx="18" cy="8" r="2"/><path d="M22 14c-1.5-.5-3 0-4 1"/></svg>
         </div>
         <span class="nav-label">Usuarios y Permisos</span>
-      </div>
-      <div class="nav-item" data-view="soporte" onclick="navigate('soporte', this)">
-        <div class="nav-icon">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r="1"/></svg>
-        </div>
-        <span class="nav-label">Soporte / Tickets</span>
-        <span class="nav-badge" id="ticket-badge">3</span>
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -952,7 +955,7 @@
         <div class="section-header mb-6">
           <div>
             <div class="section-title">Vista General</div>
-            <div class="section-sub">Métricas globales de Etrazia en tiempo real</div>
+            <div class="section-sub">Tu cartera, cotizaciones y cobros — datos reales</div>
           </div>
           <button class="btn btn-primary btn-sm" onclick="refreshDashboard()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.28-3.88"/></svg>
@@ -961,131 +964,102 @@
         </div>
         <div class="grid-4 mb-6">
           <div class="stat-card accent">
-            <div class="stat-label">Clientes Activos</div>
+            <div class="stat-label">Clientes</div>
             <div class="stat-value" id="dash-clientes">—</div>
             <div class="stat-sub" id="dash-clientes-sub">cargando...</div>
             <div class="stat-icon">◉</div>
           </div>
+          <div class="stat-card blue">
+            <div class="stat-label">Cotizaciones aprobadas</div>
+            <div class="stat-value" id="dash-cot">—</div>
+            <div class="stat-sub" id="dash-cot-sub">cargando...</div>
+            <div class="stat-icon">▤</div>
+          </div>
           <div class="stat-card green">
-            <div class="stat-label">MRR</div>
-            <div class="stat-value" id="dash-mrr">—</div>
-            <div class="stat-sub" id="dash-mrr-sub">cargando...</div>
+            <div class="stat-label">Por cobrar</div>
+            <div class="stat-value" id="dash-cobrar" style="font-size:22px">—</div>
+            <div class="stat-sub" id="dash-cobrar-sub">cargando...</div>
             <div class="stat-icon">$</div>
           </div>
-          <div class="stat-card blue">
-            <div class="stat-label">Apps Activas</div>
-            <div class="stat-value" id="dash-apps">—</div>
-            <div class="stat-sub" id="dash-apps-sub">cargando...</div>
-            <div class="stat-icon">⬡</div>
-          </div>
           <div class="stat-card red">
-            <div class="stat-label">Tickets Abiertos</div>
-            <div class="stat-value" id="dash-tickets">—</div>
-            <div class="stat-sub" id="dash-tickets-sub">cargando...</div>
+            <div class="stat-label">Acciones pendientes</div>
+            <div class="stat-value" id="dash-acciones">—</div>
+            <div class="stat-sub" id="dash-acciones-sub">cargando...</div>
             <div class="stat-icon">!</div>
           </div>
         </div>
         <div class="grid-2 mb-6">
           <div class="card">
-            <div class="card-header">
-              <div class="card-title">Distribución por Plan</div>
-            </div>
-            <div class="card-body" id="dash-plan-dist">
-              <div style="margin-bottom: 14px;">
-                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px;"><span>eControl</span><span id="pct-econtrol" style="font-family:var(--font-mono); color:var(--text1)">—</span></div>
-                <div class="progress-bar"><div class="progress-fill" id="bar-econtrol" style="width:0%"></div></div>
-              </div>
-              <div style="margin-bottom: 14px;">
-                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px;"><span>eContent Personal</span><span id="pct-econtent-p" style="font-family:var(--font-mono); color:var(--text1)">—</span></div>
-                <div class="progress-bar"><div class="progress-fill green" id="bar-econtent-p" style="width:0%"></div></div>
-              </div>
-              <div style="margin-bottom: 14px;">
-                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px;"><span>eContent Business</span><span id="pct-econtent-b" style="font-family:var(--font-mono); color:var(--text1)">—</span></div>
-                <div class="progress-bar"><div class="progress-fill blue" id="bar-econtent-b" style="width:0%"></div></div>
-              </div>
-              <div>
-                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px;"><span>Suite Completa</span><span id="pct-full" style="font-family:var(--font-mono); color:var(--text1)">—</span></div>
-                <div class="progress-bar"><div class="progress-fill" id="bar-full" style="width:0%; background:var(--yellow)"></div></div>
-              </div>
-            </div>
+            <div class="card-header"><div class="card-title">Próximas acciones</div></div>
+            <div class="card-body" id="dash-proximas" style="padding: 8px 12px;"></div>
           </div>
           <div class="card">
-            <div class="card-header">
-              <div class="card-title">Actividad Reciente</div>
-            </div>
-            <div class="card-body" id="activity-feed" style="padding: 8px 12px;">
-              <div class="activity-item">
-                <div class="activity-dot" style="background:var(--green-bg)">✓</div>
-                <div class="activity-text"><strong>LaFech</strong> activó eControl<br><span class="activity-time">hace 2 horas</span></div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-dot" style="background:var(--blue-bg)">↑</div>
-                <div class="activity-text"><strong>Nuevo ticket</strong> — "Error en PDF"<br><span class="activity-time">hace 5 horas</span></div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-dot" style="background:var(--accent-dim)">$</div>
-                <div class="activity-text"><strong>Pago recibido</strong> — Plan Full $35<br><span class="activity-time">hace 1 día</span></div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-dot" style="background:var(--yellow-bg)">!</div>
-                <div class="activity-text"><strong>Cliente nuevo</strong> registrado<br><span class="activity-time">hace 2 días</span></div>
-              </div>
-            </div>
+            <div class="card-header"><div class="card-title">Últimas interacciones</div></div>
+            <div class="card-body" id="dash-ultimas" style="padding: 8px 12px;"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Accesos rápidos</div></div>
+          <div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary btn-sm" onclick="navigate('clientes', document.querySelector('.nav-item[data-view=clientes]')); crmNuevoCliente()">+ Nuevo cliente</button>
+            <button class="btn btn-ghost btn-sm" onclick="navigate('cotizador', null)">Nueva cotización</button>
+            <button class="btn btn-ghost btn-sm" onclick="navigate('facturacion', document.querySelector('.nav-item[data-view=facturacion]'))">Facturación</button>
+            <button class="btn btn-ghost btn-sm" onclick="navigate('juegos', document.querySelector('.nav-item[data-view=juegos]'))">Ver leads de los juegos</button>
           </div>
         </div>
       </div>
 
       <!-- ──────────── CLIENTES ──────────── -->
       <div class="view" id="view-clientes">
-        <div class="section-header mb-6">
-          <div>
-            <div class="section-title">Clientes (Tenants)</div>
-            <div class="section-sub">Gestión completa de clientes de Etrazia</div>
-          </div>
-          <button class="btn btn-primary" onclick="openModal('modal-nuevo-cliente')">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nuevo Cliente
-          </button>
-        </div>
-        <div class="card mb-4">
-          <div class="card-header" style="gap:8px">
-            <div class="search-wrap" style="flex:1">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input type="text" class="search-input" placeholder="Buscar por nombre, RUC, email..." oninput="filterClientes(this.value)" id="search-clientes">
+        <div id="crm-list">
+          <div class="section-header mb-6">
+            <div>
+              <div class="section-title">CRM · Clientes</div>
+              <div class="section-sub">Clientes, aliados y prospectos de Etrazia</div>
             </div>
-            <select style="width:auto" onchange="filterClientesByStatus(this.value)">
-              <option value="">Todos los estados</option>
-              <option value="activo">Activo</option>
-              <option value="trial">Trial</option>
-              <option value="inactivo">Inactivo</option>
-            </select>
-            <select style="width:auto" onchange="filterClientesByPlan(this.value)">
-              <option value="">Todos los planes</option>
-              <option value="eControl">eControl</option>
-              <option value="eContent Personal">eContent Personal</option>
-              <option value="eContent Business">eContent Business</option>
-              <option value="Suite Completa">Suite Completa</option>
-            </select>
+            <button class="btn btn-primary" onclick="crmNuevoCliente()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nuevo cliente
+            </button>
           </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Cliente</th>
-                  <th>RUC</th>
-                  <th>Plan</th>
-                  <th>Estado</th>
-                  <th>Próximo Pago</th>
-                  <th>Firebase ID</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="tabla-clientes">
-                <tr><td colspan="7" style="text-align:center; padding:32px; color:var(--text1)">Cargando clientes...</td></tr>
-              </tbody>
-            </table>
+          <div id="crm-seed"></div>
+          <div class="card mb-4">
+            <div class="card-header" style="gap:8px">
+              <div class="search-wrap" style="flex:1">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="search-input" placeholder="Buscar por empresa, RUC, contacto..." oninput="crmFiltrar()" id="search-clientes">
+              </div>
+              <select style="width:auto" id="crm-filtro-estado" onchange="crmFiltrar()">
+                <option value="">Todos los estados</option>
+                <option value="prospecto">Prospecto</option>
+                <option value="conversacion">En conversación</option>
+                <option value="cliente">Cliente</option>
+                <option value="aliado">Aliado (gratuito)</option>
+                <option value="inactivo">Inactivo</option>
+              </select>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Empresa / contacto</th>
+                    <th>RUC</th>
+                    <th>Estado</th>
+                    <th>Última interacción</th>
+                    <th>Próxima acción</th>
+                    <th>Cot.</th>
+                    <th>Por cobrar</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="tabla-clientes">
+                  <tr><td colspan="8" style="text-align:center; padding:32px; color:var(--text1)">Cargando clientes...</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
+        <div id="crm-detail" style="display:none"></div>
       </div>
 
       <!-- ──────────── APPS Y PLANES ──────────── -->
@@ -1124,54 +1098,37 @@
       <div class="view" id="view-facturacion">
         <div class="section-header mb-6">
           <div>
-            <div class="section-title">Facturación y Pagos</div>
-            <div class="section-sub">Control financiero mensual de suscripciones</div>
+            <div class="section-title">Facturación</div>
+            <div class="section-sub">Control de las facturas que emites en SUNAT (SOL) y de su cobro</div>
           </div>
-          <button class="btn btn-primary" onclick="openModal('modal-nuevo-pago')">
+          <button class="btn btn-primary" onclick="crmFacturaForm()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Registrar Pago
+            Registrar factura
           </button>
         </div>
-        <div class="grid-4 mb-6">
-          <div class="stat-card green">
-            <div class="stat-label">MRR Actual</div>
-            <div class="stat-value" id="mrr-actual">—</div>
-            <div class="stat-sub">mensual recurrente</div>
-          </div>
-          <div class="stat-card accent">
-            <div class="stat-label">ARR Proyectado</div>
-            <div class="stat-value" id="arr-proyectado">—</div>
-            <div class="stat-sub">anual proyectado</div>
-          </div>
-          <div class="stat-card blue">
-            <div class="stat-label">Cobrado (Mes)</div>
-            <div class="stat-value" id="cobrado-mes">—</div>
-            <div class="stat-sub">pagos recibidos</div>
-          </div>
-          <div class="stat-card red">
-            <div class="stat-label">Pendientes</div>
-            <div class="stat-value" id="pagos-pendientes">—</div>
-            <div class="stat-sub">por cobrar</div>
-          </div>
+        <div class="grid-3 mb-4">
+          <div class="stat-card accent"><div class="stat-label">Facturado</div><div class="stat-value" id="fac-emitido" style="font-size:22px">—</div><div class="stat-sub">cobrado + por cobrar</div></div>
+          <div class="stat-card green"><div class="stat-label">Cobrado</div><div class="stat-value" id="fac-cobrado" style="font-size:22px">—</div><div class="stat-sub">facturas cobradas</div></div>
+          <div class="stat-card red"><div class="stat-label">Por cobrar</div><div class="stat-value" id="fac-pendiente" style="font-size:22px">—</div><div class="stat-sub" id="fac-pendiente-sub">—</div></div>
         </div>
         <div class="card">
-          <div class="card-header">
-            <div class="card-title">Historial de Pagos</div>
-            <select style="width:auto; font-size:12px" id="filter-mes" onchange="filterPagosByMes(this.value)">
-              <option>Todos los meses</option>
-              <option>Enero 2025</option>
-              <option>Febrero 2025</option>
-              <option>Marzo 2025</option>
+          <div class="card-header" style="gap:8px">
+            <div class="search-wrap" style="flex:1">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" class="search-input" placeholder="Buscar por cliente, comprobante o concepto..." oninput="facFiltrar()" id="search-facturas">
+            </div>
+            <select style="width:auto" id="fac-filtro-estado" onchange="facFiltrar()">
+              <option value="">Todos los estados</option>
+              <option value="pendiente">Por cobrar</option>
+              <option value="pagada">Cobrada</option>
+              <option value="cortesia">Cortesía</option>
+              <option value="anulada">Anulada</option>
             </select>
           </div>
           <div class="table-wrap">
             <table>
-              <thead>
-                <tr><th>Fecha</th><th>Cliente</th><th>Plan</th><th>Monto</th><th>Método</th><th>Estado</th><th>Acciones</th></tr>
-              </thead>
-              <tbody id="tabla-pagos">
-                <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text1)">Cargando pagos...</td></tr>
-              </tbody>
+              <thead><tr><th>Emisión</th><th>Cliente</th><th>Comprobante</th><th>Concepto</th><th>Monto</th><th>Estado</th><th>Cobro</th><th></th></tr></thead>
+              <tbody id="tabla-facturas"></tbody>
             </table>
           </div>
         </div>
@@ -1588,342 +1545,16 @@
 <!-- ══════════════════════════════════════════════════════════════════════ -->
 
 <!-- Modal: Nuevo Cliente -->
-<div class="modal-overlay" id="modal-nuevo-cliente">
+<div class="modal-overlay" id="modal-crm-form">
   <div class="modal" style="width:560px">
     <div class="modal-header">
-      <div class="modal-title">Nuevo Cliente (Tenant)</div>
-      <button class="modal-close" onclick="closeModal('modal-nuevo-cliente')">✕</button>
+      <div class="modal-title" id="crm-form-title"></div>
+      <button class="modal-close" onclick="closeModal('modal-crm-form')">✕</button>
     </div>
-    <div class="modal-body">
-
-      <!-- PASO INDICADOR -->
-      <div style="display:flex;gap:0;margin-bottom:24px;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border)">
-        <div class="nc-step active" id="step-tab-1" style="flex:1;padding:8px;text-align:center;font-size:11px;font-family:var(--font-mono);background:var(--accent-dim);color:var(--accent);cursor:pointer" onclick="ncGoStep(1)">1 · NEGOCIO</div>
-        <div class="nc-step" id="step-tab-2" style="flex:1;padding:8px;text-align:center;font-size:11px;font-family:var(--font-mono);color:var(--text2);cursor:pointer;border-left:1px solid var(--border)" onclick="ncGoStep(2)">2 · APPS Y PAGO</div>
-        <div class="nc-step" id="step-tab-3" style="flex:1;padding:8px;text-align:center;font-size:11px;font-family:var(--font-mono);color:var(--text2);cursor:pointer;border-left:1px solid var(--border)" onclick="ncGoStep(3)">3 · TÉCNICO</div>
-      </div>
-
-      <!-- PASO 1: DATOS DEL NEGOCIO -->
-      <div id="nc-step-1">
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Nombre del Negocio *</label>
-            <input type="text" id="nc-nombre" placeholder="Ej: LaFech Joyería">
-          </div>
-          <div class="form-group">
-            <label class="form-label">RUC</label>
-            <input type="text" id="nc-ruc" placeholder="20XXXXXXXXX" maxlength="11">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Email de Acceso (Login Key) *</label>
-          <input type="email" id="nc-email" placeholder="cliente@negocio.com">
-          <div style="font-size:11px;color:var(--text1);margin-top:4px">⚠ Este email será el usuario con el que el cliente inicia sesión en su panel.</div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">País</label>
-            <select id="nc-pais" onchange="ncUpdateMoneda()">
-              <option value="PE">🇵🇪 Perú</option>
-              <option value="MX">🇲🇽 México</option>
-              <option value="CO">🇨🇴 Colombia</option>
-              <option value="AR">🇦🇷 Argentina</option>
-              <option value="CL">🇨🇱 Chile</option>
-              <option value="US">🇺🇸 Estados Unidos</option>
-              <option value="ES">🇪🇸 España</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Moneda de Cobro</label>
-            <select id="nc-moneda">
-              <option value="PEN">PEN — Soles</option>
-              <option value="USD">USD — Dólares</option>
-              <option value="MXN">MXN — Pesos MX</option>
-              <option value="COP">COP — Pesos CO</option>
-              <option value="ARS">ARS — Pesos AR</option>
-              <option value="CLP">CLP — Pesos CL</option>
-              <option value="EUR">EUR — Euros</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Estado inicial</label>
-            <select id="nc-estado">
-              <option value="trial">Trial (en configuración)</option>
-              <option value="activo">Activo</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Fecha de inicio</label>
-            <input type="date" id="nc-fecha-inicio">
-          </div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;margin-top:8px">
-          <button class="btn btn-primary" onclick="ncGoStep(2)">Siguiente →</button>
-        </div>
-      </div>
-
-      <!-- PASO 2: APPS Y FACTURACIÓN -->
-      <div id="nc-step-2" style="display:none">
-        <div class="form-group">
-          <label class="form-label">Apps Contratadas * <span style="font-weight:400;color:var(--text1)">(selecciona una o más)</span></label>
-          <div id="nc-apps-checks" style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
-            <!-- generado dinámicamente por ncRenderAppsChecks() -->
-          </div>
-        </div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-top:4px">
-          <div style="font-size:11px;font-family:var(--font-mono);color:var(--text1);margin-bottom:10px;letter-spacing:0.06em">RESUMEN DE COBRO</div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
-            <span style="color:var(--text1)">Inversión inicial</span>
-            <span id="nc-resumen-inicial" style="font-family:var(--font-mono);color:var(--text0)">—</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
-            <span style="color:var(--text1)">Membresía mensual</span>
-            <span id="nc-resumen-mensual" style="font-family:var(--font-mono);color:var(--text0)">—</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px">
-            <span style="color:var(--text1)">Descuento por plazo</span>
-            <span id="nc-resumen-descuento" style="font-family:var(--font-mono);color:var(--green)">—</span>
-          </div>
-          <div style="border-top:1px solid var(--border);padding-top:10px;display:flex;justify-content:space-between;font-size:14px;font-weight:600">
-            <span>Total primer cobro</span>
-            <span id="nc-resumen-total" style="font-family:var(--font-mono);color:var(--accent)">—</span>
-          </div>
-        </div>
-        <div class="form-row" style="margin-top:14px">
-          <div class="form-group">
-            <label class="form-label">Plazo contratado</label>
-            <select id="nc-plazo" onchange="ncCalcularCobro()">
-              <option value="0">Mensual (sin descuento)</option>
-              <option value="5">6 meses (−5%)</option>
-              <option value="10">12 meses (−10%)</option>
-              <option value="15">18 meses (−15%)</option>
-              <option value="20">24 meses (−20%)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Inversión inicial cobrada</label>
-            <select id="nc-inicial-cobrada">
-              <option value="si">Sí, cobrar al inicio</option>
-              <option value="no">No (exonerado)</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Notas del contrato</label>
-          <textarea id="nc-notas" rows="2" placeholder="Ej: Descuento especial acordado, forma de pago, contacto..."></textarea>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-top:8px">
-          <button class="btn btn-ghost" onclick="ncGoStep(1)">← Atrás</button>
-          <button class="btn btn-primary" onclick="ncGoStep(3)">Siguiente →</button>
-        </div>
-      </div>
-
-      <!-- PASO 3: CONFIGURACIÓN TÉCNICA -->
-      <div id="nc-step-3" style="display:none">
-
-        <div style="background:var(--accent-glow);border:1px solid rgba(184,115,51,0.2);border-radius:var(--radius-sm);padding:11px 13px;font-size:12px;color:var(--text1);margin-bottom:20px">
-          🔧 <strong style="color:var(--text0)">Sección técnica — solo Talo.</strong> Completa los 3 bloques en orden. Puedes guardar sin estos datos y completarlos después.
-        </div>
-
-        <!-- ══ BLOQUE 1: NAMECHEAP DNS ══ -->
-        <div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;margin-bottom:16px">
-          <div style="background:var(--bg2);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleGuia('bloque-namecheap')">
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="background:var(--accent);color:#0B1120;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</span>
-              <span style="font-size:13px;font-weight:600">Configurar subdominio en Namecheap</span>
-            </div>
-            <span style="font-size:10px;color:var(--accent);font-family:var(--font-mono)">VER GUÍA ▾</span>
-          </div>
-          <div id="bloque-namecheap" style="padding:16px">
-            <!-- Campo subdominio -->
-            <div class="form-group">
-              <label class="form-label">Subdominio del cliente</label>
-              <div style="display:flex;gap:8px;align-items:center">
-                <input type="text" id="nc-subdominio" placeholder="lafech" oninput="ncGenerarDNS()" style="flex:1">
-                <span style="font-size:13px;color:var(--text1);white-space:nowrap">.etraziapp.com</span>
-              </div>
-              <div style="font-size:11px;color:var(--text1);margin-top:4px">Solo el prefijo. Ej: <span style="color:var(--accent)">lafech</span> → lafech.etraziapp.com</div>
-            </div>
-
-            <!-- DNS auto-generado -->
-            <div id="nc-dns-box" style="display:none">
-              <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text1);margin-bottom:8px">Registro DNS generado automáticamente</div>
-              <div style="background:var(--bg0);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:8px">
-                <table style="width:100%;font-family:var(--font-mono);font-size:12px">
-                  <tr style="border-bottom:1px solid var(--border)">
-                    <td style="padding:8px 12px;color:var(--text1);width:30%">Tipo</td>
-                    <td style="padding:8px 12px;color:var(--text0)">CNAME</td>
-                  </tr>
-                  <tr style="border-bottom:1px solid var(--border)">
-                    <td style="padding:8px 12px;color:var(--text1)">Host</td>
-                    <td style="padding:8px 12px;color:var(--accent);font-weight:600" id="dns-host">—</td>
-                  </tr>
-                  <tr style="border-bottom:1px solid var(--border)">
-                    <td style="padding:8px 12px;color:var(--text1)">Value</td>
-                    <td style="padding:8px 12px;color:var(--text0)">italoamayamoreno-lgtm.github.io</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:8px 12px;color:var(--text1)">TTL</td>
-                    <td style="padding:8px 12px;color:var(--text0)">Automatic</td>
-                  </tr>
-                </table>
-              </div>
-              <button class="btn btn-ghost btn-sm" onclick="ncCopiarDNS()" id="btn-copiar-dns" style="margin-bottom:14px">📋 Copiar datos DNS</button>
-            </div>
-
-            <!-- Guía paso a paso Namecheap -->
-            <div style="font-size:12px;color:var(--text1);line-height:1.8">
-              <strong style="color:var(--text0);font-size:13px">Pasos en Namecheap:</strong>
-              <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">1</span>
-                  <div>Ve a <a href="https://ap.www.namecheap.com/domains/list/" target="_blank" style="color:var(--accent)">namecheap.com → Domain List</a> e inicia sesión con tu cuenta de Etrazia.</div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">2</span>
-                  <div>Busca el dominio <strong style="color:var(--text0)">etraziapp.com</strong> en la lista y haz clic en el botón <strong style="color:var(--text0)">"Manage"</strong> a la derecha.</div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">3</span>
-                  <div>En la pantalla del dominio, haz clic en la pestaña <strong style="color:var(--text0)">"Advanced DNS"</strong> (está en la barra superior junto a Details, Sharing, etc.).</div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">4</span>
-                  <div>Baja hasta la sección <strong style="color:var(--text0)">"Host Records"</strong> y haz clic en <strong style="color:var(--text0)">"Add New Record"</strong>.</div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">5</span>
-                  <div>Aparece una fila nueva. En el primer campo (Type) selecciona <strong style="color:var(--text0)">CNAME Record</strong>. Luego pega los valores del cuadro de arriba en los campos Host y Value.</div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">6</span>
-                  <div>Haz clic en el ✓ (checkmark verde) al final de la fila para guardar. Verás el registro en la lista.</div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--green-bg);border:1px solid var(--green);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px;color:var(--green)">✓</span>
-                  <div style="color:var(--green)">Espera <strong>~30 minutos</strong>. El subdominio estará activo y podrás acceder en <span id="dns-preview-url" style="font-family:var(--font-mono)">nombrecliente.etraziapp.com</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══ BLOQUE 2: FIREBASE ══ -->
-        <div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;margin-bottom:16px">
-          <div style="background:var(--bg2);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleGuia('bloque-firebase')">
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="background:var(--blue);color:#0B1120;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</span>
-              <span style="font-size:13px;font-weight:600">Crear y configurar Firebase del cliente</span>
-            </div>
-            <span style="font-size:10px;color:var(--accent);font-family:var(--font-mono)">VER GUÍA ▾</span>
-          </div>
-          <div id="bloque-firebase" style="padding:16px;display:none">
-            <div class="form-group">
-              <label class="form-label">Firebase Project ID del cliente</label>
-              <input type="text" id="nc-firebase" placeholder="etrazia-lafech">
-              <div style="font-size:11px;color:var(--text1);margin-top:4px">Ej: <span style="color:var(--accent)">etrazia-lafech</span>, <span style="color:var(--accent)">etrazia-boutique</span></div>
-            </div>
-            <div style="font-size:12px;color:var(--text1);line-height:1.8">
-              <strong style="color:var(--text0);font-size:13px">Pasos para crear el Firebase del cliente:</strong>
-              <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">1</span>
-                  <div>Ve a <a href="https://console.firebase.google.com" target="_blank" style="color:var(--accent)">console.firebase.google.com</a> e inicia sesión con tu cuenta Google.</div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">2</span>
-                  <div>Haz clic en <strong style="color:var(--text0)">"Agregar proyecto"</strong> (el botón con el ícono +). Escribe el nombre del proyecto: <strong style="color:var(--accent)">etrazia-nombrecliente</strong>. Acepta los términos y crea el proyecto.</div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">3</span>
-                  <div>Una vez creado, ve al ⚙️ engranaje → <strong style="color:var(--text0)">"Configuración del proyecto"</strong>. Baja a <em>"Tus apps"</em>, haz clic en el ícono <strong style="color:var(--text0)">&lt;/&gt;</strong> para agregar una app web. Nómbrala igual que el proyecto.</div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">4</span>
-                  <div>Copia el objeto <strong style="color:var(--text0)">firebaseConfig</strong> que aparece — lo necesitarás al personalizar el código del cliente.</div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">5</span>
-                  <div>Activa <strong style="color:var(--text0)">Authentication</strong>: menú izquierdo → Build → Authentication → Comenzar → Correo/Contraseña → Activar → Guardar.</div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">6</span>
-                  <div>Activa <strong style="color:var(--text0)">Firestore</strong>: menú izquierdo → Build → Firestore Database → Crear base de datos → Modo producción → us-central1 → Listo.</div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">7</span>
-                  <div>En Firestore → pestaña <strong style="color:var(--text0)">Reglas</strong>: pega las security rules del template de Etrazia y haz clic en <strong style="color:var(--text0)">"Publicar"</strong>.</div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">8</span>
-                  <div>El <strong style="color:var(--text0)">Project ID</strong> lo encuentras en ⚙️ → Configuración del proyecto → sección "Tu proyecto". Cópialo y pégalo en el campo de arriba.</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══ BLOQUE 3: GITHUB PAGES ══ -->
-        <div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;margin-bottom:16px">
-          <div style="background:var(--bg2);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleGuia('bloque-github')">
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="background:var(--green);color:#0B1120;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</span>
-              <span style="font-size:13px;font-weight:600">Crear repo y activar GitHub Pages</span>
-            </div>
-            <span style="font-size:10px;color:var(--accent);font-family:var(--font-mono)">VER GUÍA ▾</span>
-          </div>
-          <div id="bloque-github" style="padding:16px;display:none">
-            <div class="form-group">
-              <label class="form-label">Nombre del repositorio GitHub</label>
-              <input type="text" id="nc-repo" placeholder="etrazia-lafech">
-              <div style="font-size:11px;color:var(--text1);margin-top:4px">Ej: <span style="color:var(--accent)">etrazia-lafech</span>. Sin espacios ni mayúsculas.</div>
-            </div>
-            <div style="font-size:12px;color:var(--text1);line-height:1.8">
-              <strong style="color:var(--text0);font-size:13px">Pasos para publicar el panel del cliente:</strong>
-              <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">1</span>
-                  <div>Ve a <a href="https://github.com/new" target="_blank" style="color:var(--accent)">github.com/new</a>. Nombre del repo: <strong style="color:var(--accent)">etrazia-nombrecliente</strong>. Visibilidad: <strong style="color:var(--text0)">Public</strong>. NO marques README. Clic en <strong style="color:var(--text0)">"Create repository"</strong>.</div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">2</span>
-                  <div>Descarga el template base del cliente desde Claude. Personaliza el <strong style="color:var(--text0)">firebaseConfig</strong>, logo, colores y nombre del negocio en el archivo HTML.</div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">3</span>
-                  <div>En el repo recién creado, haz clic en <strong style="color:var(--text0)">"Add file" → "Upload files"</strong>. Sube el HTML del cliente y renómbralo <strong style="color:var(--text0)">index.html</strong>. Escribe un mensaje de commit y guarda.</div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">4</span>
-                  <div>Ve a <strong style="color:var(--text0)">Settings</strong> del repo (engranaje ⚙️) → menú izquierdo <strong style="color:var(--text0)">"Pages"</strong> → Source: <strong style="color:var(--text0)">Deploy from a branch</strong> → Branch: <strong style="color:var(--text0)">main / (root)</strong> → <strong style="color:var(--text0)">Save</strong>.</div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px">5</span>
-                  <div>Espera ~2 minutos. El panel del cliente estará disponible en <strong style="color:var(--accent)">italoamayamoreno-lgtm.github.io/etrazia-nombrecliente</strong> — y si ya configuraste el DNS, también en <strong style="color:var(--accent)">nombrecliente.etraziapp.com</strong>.</div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <span style="background:var(--green-bg);border:1px solid var(--green);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px;color:var(--green)">✓</span>
-                  <div style="color:var(--green)">Copia el nombre del repo (<strong>sin la URL</strong>) y pégalo en el campo de arriba. Ej: <span style="font-family:var(--font-mono)">etrazia-lafech</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- URL final auto-completada -->
-        <div class="form-group">
-          <label class="form-label">URL del Panel <span style="color:var(--text2);font-weight:400">(auto-completada)</span></label>
-          <input type="text" id="nc-url" placeholder="Se completa al ingresar el subdominio en el bloque 1" readonly style="color:var(--text1);cursor:default;background:var(--bg2)">
-        </div>
-
-        <div style="display:flex;justify-content:space-between;margin-top:8px">
-          <button class="btn btn-ghost" onclick="ncGoStep(2)">← Atrás</button>
-          <button class="btn btn-primary" onclick="guardarCliente()">✓ Guardar Cliente</button>
-        </div>
-      </div>
-
+    <div class="modal-body" id="crm-form-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-crm-form')">Cancelar</button>
+      <button class="btn btn-primary" id="crm-form-save">Guardar</button>
     </div>
   </div>
 </div>
@@ -2254,85 +1885,27 @@ window.signOut = async function() {
 // ── LOAD ALL DATA ──────────────────────────────────────────────────────
 function loadAll() {
   loadClientes();
-  loadPagos();
-  loadTickets();
   loadUsuarios();
   renderPlanes();
   renderPermisos();
 }
 
-// ── CLIENTES ───────────────────────────────────────────────────────────
+// ── CLIENTES (CRM) ─────────────────────────────────────────────────────
 function loadClientes() {
-  const q = query(collection(db, 'clientes'), orderBy('createdAt', 'desc'));
-  onSnapshot(q, snap => {
+  onSnapshot(collection(db, 'clientes'), snap => {
     clientes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderTablaClientes(clientes);
-    updateDashboard();
     populateClienteSelects();
+    crmOnDataChange();
   }, err => {
-    // Si Firestore no está configurado aún, mostrar datos demo
-    if (err.code === 'failed-precondition' || firebaseConfig.apiKey === 'TU_API_KEY') {
-      clientes = DEMO_CLIENTES;
-      renderTablaClientes(clientes);
-      updateDashboard();
-    }
+    console.error('Error cargando clientes:', err);
+    showToast(`No se pudo leer clientes (${err.code || err.message}).`, 'error');
   });
 }
-
-// DEMO DATA (solo hasta que conectes Firebase)
-const DEMO_CLIENTES = [
-  { id: 'c1', nombre: 'LaFech Joyería', ruc: '10485721836',
-    email: 'kristeldextre.caro@gmail.com',
-    plan: 'Vcontrol', estado: 'activo', firebaseId: 'lafech-ac769',
-    subdominio: 'lafech', url: 'lafech.etraziapp.com',
-    montoSetup: 0, montoMensual: 0, plazo: 'Mensual',
-    proximoPago: null, notas: 'Cliente fundador · Costo cero',
-    adminEmail: 'italoamaya.moreno@gmail.com',
-    createdAt: '2025-01-01' },
-];
-
-const DEMO_PAGOS = [
-  { id: 'p1', clienteNombre: 'LaFech Joyería', plan: 'Vcontrol', monto: 0,
-    periodo: '2025-01', metodo: '—', estado: 'exento', fecha: '2025-01-01', referencia: 'Cliente fundador' },
-];
-
-const DEMO_TICKETS = [
-  { id: 't1', clienteNombre: 'LaFech Joyería', asunto: 'Error al generar PDF de venta',
-    descripcion: 'Al presionar "Generar PDF" en la pantalla de ventas, no descarga nada.', estado: 'abierto', prioridad: 'alta', fecha: '2025-01-15' },
-  { id: 't2', clienteNombre: 'LaFech Joyería', asunto: 'Cómo agregar segundo usuario', descripcion: 'Quiero dar acceso a mi empleada.', estado: 'en_proceso', prioridad: 'media', fecha: '2025-01-14' },
-  { id: 't3', clienteNombre: 'LaFech Joyería', asunto: 'Actualizar logo del sistema', descripcion: 'Cambiar el logo en el topbar.', estado: 'resuelto', prioridad: 'baja', fecha: '2025-01-10' },
-];
 
 const DEMO_USUARIOS = [
   { id: 'u1', nombre: 'Talo Amaya', email: 'italoamaya.moreno@gmail.com', rol: 'superadmin', estado: 'activo', ultimoAcceso: 'Hoy' },
   { id: 'u2', nombre: 'Kristel Dextre', email: 'kristeldextre.caro@gmail.com', rol: 'soporte', estado: 'activo', ultimoAcceso: 'Hace 2 días' },
 ];
-
-function loadPagos() {
-  const q = query(collection(db, 'pagos'), orderBy('createdAt', 'desc'));
-  onSnapshot(q, snap => {
-    pagos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderTablaPagos(pagos);
-    updateFinanzas();
-  }, () => {
-    pagos = DEMO_PAGOS;
-    renderTablaPagos(pagos);
-    updateFinanzas();
-  });
-}
-
-function loadTickets() {
-  const q = query(collection(db, 'tickets'), orderBy('createdAt', 'desc'));
-  onSnapshot(q, snap => {
-    tickets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderTickets(tickets);
-    updateTicketStats();
-  }, () => {
-    tickets = DEMO_TICKETS;
-    renderTickets(tickets);
-    updateTicketStats();
-  });
-}
 
 function loadUsuarios() {
   const q = query(collection(db, 'admins'), orderBy('nombre'));
@@ -2346,35 +1919,6 @@ function loadUsuarios() {
 }
 
 // ── RENDER CLIENTES ────────────────────────────────────────────────────
-function renderTablaClientes(data) {
-  const tbody = document.getElementById('tabla-clientes');
-  if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text1)">
-      <div>Sin clientes registrados.</div>
-      <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="openModal('modal-nuevo-cliente')">+ Agregar primer cliente</button>
-    </td></tr>`;
-    return;
-  }
-  tbody.innerHTML = data.map(c => `
-    <tr>
-      <td>
-        <div class="td-name">${c.nombre}</div>
-        <div class="td-mono">${c.email}</div>
-      </td>
-      <td class="td-mono">${c.ruc || '—'}</td>
-      <td><span class="badge badge-accent">${c.plan}</span></td>
-      <td>${estadoBadge(c.estado)}</td>
-      <td class="td-mono">${c.proximoPago ? formatDate(c.proximoPago) : '—'}</td>
-      <td class="td-mono" style="font-size:11px">${c.firebaseId || '—'}</td>
-      <td>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-ghost btn-sm" onclick="editarCliente('${c.id}')">Editar</button>
-          <button class="btn btn-danger btn-sm" onclick="confirmarEliminarCliente('${c.id}','${c.nombre}')">Eliminar</button>
-        </div>
-      </td>
-    </tr>`).join('');
-}
-
 // ── RENDER PAGOS ───────────────────────────────────────────────────────
 function renderTablaPagos(data) {
   const tbody = document.getElementById('tabla-pagos');
@@ -2516,239 +2060,12 @@ function renderPermisos() {
 }
 
 // ── DASHBOARD ──────────────────────────────────────────────────────────
-function updateDashboard() {
-  const activos = clientes.filter(c => c.estado === 'activo').length;
-  document.getElementById('dash-clientes').textContent = activos;
-  document.getElementById('dash-clientes-sub').textContent = `${clientes.length} totales registrados`;
-
-  const appsActivas = clientes.filter(c => c.estado === 'activo').length;
-  document.getElementById('dash-apps').textContent = PLANES_DEFAULT.length;
-  document.getElementById('dash-apps-sub').textContent = 'en catálogo de Suite Etrazia';
-
-  updateFinanzas();
-
-  const abiertos = tickets.filter(t => t.estado === 'abierto').length;
-  document.getElementById('dash-tickets').textContent = abiertos;
-  document.getElementById('dash-tickets-sub').textContent = `${tickets.length} tickets totales`;
-  document.getElementById('ticket-badge').textContent = abiertos;
-  if (abiertos === 0) document.getElementById('ticket-badge').style.display = 'none';
-
-  // Distribución de planes
-  const total = clientes.length || 1;
-  const planCounts = {
-    eControl: clientes.filter(c => c.plan === 'eControl').length,
-    personal: clientes.filter(c => c.plan === 'eContent Personal').length,
-    business: clientes.filter(c => c.plan === 'eContent Business').length,
-    full:     clientes.filter(c => c.plan === 'Suite Completa').length,
-  };
-  const pct = v => Math.round((v/total)*100) + '%';
-  document.getElementById('pct-econtrol').textContent   = pct(planCounts.eControl);
-  document.getElementById('bar-econtrol').style.width   = pct(planCounts.eControl);
-  document.getElementById('pct-econtent-p').textContent = pct(planCounts.personal);
-  document.getElementById('bar-econtent-p').style.width = pct(planCounts.personal);
-  document.getElementById('pct-econtent-b').textContent = pct(planCounts.business);
-  document.getElementById('bar-econtent-b').style.width = pct(planCounts.business);
-  document.getElementById('pct-full').textContent       = pct(planCounts.full);
-  document.getElementById('bar-full').style.width       = pct(planCounts.full);
-}
-
-function updateFinanzas() {
-  const planPrecios = { 'eControl': 30, 'eContent Personal': 20, 'eContent Business': 30, 'Suite Completa': 35 };
-  const mrr = clientes.filter(c => c.estado === 'activo').reduce((sum, c) => sum + (planPrecios[c.plan] || 0), 0);
-  const arr = mrr * 12;
-  const cobradoMes = pagos.filter(p => p.estado === 'pagado').reduce((sum, p) => sum + parseFloat(p.monto || 0), 0);
-  const pendientes = pagos.filter(p => p.estado === 'pendiente').length;
-
-  document.getElementById('dash-mrr').textContent     = `$${mrr}`;
-  document.getElementById('dash-mrr-sub').textContent = `ARR proyectado: $${arr}`;
-  document.getElementById('mrr-actual').textContent   = `$${mrr}`;
-  document.getElementById('arr-proyectado').textContent = `$${arr}`;
-  document.getElementById('cobrado-mes').textContent  = `$${cobradoMes.toFixed(0)}`;
-  document.getElementById('pagos-pendientes').textContent = pendientes;
-}
-
 function updateTicketStats() {
   document.getElementById('t-abiertos').textContent  = tickets.filter(t => t.estado === 'abierto').length;
   document.getElementById('t-proceso').textContent   = tickets.filter(t => t.estado === 'en_proceso').length;
   document.getElementById('t-resueltos').textContent = tickets.filter(t => t.estado === 'resuelto').length;
   document.getElementById('t-tiempo').textContent    = '2.3h';
 }
-
-// ── MODAL NUEVO CLIENTE — LÓGICA MULTIPASO ────────────────────────────
-
-// Apps disponibles — se actualiza aquí cuando se agreguen nuevas apps
-const APPS_CATALOGO = [
-  { id: 'vcontrol',        nombre: 'Vcontrol',          inicial: 200, mensual: 35,  desc: 'Gestión comercial: ventas, inventario, CRM' },
-  { id: 'vcontent_p',      nombre: 'Vcontent Personal', inicial: 200, mensual: 35,  desc: 'Contenido para LinkedIn e Instagram personal' },
-  { id: 'vcontent_b',      nombre: 'Vcontent Business', inicial: 350, mensual: 100, desc: 'Contenido para Instagram y TikTok del negocio' },
-  { id: 'vfacturacion',    nombre: 'Vfacturación',      inicial: 200, mensual: 35,  desc: 'Emisión de boletas y facturas electrónicas' },
-];
-
-window.ncRenderAppsChecks = function ncRenderAppsChecks() {
-  const container = document.getElementById('nc-apps-checks');
-  if (!container) return;
-  container.innerHTML = APPS_CATALOGO.map(app => `
-    <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:border-color 0.2s" 
-           onmouseover="this.style.borderColor='var(--border-strong)'" 
-           onmouseout="this.style.borderColor='var(--border)'">
-      <input type="checkbox" id="nc-app-${app.id}" value="${app.id}" onchange="window.ncCalcularCobro()" 
-             style="width:15px;height:15px;margin-top:2px;accent-color:var(--accent);flex-shrink:0">
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:500">${app.nombre}</div>
-        <div style="font-size:11px;color:var(--text1);margin-top:1px">${app.desc}</div>
-      </div>
-      <div style="text-align:right;flex-shrink:0">
-        <div style="font-size:12px;font-family:var(--font-mono);color:var(--accent)">S/${app.mensual}/mes</div>
-        <div style="font-size:10px;color:var(--text2)">+S/${app.inicial} inicio</div>
-      </div>
-    </label>`).join('');
-}
-
-function ncGetMoneda() {
-  return document.getElementById('nc-moneda')?.value || 'PEN';
-}
-
-window.ncCalcularCobro = function ncCalcularCobro() {
-  const moneda = ncGetMoneda();
-  const plazoDescuento = parseInt(document.getElementById('nc-plazo')?.value || '0');
-  const appsSeleccionadas = APPS_CATALOGO.filter(a => document.getElementById(`nc-app-${a.id}`)?.checked);
-
-  if (!appsSeleccionadas.length) {
-    document.getElementById('nc-resumen-inicial').textContent = '—';
-    document.getElementById('nc-resumen-mensual').textContent = '—';
-    document.getElementById('nc-resumen-descuento').textContent = '—';
-    document.getElementById('nc-resumen-total').textContent = '—';
-    return;
-  }
-
-  const totalInicial  = appsSeleccionadas.reduce((s, a) => s + a.inicial, 0);
-  const totalMensual  = appsSeleccionadas.reduce((s, a) => s + a.mensual, 0);
-  const descuento     = plazoDescuento > 0 ? Math.round(totalMensual * (plazoDescuento / 100)) : 0;
-  const mensualFinal  = totalMensual - descuento;
-  const cobrarInicial = document.getElementById('nc-inicial-cobrada')?.value !== 'no';
-  const totalPrimer   = (cobrarInicial ? totalInicial : 0) + mensualFinal;
-
-  document.getElementById('nc-resumen-inicial').textContent  = `${moneda} ${totalInicial.toFixed(0)}`;
-  document.getElementById('nc-resumen-mensual').textContent  = `${moneda} ${totalMensual.toFixed(0)}/mes`;
-  document.getElementById('nc-resumen-descuento').textContent = plazoDescuento > 0 ? `−${moneda} ${descuento} (${plazoDescuento}%)` : 'Sin descuento';
-  document.getElementById('nc-resumen-total').textContent    = `${moneda} ${totalPrimer.toFixed(0)}`;
-}
-
-window.ncUpdateMoneda = function() {
-  const pais = document.getElementById('nc-pais').value;
-  const monedaMap = { PE: 'PEN', MX: 'MXN', CO: 'COP', AR: 'ARS', CL: 'CLP', US: 'USD', ES: 'EUR' };
-  const monedaSel = document.getElementById('nc-moneda');
-  if (monedaSel) monedaSel.value = monedaMap[pais] || 'PEN';
-  window.ncCalcularCobro();
-};
-
-window.ncGoStep = function(step) {
-  [1,2,3].forEach(s => {
-    const el = document.getElementById(`nc-step-${s}`);
-    const tab = document.getElementById(`step-tab-${s}`);
-    if (el) el.style.display = s === step ? 'block' : 'none';
-    if (tab) {
-      tab.style.background = s === step ? 'var(--accent-dim)' : 'transparent';
-      tab.style.color = s === step ? 'var(--accent)' : 'var(--text2)';
-    }
-  });
-  if (step === 2) { window.ncRenderAppsChecks(); window.ncCalcularCobro(); }
-};
-
-window.ncPreviewUrl = function() {}; // legacy
-
-window.ncGenerarDNS = function() {
-  const sub = document.getElementById('nc-subdominio')?.value.trim().toLowerCase();
-  const dnsBox = document.getElementById('nc-dns-box');
-  const dnsHost = document.getElementById('dns-host');
-  const urlField = document.getElementById('nc-url');
-  const dnsPreview = document.getElementById('dns-preview-url');
-  if (!sub) {
-    if (dnsBox) dnsBox.style.display = 'none';
-    if (urlField) urlField.value = '';
-    if (dnsPreview) dnsPreview.textContent = 'nombrecliente.etraziapp.com';
-    return;
-  }
-  if (dnsHost) dnsHost.textContent = sub;
-  if (dnsBox) dnsBox.style.display = 'block';
-  if (urlField) urlField.value = `${sub}.etraziapp.com`;
-  if (dnsPreview) dnsPreview.textContent = `${sub}.etraziapp.com`;
-};
-
-window.ncCopiarDNS = function() {
-  const sub = document.getElementById('nc-subdominio')?.value.trim().toLowerCase();
-  if (!sub) return;
-  const texto = `Tipo: CNAME\nHost: ${sub}\nValue: italoamayamoreno-lgtm.github.io\nTTL: Automatic`;
-  navigator.clipboard.writeText(texto).then(() => {
-    const btn = document.getElementById('btn-copiar-dns');
-    if (btn) { btn.textContent = '✓ Copiado'; setTimeout(() => { if(btn) btn.textContent = '📋 Copiar todo'; }, 2000); }
-  }).catch(() => showToast('No se pudo copiar. Cópialo manualmente.', 'error'));
-};
-
-window.toggleGuia = function(id) {
-  const el = document.getElementById(id);
-  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
-};
-
-// Reset modal al abrirlo
-const _origOpenModal = window.openModal;
-window.openModal = function(id) {
-  if (id === 'modal-nuevo-cliente') {
-    ncGoStep(1);
-    // reset fecha de hoy
-    const fi = document.getElementById('nc-fecha-inicio');
-    if (fi) fi.value = new Date().toISOString().slice(0,10);
-  }
-  _origOpenModal(id);
-};
-
-// ── GUARDAR / CRUD ─────────────────────────────────────────────────────
-window.guardarCliente = async function() {
-  const nombre = document.getElementById('nc-nombre').value.trim();
-  const email  = document.getElementById('nc-email').value.trim();
-  if (!nombre || !email) { showToast('Nombre y email son obligatorios.', 'error'); ncGoStep(1); return; }
-
-  const appsSeleccionadas = APPS_CATALOGO.filter(a => document.getElementById(`nc-app-${a.id}`)?.checked).map(a => a.id);
-  if (!appsSeleccionadas.length) { showToast('Selecciona al menos una app.', 'error'); ncGoStep(2); return; }
-
-  const moneda       = ncGetMoneda();
-  const plazoDesc    = parseInt(document.getElementById('nc-plazo')?.value || '0');
-  const totalInicial = APPS_CATALOGO.filter(a => appsSeleccionadas.includes(a.id)).reduce((s,a) => s + a.inicial, 0);
-  const totalMensual = APPS_CATALOGO.filter(a => appsSeleccionadas.includes(a.id)).reduce((s,a) => s + a.mensual, 0);
-
-  const data = {
-    nombre,
-    ruc:           document.getElementById('nc-ruc').value.trim(),
-    email,
-    pais:          document.getElementById('nc-pais').value,
-    moneda,
-    apps:          appsSeleccionadas,
-    plan:          appsSeleccionadas.join(' + '),
-    plazoMeses:    plazoDesc > 0 ? [6,12,18,24][[5,10,15,20].indexOf(plazoDesc)] : 1,
-    descuento:     plazoDesc,
-    montoInicial:  totalInicial,
-    montoMensual:  totalMensual,
-    estado:        document.getElementById('nc-estado').value,
-    fechaInicio:   document.getElementById('nc-fecha-inicio').value,
-    firebaseId:    document.getElementById('nc-firebase').value.trim(),
-    subdominio:    document.getElementById('nc-subdominio')?.value.trim().toLowerCase() || '',
-    url:           document.getElementById('nc-url').value.trim(),
-    repo:          document.getElementById('nc-repo').value.trim(),
-    notas:         document.getElementById('nc-notas').value.trim(),
-    createdAt:     serverTimestamp(),
-  };
-
-  try {
-    await addDoc(collection(db, 'clientes'), data);
-    showToast(`Cliente "${data.nombre}" creado.`, 'success');
-    closeModal('modal-nuevo-cliente');
-  } catch(e) {
-    clientes.unshift({ id: 'demo_' + Date.now(), ...data });
-    renderTablaClientes(clientes);
-    showToast(`Cliente "${data.nombre}" guardado.`, 'success');
-    closeModal('modal-nuevo-cliente');
-  }
-};
 
 window.guardarPago = async function() {
   const clienteNombre = document.getElementById('pago-cliente').value;
@@ -2825,20 +2142,6 @@ window.guardarPlan = function() {
 };
 
 // ── ELIMINAR ───────────────────────────────────────────────────────────
-window.confirmarEliminarCliente = function(id, nombre) {
-  if (!confirm(`¿Eliminar el cliente "${nombre}"? Esta acción no se puede deshacer.`)) return;
-  eliminarCliente(id, nombre);
-};
-async function eliminarCliente(id, nombre) {
-  try {
-    await deleteDoc(doc(db, 'clientes', id));
-  } catch {
-    clientes = clientes.filter(c => c.id !== id);
-    renderTablaClientes(clientes);
-  }
-  showToast(`Cliente "${nombre}" eliminado.`, 'success');
-}
-
 window.confirmarEliminarUsuario = function(id, nombre) {
   if (!confirm(`¿Revocar acceso a "${nombre}"?`)) return;
   usuarios = usuarios.filter(u => u.id !== id);
@@ -2847,20 +2150,6 @@ window.confirmarEliminarUsuario = function(id, nombre) {
 };
 
 // ── FILTERS ────────────────────────────────────────────────────────────
-window.filterClientes = function(q) {
-  const term = q.toLowerCase();
-  renderTablaClientes(clientes.filter(c =>
-    c.nombre?.toLowerCase().includes(term) ||
-    c.email?.toLowerCase().includes(term) ||
-    c.ruc?.includes(term)
-  ));
-};
-window.filterClientesByStatus = function(s) {
-  renderTablaClientes(s ? clientes.filter(c => c.estado === s) : clientes);
-};
-window.filterClientesByPlan = function(p) {
-  renderTablaClientes(p ? clientes.filter(c => c.plan === p) : clientes);
-};
 window.filterTickets = function(s) {
   renderTickets(s ? tickets.filter(t => t.estado === s) : tickets);
 };
@@ -2895,12 +2184,14 @@ window.navigate = function(view, el) {
   }
 
   const titles = {
-    dashboard: 'Dashboard', clientes: 'Clientes (Tenants)', apps: 'Apps y Planes',
-    facturacion: 'Facturación y Pagos', usuarios: 'Usuarios y Permisos', soporte: 'Soporte / Tickets',
+    dashboard: 'Dashboard', clientes: 'CRM · Clientes',
+    facturacion: 'Facturación', usuarios: 'Usuarios y Permisos',
     cotizador: 'Nueva Cotización', historial: 'Cotizaciones', presentacion: 'Documento de Presentación',
     juegos: 'Juegos',
   };
   document.getElementById('topbar-title').textContent = titles[view] || view;
+
+  if (view === 'clientes' && el && typeof crmBack === 'function') crmBack();
 
   // Lazy-init: cada módulo carga sus datos/imágenes recién la primera vez que se abre su vista
   if (view === 'presentacion' && !presentacionInicializada) {
@@ -3005,7 +2296,6 @@ function updateTopbarDate() {
   document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('es-PE', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-window.editarCliente = (id) => showToast('Editar cliente: próximamente.', 'info');
 window.editarPlan = (id) => showToast('Editar plan: próximamente.', 'info');
 window.verComprobante = (id) => showToast('Ver comprobante: próximamente.', 'info');
 
@@ -3410,6 +2700,7 @@ function loadCotizaciones() {
     cotizaciones = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderHistorial();
     actualizarStats();
+    crmOnDataChange();
   }, err => {
     console.error('Error escuchando cotizaciones en Firestore:', err);
     showToast(`No se pudo conectar a Firestore (${err.code || err.message}). Mostrando solo datos de esta sesión.`, 'error');
@@ -4169,6 +3460,729 @@ window.downloadAzzortiReport = function(id) {
 
   doc.save('azzorti-embajadora' + (nombreCompleto ? '-' + nombreCompleto.replace(/\s+/g, '-').toLowerCase() : '') + '.pdf');
 };
+
+
+// ═══════════════════════════════════════════════════════════════════════
+// CRM · FACTURACIÓN · DASHBOARD  (datos reales en Firestore → colección "clientes")
+// Cada cliente guarda dentro de su propio documento:
+//   contactos[], interacciones[], documentos[], activos[], facturas[], cotizacionesVinculadas[]
+// (así no hace falta tocar las reglas de Firestore)
+// ═══════════════════════════════════════════════════════════════════════
+const CRM_ESTADOS = {
+  prospecto:    { label: 'Prospecto',          cls: 'badge-yellow' },
+  conversacion: { label: 'En conversación',    cls: 'badge-blue'   },
+  cliente:      { label: 'Cliente',            cls: 'badge-green'  },
+  aliado:       { label: 'Aliado (gratuito)',  cls: 'badge-accent' },
+  inactivo:     { label: 'Inactivo',           cls: 'badge-red'    },
+};
+const FAC_ESTADOS = {
+  pendiente: { label: 'Por cobrar', cls: 'badge-yellow' },
+  pagada:    { label: 'Cobrada',    cls: 'badge-green'  },
+  anulada:   { label: 'Anulada',    cls: 'badge-red'    },
+  cortesia:  { label: 'Cortesía',   cls: 'badge-accent' },
+};
+const INT_TIPOS = {
+  llamada:     { label: 'Llamada',      icon: '📞' },
+  reunion:     { label: 'Reunión',      icon: '🤝' },
+  whatsapp:    { label: 'WhatsApp',     icon: '💬' },
+  correo:      { label: 'Correo',       icon: '✉️' },
+  capacitacion:{ label: 'Capacitación', icon: '🎓' },
+  otro:        { label: 'Otro',         icon: '📝' },
+};
+const DOC_TIPOS   = ['Contrato', 'Propuesta firmada', 'Orden de compra', 'Informe / entregable', 'Factura (PDF)', 'Otro'];
+const ACTIVO_TIPOS = ['Web', 'App / Panel', 'Infraestructura', 'Dominio', 'Contenido', 'Otro'];
+
+let crmCurrentId = null;
+let crmTab = 'resumen';
+
+// ── Utilidades ──────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
+function norm(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function hoy() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function fmtFecha(s) {
+  if (!s) return '—';
+  if (typeof s === 'object' && s.toDate) { const d = s.toDate(); return d.toLocaleDateString('es-PE'); }
+  const p = String(s).slice(0, 10).split('-');
+  return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : esc(s);
+}
+function money(n, mon) {
+  const v = Number(n || 0).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  return (mon === 'USD' ? 'US$ ' : 'S/ ') + v;
+}
+function sumPorMoneda(items, campo) {
+  const t = {};
+  items.forEach(i => { const m = i.moneda === 'USD' ? 'USD' : 'PEN'; t[m] = (t[m] || 0) + (Number(i[campo]) || 0); });
+  return t;
+}
+function fmtTotales(t) {
+  const parts = [];
+  if (t.PEN) parts.push(money(t.PEN, 'PEN'));
+  if (t.USD) parts.push(money(t.USD, 'USD'));
+  return parts.length ? parts.join(' + ') : 'S/ 0';
+}
+function urlSegura(u) {
+  u = String(u || '').trim();
+  if (!u) return '';
+  if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  try { const x = new URL(u); return (x.protocol === 'http:' || x.protocol === 'https:') ? x.href : ''; } catch { return ''; }
+}
+function arr(c, k) { return Array.isArray(c?.[k]) ? c[k] : []; }
+function getCli(id) { return clientes.find(c => c.id === id); }
+function crmEstado(c) {
+  const e = c?.estado;
+  if (CRM_ESTADOS[e]) return e;
+  if (e === 'activo') return 'cliente';
+  if (e === 'trial') return 'prospecto';
+  if (e === 'inactivo') return 'inactivo';
+  return 'prospecto';
+}
+function estadoCrmBadge(c) {
+  const e = CRM_ESTADOS[crmEstado(c)];
+  return `<span class="badge ${e.cls}">${e.label}</span>`;
+}
+function contactoPrincipal(c) {
+  const l = arr(c, 'contactos');
+  return l.find(x => x.principal) || l[0] || null;
+}
+function accionesPendientes(c) {
+  return arr(c, 'interacciones').filter(i => i.proximaAccion && !i.hecha);
+}
+function proximaAccion(c) {
+  const l = accionesPendientes(c).slice().sort((a, b) => (a.proximaFecha || '9999').localeCompare(b.proximaFecha || '9999'));
+  return l[0] || null;
+}
+function ultimaInteraccion(c) {
+  const l = arr(c, 'interacciones').slice().sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+  return l[0] || null;
+}
+function facturasPendientes(c) { return arr(c, 'facturas').filter(f => f.estado === 'pendiente'); }
+function cotsDeCliente(c) {
+  const vinc = new Set(arr(c, 'cotizacionesVinculadas'));
+  const n = norm(c.nombre);
+  return cotizaciones.filter(q => {
+    if (vinc.has(q.id)) return true;
+    const e = norm(q.empresa);
+    return e.length >= 3 && n && (n.includes(e) || e.includes(n));
+  });
+}
+function totalCot(q) { return (q.oneshotFinal || 0) + (q.setupFinal || 0); }
+
+async function crmUpdate(id, patch) {
+  try { await updateDoc(doc(db, 'clientes', id), patch); return true; }
+  catch (e) { console.error(e); showToast('No se pudo guardar: ' + (e.code || e.message), 'error'); return false; }
+}
+async function crmPush(id, key, item) {
+  const c = getCli(id); if (!c) return false;
+  return crmUpdate(id, { [key]: [...arr(c, key), item] });
+}
+async function crmMutate(id, key, itemId, fn) {
+  const c = getCli(id); if (!c) return false;
+  const list = arr(c, key).map(x => x.id === itemId ? fn(x) : x).filter(Boolean);
+  return crmUpdate(id, { [key]: list });
+}
+
+// ── Formulario genérico (modal) ─────────────────────────────────────────
+function fieldHTML(f) {
+  const id = 'crmf-' + f.id;
+  const v = f.value ?? '';
+  let ctl;
+  if (f.type === 'textarea') ctl = `<textarea id="${id}" rows="3" placeholder="${esc(f.placeholder || '')}" style="resize:vertical">${esc(v)}</textarea>`;
+  else if (f.type === 'select') ctl = `<select id="${id}">${f.options.map(([val, lab]) => `<option value="${esc(val)}" ${String(val) === String(v) ? 'selected' : ''}>${esc(lab)}</option>`).join('')}</select>`;
+  else if (f.type === 'checkbox') return `<div class="form-group"><label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="${id}" ${v ? 'checked' : ''} style="width:auto"> ${esc(f.label)}</label></div>`;
+  else ctl = `<input type="${f.type || 'text'}" id="${id}" value="${esc(v)}" placeholder="${esc(f.placeholder || '')}" ${f.type === 'number' ? 'step="0.01" min="0"' : ''}>`;
+  return `<div class="form-group"><label class="form-label">${esc(f.label)}${f.required ? ' *' : ''}</label>${ctl}</div>`;
+}
+function crmForm({ title, fields, saveLabel = 'Guardar', onSave }) {
+  document.getElementById('crm-form-title').textContent = title;
+  let html = '';
+  for (let i = 0; i < fields.length; i++) {
+    const f = fields[i], g = fields[i + 1];
+    if (f.half && g && g.half) { html += `<div class="form-row">${fieldHTML(f)}${fieldHTML(g)}</div>`; i++; }
+    else html += fieldHTML(f);
+  }
+  document.getElementById('crm-form-body').innerHTML = html;
+  const btn = document.getElementById('crm-form-save');
+  btn.textContent = saveLabel;
+  btn.onclick = async () => {
+    const vals = {};
+    for (const f of fields) {
+      const el = document.getElementById('crmf-' + f.id);
+      vals[f.id] = f.type === 'checkbox' ? el.checked : el.value.trim();
+      if (f.required && !vals[f.id]) { showToast(`Completa "${f.label}".`, 'error'); el.focus(); return; }
+    }
+    btn.disabled = true;
+    const ok = await onSave(vals);
+    btn.disabled = false;
+    if (ok !== false) closeModal('modal-crm-form');
+  };
+  openModal('modal-crm-form');
+}
+const opts = (obj) => Object.entries(obj).map(([k, v]) => [k, v.label || v]);
+
+// ── LISTA CRM ───────────────────────────────────────────────────────────
+function crmRender() {
+  const tb = document.getElementById('tabla-clientes');
+  if (!tb) return;
+  const q = norm(document.getElementById('search-clientes')?.value);
+  const fe = document.getElementById('crm-filtro-estado')?.value || '';
+
+  // Banner de carga inicial (LaFech / Azzorti)
+  const falta = [];
+  if (!clientes.some(c => norm(c.nombre).includes('lafech')) || clientes.some(c => norm(c.nombre).includes('lafech') && !arr(c, 'activos').length)) falta.push('LaFech');
+  if (!clientes.some(c => norm(c.nombre).includes('azzorti'))) falta.push('Azzorti');
+  const seed = document.getElementById('crm-seed');
+  if (seed) seed.innerHTML = falta.length ? `
+    <div class="card mb-4" style="border-color:var(--accent)"><div class="card-body" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div style="font-size:13px"><strong>Carga inicial pendiente:</strong> ${falta.join(' y ')}. Los creo con sus contactos${falta.includes('LaFech') ? ' y los activos que Etrazia desarrolló para LaFech' : ''} (puedes editarlos después).</div>
+      <button class="btn btn-primary btn-sm" onclick="crmSeed()">Cargar ahora</button>
+    </div></div>` : '';
+
+  const list = clientes.filter(c => {
+    if (fe && crmEstado(c) !== fe) return false;
+    if (!q) return true;
+    const hay = [c.nombre, c.ruc, c.email, ...arr(c, 'contactos').map(x => x.nombre + ' ' + x.cargo + ' ' + x.email)].map(norm).join(' ');
+    return hay.includes(q);
+  }).sort((a, b) => norm(a.nombre).localeCompare(norm(b.nombre)));
+
+  if (!list.length) {
+    tb.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text1)">${clientes.length ? 'Sin resultados para ese filtro.' : 'Aún no hay clientes en el CRM.'}</td></tr>`;
+    return;
+  }
+  const h = hoy();
+  tb.innerHTML = list.map(c => {
+    const cp = contactoPrincipal(c), ui = ultimaInteraccion(c), pa = proximaAccion(c);
+    const pend = facturasPendientes(c);
+    const vencida = pa && pa.proximaFecha && pa.proximaFecha < h;
+    return `<tr class="cot-row" onclick="openCrm('${c.id}')">
+      <td><div class="td-name">${esc(c.nombre)}</div><div class="td-mono">${cp ? esc(cp.nombre) + (cp.cargo ? ' · ' + esc(cp.cargo) : '') : 'Sin contacto'}</div></td>
+      <td class="td-mono">${esc(c.ruc) || '—'}</td>
+      <td>${estadoCrmBadge(c)}</td>
+      <td class="td-mono">${ui ? fmtFecha(ui.fecha) + ' · ' + (INT_TIPOS[ui.tipo]?.label || 'Otro') : '—'}</td>
+      <td style="font-size:12px;${vencida ? 'color:var(--red)' : ''}">${pa ? esc(pa.proximaAccion) + `<div class="td-mono">${fmtFecha(pa.proximaFecha)}${vencida ? ' · vencida' : ''}</div>` : '—'}</td>
+      <td class="td-mono">${cotsDeCliente(c).length}</td>
+      <td class="td-mono" style="${pend.length ? 'color:var(--yellow)' : ''}">${pend.length ? fmtTotales(sumPorMoneda(pend, 'monto')) : '—'}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openCrm('${c.id}')">Abrir</button></td>
+    </tr>`;
+  }).join('');
+}
+window.crmRender = crmRender;
+
+window.crmNuevoCliente = function () {
+  crmForm({
+    title: 'Nuevo cliente / prospecto',
+    saveLabel: 'Crear',
+    fields: [
+      { id: 'nombre', label: 'Empresa o nombre', required: true },
+      { id: 'ruc', label: 'RUC', half: true },
+      { id: 'estado', label: 'Estado', type: 'select', options: opts(CRM_ESTADOS), value: 'prospecto', half: true },
+      { id: 'email', label: 'Correo general', type: 'email', half: true },
+      { id: 'telefono', label: 'Teléfono general', half: true },
+      { id: 'web', label: 'Sitio web' },
+      { id: 'notas', label: 'Notas', type: 'textarea' },
+    ],
+    onSave: async v => {
+      try {
+        await addDoc(collection(db, 'clientes'), {
+          nombre: v.nombre, ruc: v.ruc, estado: v.estado, email: v.email, telefono: v.telefono, web: urlSegura(v.web), notas: v.notas,
+          contactos: [], interacciones: [], documentos: [], activos: [], facturas: [], cotizacionesVinculadas: [],
+          createdAt: serverTimestamp(),
+        });
+        showToast(`"${v.nombre}" creado.`, 'success');
+        return true;
+      } catch (e) { console.error(e); showToast('No se pudo crear: ' + (e.code || e.message), 'error'); return false; }
+    },
+  });
+};
+
+window.crmEditarCliente = function (id) {
+  const c = getCli(id); if (!c) return;
+  crmForm({
+    title: 'Editar datos',
+    fields: [
+      { id: 'nombre', label: 'Empresa o nombre', required: true, value: c.nombre },
+      { id: 'ruc', label: 'RUC', value: c.ruc, half: true },
+      { id: 'estado', label: 'Estado', type: 'select', options: opts(CRM_ESTADOS), value: crmEstado(c), half: true },
+      { id: 'email', label: 'Correo general', type: 'email', value: c.email, half: true },
+      { id: 'telefono', label: 'Teléfono general', value: c.telefono, half: true },
+      { id: 'web', label: 'Sitio web', value: c.web },
+      { id: 'notas', label: 'Notas', type: 'textarea', value: c.notas },
+    ],
+    onSave: v => crmUpdate(id, { nombre: v.nombre, ruc: v.ruc, estado: v.estado, email: v.email, telefono: v.telefono, web: urlSegura(v.web), notas: v.notas }),
+  });
+};
+
+window.crmEliminarCliente = async function (id) {
+  const c = getCli(id); if (!c) return;
+  if (!confirm(`¿Eliminar "${c.nombre}" y todo su historial (interacciones, documentos, activos y facturas)? Esta acción no se puede deshacer.`)) return;
+  try { await deleteDoc(doc(db, 'clientes', id)); showToast('Cliente eliminado.', 'success'); crmBack(); }
+  catch (e) { showToast('No se pudo eliminar: ' + (e.code || e.message), 'error'); }
+};
+
+// ── FICHA DEL CLIENTE ───────────────────────────────────────────────────
+window.openCrm = function (id) {
+  crmCurrentId = id; crmTab = 'resumen';
+  document.getElementById('crm-list').style.display = 'none';
+  document.getElementById('crm-detail').style.display = 'block';
+  renderFicha();
+  const ct = document.getElementById('content'); if (ct) ct.scrollTop = 0;
+};
+window.crmBack = function () {
+  crmCurrentId = null;
+  const l = document.getElementById('crm-list'), d = document.getElementById('crm-detail');
+  if (l) l.style.display = 'block';
+  if (d) d.style.display = 'none';
+  crmRender();
+};
+window.crmGo = function (id) {
+  navigate('clientes', document.querySelector('.nav-item[data-view="clientes"]'));
+  openCrm(id);
+};
+window.crmSetTab = function (t) { crmTab = t; renderFicha(); };
+
+function renderFicha() {
+  const c = getCli(crmCurrentId);
+  const box = document.getElementById('crm-detail');
+  if (!c) { crmBack(); return; }
+  const cots = cotsDeCliente(c);
+  const tabs = [
+    ['resumen', 'Resumen', ''],
+    ['interacciones', 'Interacciones', arr(c, 'interacciones').length],
+    ['cotizaciones', 'Cotizaciones', cots.length],
+    ['documentos', 'Documentos', arr(c, 'documentos').length],
+    ['activos', 'Activos', arr(c, 'activos').length],
+    ['facturacion', 'Facturación', arr(c, 'facturas').length],
+  ];
+  const body = { resumen: tabResumen, interacciones: tabInteracciones, cotizaciones: tabCotizaciones, documentos: tabDocumentos, activos: tabActivos, facturacion: tabFacturacion }[crmTab](c, cots);
+  box.innerHTML = `
+    <div class="section-header mb-4" style="align-items:flex-start;gap:12px;flex-wrap:wrap">
+      <div>
+        <button class="btn btn-ghost btn-sm" onclick="crmBack()" style="margin-bottom:10px">← Todos los clientes</button>
+        <div class="section-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">${esc(c.nombre)} ${estadoCrmBadge(c)}</div>
+        <div class="section-sub">${[c.ruc ? 'RUC ' + esc(c.ruc) : '', esc(c.email || ''), c.web && urlSegura(c.web) ? `<a href="${esc(urlSegura(c.web))}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(c.web.replace(/^https?:\/\//, ''))}</a>` : ''].filter(Boolean).join(' · ') || 'Sin datos de contacto general'}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="crmEditarCliente('${c.id}')">Editar datos</button>
+        <button class="btn btn-danger btn-sm" onclick="crmEliminarCliente('${c.id}')">Eliminar</button>
+      </div>
+    </div>
+    <div class="crm-tabs">${tabs.map(([k, l, n]) => `<button class="crm-tab ${crmTab === k ? 'active' : ''}" onclick="crmSetTab('${k}')">${l}${n !== '' ? ` <span class="crm-count">${n}</span>` : ''}</button>`).join('')}</div>
+    ${body}`;
+}
+
+function vacio(msg) { return `<div style="padding:28px;text-align:center;color:var(--text1);font-size:13px">${msg}</div>`; }
+function kv(l, v) { return `<div class="crm-kv"><span style="color:var(--text1)">${l}</span><span style="text-align:right">${v || '—'}</span></div>`; }
+
+// — Resumen —
+function tabResumen(c, cots) {
+  const aprob = cots.filter(q => q.estado === 'aprobada');
+  const pend = facturasPendientes(c);
+  const act = arr(c, 'activos');
+  const valorAct = sumPorMoneda(act.filter(a => a.valor), 'valor');
+  const contactos = arr(c, 'contactos');
+  const tel = c.telefono ? `<a href="https://wa.me/${esc(String(c.telefono).replace(/\D/g, ''))}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(c.telefono)}</a>` : '';
+  return `
+    <div class="grid-4 mb-4">
+      <div class="stat-card accent"><div class="stat-label">Interacciones</div><div class="stat-value">${arr(c, 'interacciones').length}</div><div class="stat-sub">${accionesPendientes(c).length} acción(es) pendiente(s)</div></div>
+      <div class="stat-card blue"><div class="stat-label">Cotizaciones</div><div class="stat-value">${cots.length}</div><div class="stat-sub">${aprob.length} aprobada(s)</div></div>
+      <div class="stat-card green"><div class="stat-label">Por cobrar</div><div class="stat-value" style="font-size:20px">${pend.length ? fmtTotales(sumPorMoneda(pend, 'monto')) : 'S/ 0'}</div><div class="stat-sub">${pend.length} factura(s) pendiente(s)</div></div>
+      <div class="stat-card red"><div class="stat-label">Activos entregados</div><div class="stat-value">${act.length}</div><div class="stat-sub">${Object.keys(valorAct).length ? 'Valor ref. ' + fmtTotales(valorAct) : 'sin valor referencial'}</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-header"><div class="card-title">Datos</div></div><div class="card-body">
+        ${kv('Estado', CRM_ESTADOS[crmEstado(c)].label)}${kv('RUC', esc(c.ruc))}${kv('Correo', esc(c.email))}${kv('Teléfono', tel)}
+        ${c.notas ? `<div style="margin-top:12px;padding:12px;background:var(--bg2);border-radius:var(--radius-sm);font-size:12px;color:var(--text1);white-space:pre-wrap">${esc(c.notas)}</div>` : ''}
+      </div></div>
+      <div class="card"><div class="card-header"><div class="card-title">Contactos</div><button class="btn btn-ghost btn-sm" onclick="crmContactoForm('${c.id}')">+ Agregar</button></div><div class="card-body" style="padding:8px 16px">
+        ${contactos.length ? contactos.map(x => `
+          <div class="crm-item">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:500;font-size:13px">${esc(x.nombre)} ${x.principal ? '<span class="badge badge-accent" style="margin-left:6px">Principal</span>' : ''}</div>
+              <div style="font-size:12px;color:var(--text1)">${esc(x.cargo || '')}</div>
+              <div class="td-mono" style="margin-top:4px">${x.telefono ? `<a href="https://wa.me/${esc(String(x.telefono).replace(/\D/g, ''))}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(x.telefono)}</a>` : ''}${x.telefono && x.email ? ' · ' : ''}${x.email ? `<a href="mailto:${esc(x.email)}" style="color:var(--accent)">${esc(x.email)}</a>` : ''}</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:flex-start"><button class="btn btn-ghost btn-sm" onclick="crmContactoForm('${c.id}','${x.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="crmQuitar('${c.id}','contactos','${x.id}')">✕</button></div>
+          </div>`).join('') : vacio('Sin contactos todavía.')}
+      </div></div>
+    </div>`;
+}
+window.crmContactoForm = function (cid, xid) {
+  const c = getCli(cid); const x = xid ? arr(c, 'contactos').find(i => i.id === xid) : null;
+  crmForm({
+    title: x ? 'Editar contacto' : 'Nuevo contacto',
+    fields: [
+      { id: 'nombre', label: 'Nombre', required: true, value: x?.nombre },
+      { id: 'cargo', label: 'Cargo', value: x?.cargo },
+      { id: 'telefono', label: 'Teléfono / WhatsApp', value: x?.telefono, half: true },
+      { id: 'email', label: 'Correo', type: 'email', value: x?.email, half: true },
+      { id: 'principal', label: 'Es el contacto principal', type: 'checkbox', value: x?.principal || (!x && !arr(c, 'contactos').length) },
+    ],
+    onSave: async v => {
+      let list = arr(c, 'contactos');
+      if (v.principal) list = list.map(i => ({ ...i, principal: false }));
+      const item = { id: x?.id || uid(), nombre: v.nombre, cargo: v.cargo, telefono: v.telefono, email: v.email, principal: !!v.principal };
+      list = x ? list.map(i => i.id === x.id ? item : i) : [...list, item];
+      return crmUpdate(cid, { contactos: list });
+    },
+  });
+};
+window.crmQuitar = async function (cid, key, itemId) {
+  if (!confirm('¿Eliminar este registro?')) return;
+  await crmMutate(cid, key, itemId, () => null);
+};
+
+// — Interacciones —
+function tabInteracciones(c) {
+  const l = arr(c, 'interacciones').slice().sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+  const h = hoy();
+  return `<div class="card"><div class="card-header"><div class="card-title">Historial de interacciones</div><button class="btn btn-primary btn-sm" onclick="crmInteraccionForm('${c.id}')">+ Registrar interacción</button></div>
+    <div class="card-body" style="padding:8px 16px">${l.length ? l.map(i => {
+      const t = INT_TIPOS[i.tipo] || INT_TIPOS.otro;
+      const vencida = i.proximaAccion && !i.hecha && i.proximaFecha && i.proximaFecha < h;
+      return `<div class="crm-item">
+        <div style="font-size:18px;width:28px;text-align:center">${t.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;white-space:pre-wrap">${esc(i.resumen)}</div>
+          <div class="td-mono" style="margin-top:4px">${fmtFecha(i.fecha)} · ${t.label}${i.con ? ' · con ' + esc(i.con) : ''}</div>
+          ${i.proximaAccion ? `<div style="margin-top:6px;font-size:12px;${i.hecha ? 'color:var(--text2);text-decoration:line-through' : vencida ? 'color:var(--red)' : 'color:var(--yellow)'}">➜ ${esc(i.proximaAccion)}${i.proximaFecha ? ' · ' + fmtFecha(i.proximaFecha) : ''}${vencida ? ' (vencida)' : ''}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:6px;align-items:flex-start">
+          ${i.proximaAccion && !i.hecha ? `<button class="btn btn-green btn-sm" onclick="crmAccionHecha('${c.id}','${i.id}')">✓ Hecha</button>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="crmQuitar('${c.id}','interacciones','${i.id}')">✕</button>
+        </div>
+      </div>`;
+    }).join('') : vacio('Aún no registraste interacciones con este cliente.')}</div></div>`;
+}
+window.crmInteraccionForm = function (cid) {
+  const c = getCli(cid);
+  crmForm({
+    title: 'Registrar interacción',
+    fields: [
+      { id: 'fecha', label: 'Fecha', type: 'date', value: hoy(), half: true },
+      { id: 'tipo', label: 'Tipo', type: 'select', options: opts(INT_TIPOS), half: true },
+      { id: 'con', label: 'Con quién', placeholder: 'Ej: ' + (contactoPrincipal(c)?.nombre || 'nombre del contacto'), value: contactoPrincipal(c)?.nombre },
+      { id: 'resumen', label: 'Qué se habló / resultado', type: 'textarea', required: true },
+      { id: 'proximaAccion', label: 'Próxima acción (opcional)', placeholder: 'Ej: Enviar propuesta' },
+      { id: 'proximaFecha', label: 'Fecha de la próxima acción', type: 'date' },
+    ],
+    onSave: v => crmPush(cid, 'interacciones', { id: uid(), fecha: v.fecha || hoy(), tipo: v.tipo, con: v.con, resumen: v.resumen, proximaAccion: v.proximaAccion, proximaFecha: v.proximaAccion ? v.proximaFecha : '', hecha: false }),
+  });
+};
+window.crmAccionHecha = function (cid, iid) { return crmMutate(cid, 'interacciones', iid, i => ({ ...i, hecha: true })); };
+
+// — Cotizaciones —
+function tabCotizaciones(c, cots) {
+  const vinc = new Set(arr(c, 'cotizacionesVinculadas'));
+  const lab = { borrador: ['Borrador', 'badge'], enviada: ['Enviada', 'badge-blue'], aprobada: ['Aprobada', 'badge-green'], rechazada: ['Rechazada', 'badge-red'] };
+  const aprob = cots.filter(q => q.estado === 'aprobada');
+  return `
+    <div class="card mb-4"><div class="card-header"><div class="card-title">File digital · Cotizaciones aprobadas</div></div><div class="card-body" style="padding:8px 16px">
+      ${aprob.length ? aprob.map(q => filaCot(c, q, vinc, lab)).join('') : vacio('Cuando una cotización de este cliente pase a "Aprobada" aparecerá aquí.')}
+    </div></div>
+    <div class="card"><div class="card-header"><div class="card-title">Todas las cotizaciones</div>
+      <div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" onclick="crmVincularCot('${c.id}')">Vincular existente</button><button class="btn btn-primary btn-sm" onclick="crmNuevaCot('${c.id}')">+ Nueva cotización</button></div></div>
+      <div class="card-body" style="padding:8px 16px">${cots.filter(q => q.estado !== 'aprobada').length ? cots.filter(q => q.estado !== 'aprobada').map(q => filaCot(c, q, vinc, lab)).join('') : vacio('Sin otras cotizaciones. Las que tengan el mismo nombre de empresa se vinculan solas.')}</div></div>`;
+}
+function filaCot(c, q, vinc, lab) {
+  const l = lab[q.estado] || [q.estado, 'badge-accent'];
+  return `<div class="crm-item">
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:500"><span class="cot-number">${esc(q.numero || '—')}</span> · ${esc(q.nombre || '')}</div>
+      <div class="td-mono" style="margin-top:4px">${fmtFecha(q.fecha)}${totalCot(q) ? ' · ' + money(totalCot(q)) : ''}${q.mesFinal ? ' · ' + money(q.mesFinal) + '/mes' : ''}</div>
+    </div>
+    <span class="badge ${l[1]}">${l[0]}</span>
+    <div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="verCotizacion('${q.id}')">Ver</button>${vinc.has(q.id) ? `<button class="btn btn-danger btn-sm" title="Quitar vínculo manual" onclick="crmDesvincularCot('${c.id}','${q.id}')">✕</button>` : ''}</div>
+  </div>`;
+}
+window.crmVincularCot = function (cid) {
+  const c = getCli(cid);
+  const ya = new Set(cotsDeCliente(c).map(q => q.id));
+  const libres = cotizaciones.filter(q => !ya.has(q.id) && !String(q.id).startsWith('demo_'));
+  if (!libres.length) { showToast('No hay otras cotizaciones para vincular.', 'info'); return; }
+  crmForm({
+    title: 'Vincular cotización a ' + c.nombre,
+    saveLabel: 'Vincular',
+    fields: [{ id: 'cot', label: 'Cotización', type: 'select', options: libres.map(q => [q.id, `${q.numero || '—'} · ${q.empresa || q.nombre || ''}`]) }],
+    onSave: v => crmUpdate(cid, { cotizacionesVinculadas: [...new Set([...arr(c, 'cotizacionesVinculadas'), v.cot])] }),
+  });
+};
+window.crmDesvincularCot = function (cid, qid) {
+  const c = getCli(cid);
+  return crmUpdate(cid, { cotizacionesVinculadas: arr(c, 'cotizacionesVinculadas').filter(x => x !== qid) });
+};
+window.crmNuevaCot = function (cid) {
+  const c = getCli(cid); const cp = contactoPrincipal(c) || {};
+  navigate('cotizador', null);
+  const set = (id, v) => { const el = document.getElementById(id); if (el && v) { el.value = v; el.dispatchEvent(new Event('input')); } };
+  set('f-empresa', c.nombre); set('f-nombre', cp.nombre); set('f-email', cp.email || c.email); set('f-telefono', cp.telefono || c.telefono);
+};
+
+// — Documentos —
+function tabDocumentos(c) {
+  const l = arr(c, 'documentos').slice().sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+  const carpeta = urlSegura(c.carpetaDrive);
+  return `<div class="card"><div class="card-header"><div class="card-title">Documentos del cliente</div>
+      <div style="display:flex;gap:8px">${carpeta ? `<a class="btn btn-ghost btn-sm" href="${esc(carpeta)}" target="_blank" rel="noopener">Abrir carpeta en Drive ↗</a>` : ''}
+      <button class="btn btn-ghost btn-sm" onclick="crmCarpetaForm('${c.id}')">${carpeta ? 'Cambiar' : 'Enlazar'} carpeta de Drive</button>
+      <button class="btn btn-primary btn-sm" onclick="crmDocumentoForm('${c.id}')">+ Agregar documento</button></div></div>
+    <div class="card-body" style="padding:8px 16px">
+      <div style="font-size:12px;color:var(--text1);padding:10px 0">Sube el archivo (contrato, propuesta firmada, informe…) a la carpeta del cliente en Google Drive, copia el enlace para compartir y regístralo aquí.</div>
+      ${l.length ? l.map(d => `<div class="crm-item">
+        <div style="font-size:18px;width:28px;text-align:center">📄</div>
+        <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${esc(d.nombre)}</div><div class="td-mono" style="margin-top:4px">${esc(d.tipo)} · ${fmtFecha(d.fecha)}</div></div>
+        <div style="display:flex;gap:6px">${urlSegura(d.url) ? `<a class="btn btn-ghost btn-sm" href="${esc(urlSegura(d.url))}" target="_blank" rel="noopener">Abrir ↗</a>` : ''}<button class="btn btn-danger btn-sm" onclick="crmQuitar('${c.id}','documentos','${d.id}')">✕</button></div>
+      </div>`).join('') : vacio('Todavía no registraste documentos.')}
+    </div></div>`;
+}
+window.crmCarpetaForm = function (cid) {
+  const c = getCli(cid);
+  crmForm({
+    title: 'Carpeta del cliente en Drive',
+    fields: [{ id: 'url', label: 'Enlace de la carpeta', value: c.carpetaDrive, placeholder: 'https://drive.google.com/drive/folders/…' }],
+    onSave: v => crmUpdate(cid, { carpetaDrive: urlSegura(v.url) }),
+  });
+};
+window.crmDocumentoForm = function (cid) {
+  crmForm({
+    title: 'Agregar documento',
+    fields: [
+      { id: 'nombre', label: 'Nombre del documento', required: true, placeholder: 'Ej: Contrato de servicio 2026' },
+      { id: 'tipo', label: 'Tipo', type: 'select', options: DOC_TIPOS.map(t => [t, t]), half: true },
+      { id: 'fecha', label: 'Fecha', type: 'date', value: hoy(), half: true },
+      { id: 'url', label: 'Enlace (Drive u otro)', required: true, placeholder: 'https://drive.google.com/…' },
+    ],
+    onSave: v => {
+      const u = urlSegura(v.url);
+      if (!u) { showToast('El enlace no es válido.', 'error'); return false; }
+      return crmPush(cid, 'documentos', { id: uid(), nombre: v.nombre, tipo: v.tipo, fecha: v.fecha || hoy(), url: u });
+    },
+  });
+};
+
+// — Activos —
+function tabActivos(c) {
+  const l = arr(c, 'activos').slice().sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+  const total = sumPorMoneda(l.filter(a => a.valor), 'valor');
+  return `<div class="card"><div class="card-header"><div class="card-title">Activos desarrollados para el cliente</div><button class="btn btn-primary btn-sm" onclick="crmActivoForm('${c.id}')">+ Registrar activo</button></div>
+    <div class="card-body" style="padding:8px 16px">
+      <div style="font-size:12px;color:var(--text1);padding:10px 0">${crmEstado(c) === 'aliado' ? 'Trabajo realizado sin costo. El valor referencial muestra cuánto habría costado.' : 'Entregables y sistemas construidos por Etrazia para este cliente.'}${Object.keys(total).length ? ` <strong style="color:var(--accent)">Valor referencial total: ${fmtTotales(total)}</strong>` : ''}</div>
+      ${l.length ? l.map(a => `<div class="crm-item">
+        <div style="font-size:18px;width:28px;text-align:center">🧩</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:500">${esc(a.nombre)} <span class="badge badge-blue" style="margin-left:6px">${esc(a.tipo)}</span></div>
+          ${a.notas ? `<div style="font-size:12px;color:var(--text1);margin-top:3px">${esc(a.notas)}</div>` : ''}
+          <div class="td-mono" style="margin-top:4px">${a.fecha ? fmtFecha(a.fecha) + ' · ' : ''}${a.valor ? 'Valor ref. ' + money(a.valor, a.moneda) : 'Sin valor referencial'}${urlSegura(a.url) ? ` · <a href="${esc(urlSegura(a.url))}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(urlSegura(a.url).replace(/^https?:\/\//, ''))} ↗</a>` : ''}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:flex-start"><button class="btn btn-ghost btn-sm" onclick="crmActivoForm('${c.id}','${a.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="crmQuitar('${c.id}','activos','${a.id}')">✕</button></div>
+      </div>`).join('') : vacio('Aún no registraste activos para este cliente.')}
+    </div></div>`;
+}
+window.crmActivoForm = function (cid, aid) {
+  const c = getCli(cid); const a = aid ? arr(c, 'activos').find(i => i.id === aid) : null;
+  crmForm({
+    title: a ? 'Editar activo' : 'Registrar activo',
+    fields: [
+      { id: 'nombre', label: 'Nombre', required: true, value: a?.nombre, placeholder: 'Ej: Panel de inventario' },
+      { id: 'tipo', label: 'Tipo', type: 'select', options: ACTIVO_TIPOS.map(t => [t, t]), value: a?.tipo, half: true },
+      { id: 'fecha', label: 'Fecha de entrega', type: 'date', value: a?.fecha, half: true },
+      { id: 'url', label: 'Enlace (opcional)', value: a?.url },
+      { id: 'valor', label: 'Valor referencial (opcional)', type: 'number', value: a?.valor, half: true },
+      { id: 'moneda', label: 'Moneda', type: 'select', options: [['PEN', 'Soles (S/)'], ['USD', 'Dólares (US$)']], value: a?.moneda || 'PEN', half: true },
+      { id: 'notas', label: 'Notas', type: 'textarea', value: a?.notas },
+    ],
+    onSave: async v => {
+      const item = { id: a?.id || uid(), nombre: v.nombre, tipo: v.tipo, fecha: v.fecha, url: urlSegura(v.url), valor: v.valor ? Number(v.valor) : 0, moneda: v.moneda, notas: v.notas };
+      return a ? crmMutate(cid, 'activos', a.id, () => item) : crmPush(cid, 'activos', item);
+    },
+  });
+};
+
+// — Facturación (en la ficha) —
+function tabFacturacion(c) {
+  const l = arr(c, 'facturas').slice().sort((a, b) => (b.fechaEmision || '').localeCompare(a.fechaEmision || ''));
+  return `<div class="card"><div class="card-header"><div class="card-title">Facturas del cliente</div><button class="btn btn-primary btn-sm" onclick="crmFacturaForm('${c.id}')">+ Registrar factura</button></div>
+    <div class="card-body" style="padding:8px 16px">
+      <div style="font-size:12px;color:var(--text1);padding:10px 0">Emite la factura en SUNAT (SOL) y regístrala aquí para controlar su cobro.${crmEstado(c) === 'aliado' ? ' LaFech es aliado: no se factura, pero puedes dejar constancia como "Cortesía".' : ''}</div>
+      ${l.length ? l.map(f => filaFactura(c.id, f, false)).join('') : vacio('Sin facturas registradas.')}
+    </div></div>`;
+}
+function filaFactura(cid, f) {
+  const e = FAC_ESTADOS[f.estado] || FAC_ESTADOS.pendiente;
+  return `<div class="crm-item">
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:500">${esc(f.numero || 'Sin número')} · ${esc(f.concepto)}</div>
+      <div class="td-mono" style="margin-top:4px">Emitida ${fmtFecha(f.fechaEmision)}${f.estado === 'pagada' ? ' · Cobrada ' + fmtFecha(f.fechaPago) : ''}</div>
+    </div>
+    <div class="td-mono" style="font-size:13px;color:var(--text0)">${money(f.monto, f.moneda)}</div>
+    <span class="badge ${e.cls}">${e.label}</span>
+    <div style="display:flex;gap:6px">${f.estado === 'pendiente' ? `<button class="btn btn-green btn-sm" onclick="crmFacCobrar('${cid}','${f.id}')">✓ Cobrada</button>` : ''}<button class="btn btn-ghost btn-sm" onclick="crmFacturaForm('${cid}','${f.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="crmQuitar('${cid}','facturas','${f.id}')">✕</button></div>
+  </div>`;
+}
+window.crmFacCobrar = function (cid, fid) { return crmMutate(cid, 'facturas', fid, f => ({ ...f, estado: 'pagada', fechaPago: f.fechaPago || hoy() })); };
+window.crmFacturaForm = function (cid, fid) {
+  const c0 = cid ? getCli(cid) : null;
+  const f = fid ? arr(c0, 'facturas').find(i => i.id === fid) : null;
+  const campos = [];
+  if (!cid) campos.push({ id: 'cliente', label: 'Cliente', type: 'select', options: clientes.slice().sort((a, b) => norm(a.nombre).localeCompare(norm(b.nombre))).map(c => [c.id, c.nombre]), required: true });
+  campos.push(
+    { id: 'numero', label: 'N° de comprobante (SUNAT)', value: f?.numero, placeholder: 'F001-00001', half: true },
+    { id: 'estado', label: 'Estado', type: 'select', options: opts(FAC_ESTADOS), value: f?.estado || 'pendiente', half: true },
+    { id: 'concepto', label: 'Concepto', required: true, value: f?.concepto, placeholder: 'Ej: Taller de Habilidades Blandas' },
+    { id: 'monto', label: 'Monto (con IGV)', type: 'number', value: f?.monto, required: true, half: true },
+    { id: 'moneda', label: 'Moneda', type: 'select', options: [['PEN', 'Soles (S/)'], ['USD', 'Dólares (US$)']], value: f?.moneda || 'PEN', half: true },
+    { id: 'fechaEmision', label: 'Fecha de emisión', type: 'date', value: f?.fechaEmision || hoy(), half: true },
+    { id: 'fechaPago', label: 'Fecha de cobro', type: 'date', value: f?.fechaPago, half: true },
+  );
+  crmForm({
+    title: f ? 'Editar factura' : 'Registrar factura',
+    fields: campos,
+    onSave: async v => {
+      const target = cid || v.cliente;
+      const monto = Number(v.monto);
+      if (Number.isNaN(monto) || monto < 0) { showToast('Monto inválido.', 'error'); return false; }
+      const item = { id: f?.id || uid(), numero: v.numero, concepto: v.concepto, monto, moneda: v.moneda, fechaEmision: v.fechaEmision, estado: v.estado, fechaPago: v.estado === 'pagada' ? (v.fechaPago || hoy()) : '' };
+      return f ? crmMutate(target, 'facturas', f.id, () => item) : crmPush(target, 'facturas', item);
+    },
+  });
+};
+
+// ── VISTA FACTURACIÓN (todas las facturas) ──────────────────────────────
+function renderFacturacion() {
+  const tb = document.getElementById('tabla-facturas');
+  if (!tb) return;
+  const todas = [];
+  clientes.forEach(c => arr(c, 'facturas').forEach(f => todas.push({ ...f, cid: c.id, cliente: c.nombre })));
+  const vivas = todas.filter(f => f.estado === 'pendiente' || f.estado === 'pagada');
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('fac-emitido', fmtTotales(sumPorMoneda(vivas, 'monto')));
+  set('fac-cobrado', fmtTotales(sumPorMoneda(todas.filter(f => f.estado === 'pagada'), 'monto')));
+  set('fac-pendiente', fmtTotales(sumPorMoneda(todas.filter(f => f.estado === 'pendiente'), 'monto')));
+  set('fac-pendiente-sub', `${todas.filter(f => f.estado === 'pendiente').length} factura(s) por cobrar`);
+
+  const q = norm(document.getElementById('search-facturas')?.value);
+  const fe = document.getElementById('fac-filtro-estado')?.value || '';
+  const list = todas.filter(f => (!fe || f.estado === fe) && (!q || norm(f.cliente + ' ' + f.numero + ' ' + f.concepto).includes(q)))
+    .sort((a, b) => (b.fechaEmision || '').localeCompare(a.fechaEmision || ''));
+  if (!list.length) { tb.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text1)">${todas.length ? 'Sin resultados.' : 'Aún no registraste facturas. Emítelas en SUNAT (SOL) y regístralas aquí.'}</td></tr>`; return; }
+  tb.innerHTML = list.map(f => {
+    const e = FAC_ESTADOS[f.estado] || FAC_ESTADOS.pendiente;
+    return `<tr>
+      <td class="td-mono">${fmtFecha(f.fechaEmision)}</td>
+      <td><a href="#" onclick="event.preventDefault();crmGo('${f.cid}')" style="color:var(--text0)">${esc(f.cliente)}</a></td>
+      <td class="td-mono">${esc(f.numero) || '—'}</td>
+      <td style="font-size:12px;color:var(--text1)">${esc(f.concepto)}</td>
+      <td class="td-mono">${money(f.monto, f.moneda)}</td>
+      <td><span class="badge ${e.cls}">${e.label}</span></td>
+      <td class="td-mono">${f.estado === 'pagada' ? fmtFecha(f.fechaPago) : '—'}</td>
+      <td><div style="display:flex;gap:6px">${f.estado === 'pendiente' ? `<button class="btn btn-green btn-sm" onclick="crmFacCobrar('${f.cid}','${f.id}')">✓ Cobrada</button>` : ''}<button class="btn btn-ghost btn-sm" onclick="crmFacturaForm('${f.cid}','${f.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="crmQuitar('${f.cid}','facturas','${f.id}')">✕</button></div></td>
+    </tr>`;
+  }).join('');
+}
+window.renderFacturacion = renderFacturacion;
+
+// ── DASHBOARD ───────────────────────────────────────────────────────────
+function renderDashboard() {
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const est = c => crmEstado(c);
+  const cartera = clientes.filter(c => est(c) === 'cliente' || est(c) === 'aliado').length;
+  set('dash-clientes', cartera);
+  set('dash-clientes-sub', `${clientes.filter(c => est(c) === 'prospecto' || est(c) === 'conversacion').length} prospecto(s) · ${clientes.filter(c => est(c) === 'aliado').length} aliado(s)`);
+
+  const aprob = cotizaciones.filter(q => q.estado === 'aprobada');
+  set('dash-cot', aprob.length);
+  set('dash-cot-sub', `${cotizaciones.filter(q => q.estado === 'enviada').length} enviada(s) · ${money(aprob.reduce((a, q) => a + totalCot(q), 0))} aprobado`);
+
+  const pend = [];
+  clientes.forEach(c => facturasPendientes(c).forEach(f => pend.push(f)));
+  set('dash-cobrar', pend.length ? fmtTotales(sumPorMoneda(pend, 'monto')) : 'S/ 0');
+  set('dash-cobrar-sub', `${pend.length} factura(s) por cobrar`);
+
+  const h = hoy();
+  const acciones = [];
+  clientes.forEach(c => accionesPendientes(c).forEach(i => acciones.push({ ...i, cid: c.id, cliente: c.nombre })));
+  acciones.sort((a, b) => (a.proximaFecha || '9999').localeCompare(b.proximaFecha || '9999'));
+  const venc = acciones.filter(a => a.proximaFecha && a.proximaFecha < h).length;
+  set('dash-acciones', acciones.length);
+  set('dash-acciones-sub', `${venc} vencida(s)`);
+
+  const bp = document.getElementById('dash-proximas');
+  if (bp) bp.innerHTML = acciones.length ? acciones.slice(0, 6).map(a => {
+    const v = a.proximaFecha && a.proximaFecha < h;
+    return `<div class="activity-item" style="cursor:pointer" onclick="crmGo('${a.cid}')">
+      <div class="activity-dot" style="background:${v ? 'var(--red-bg)' : 'var(--yellow-bg)'}">➜</div>
+      <div class="activity-text"><strong>${esc(a.cliente)}</strong> — ${esc(a.proximaAccion)}<br><span class="activity-time">${fmtFecha(a.proximaFecha)}${v ? ' · vencida' : ''}</span></div></div>`;
+  }).join('') : vacio('No hay acciones pendientes.');
+
+  const ints = [];
+  clientes.forEach(c => arr(c, 'interacciones').forEach(i => ints.push({ ...i, cid: c.id, cliente: c.nombre })));
+  ints.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+  const bu = document.getElementById('dash-ultimas');
+  if (bu) bu.innerHTML = ints.length ? ints.slice(0, 6).map(i => {
+    const t = INT_TIPOS[i.tipo] || INT_TIPOS.otro;
+    const r = String(i.resumen || ''); 
+    return `<div class="activity-item" style="cursor:pointer" onclick="crmGo('${i.cid}')">
+      <div class="activity-dot" style="background:var(--accent-dim)">${t.icon}</div>
+      <div class="activity-text"><strong>${esc(i.cliente)}</strong> — ${esc(r.length > 90 ? r.slice(0, 90) + '…' : r)}<br><span class="activity-time">${fmtFecha(i.fecha)} · ${t.label}</span></div></div>`;
+  }).join('') : vacio('Aún no registraste interacciones.');
+}
+function updateDashboard() { renderDashboard(); }
+
+function crmOnDataChange() {
+  crmRender();
+  renderDashboard();
+  renderFacturacion();
+  if (crmCurrentId && document.getElementById('crm-detail')?.style.display !== 'none') renderFicha();
+}
+
+// ── CARGA INICIAL: LaFech y Azzorti ─────────────────────────────────────
+window.crmSeed = async function () {
+  const lafechActivos = () => [
+    { id: uid(), nombre: 'Sitio web público lafech.com', tipo: 'Web', url: 'https://lafech.com', fecha: '', valor: 0, moneda: 'PEN', notas: 'Catálogo en vivo conectado al inventario, pedidos por WhatsApp.' },
+    { id: uid(), nombre: 'Panel de inventario (Vcontrol)', tipo: 'App / Panel', url: 'https://lafech.etraziapp.com', fecha: '', valor: 0, moneda: 'PEN', notas: 'Catálogo, movimientos, alertas, dashboard, finanzas, pagos, clientes y promociones.' },
+    { id: uid(), nombre: 'Base de datos y alojamiento (Firebase)', tipo: 'Infraestructura', url: '', fecha: '', valor: 0, moneda: 'PEN', notas: 'Proyecto Firebase lafech-ac769.' },
+  ];
+  try {
+    const la = clientes.find(c => norm(c.nombre).includes('lafech'));
+    if (la) {
+      const patch = { estado: 'aliado' };
+      if (!arr(la, 'activos').length) patch.activos = lafechActivos();
+      if (!la.notas) patch.notas = 'Cliente fundador. Todo el trabajo se realiza sin costo (cortesía).';
+      await updateDoc(doc(db, 'clientes', la.id), patch);
+    } else {
+      await addDoc(collection(db, 'clientes'), {
+        nombre: 'LaFech Joyería', ruc: '', estado: 'aliado', email: '', telefono: '', web: 'https://lafech.com',
+        notas: 'Cliente fundador. Todo el trabajo se realiza sin costo (cortesía).',
+        contactos: [], interacciones: [], documentos: [], activos: lafechActivos(), facturas: [], cotizacionesVinculadas: [],
+        createdAt: serverTimestamp(),
+      });
+    }
+    if (!clientes.some(c => norm(c.nombre).includes('azzorti'))) {
+      await addDoc(collection(db, 'clientes'), {
+        nombre: 'Azzorti (Dupree)', ruc: '', estado: 'cliente', email: '', telefono: '', web: '',
+        notas: 'Primer contacto: taller de Habilidades Blandas para embajadores. Incluye juego de diagnóstico previo co-brandeado.',
+        contactos: [
+          { id: uid(), nombre: 'Katerine Osorio', cargo: 'Coordinadora de Cultura, Clima y Bienestar', telefono: '+51987504097', email: '', principal: true },
+          { id: uid(), nombre: 'Karla Fiallo', cargo: 'Gerente de RRHH', telefono: '+593986249991', email: 'karla.fiallos@azzorti.com', principal: false },
+        ],
+        interacciones: [], documentos: [],
+        activos: [{ id: uid(), nombre: 'Juego de diagnóstico para embajadores', tipo: 'App / Panel', url: '', fecha: '', valor: 0, moneda: 'PEN', notas: 'Juego co-brandeado con captura de leads (Worker azzorti-embajadores-worker).' }],
+        facturas: [], cotizacionesVinculadas: [], createdAt: serverTimestamp(),
+      });
+    }
+    showToast('Clientes iniciales cargados.', 'success');
+  } catch (e) { console.error(e); showToast('No se pudo cargar: ' + (e.code || e.message), 'error'); }
+};
+
+window.crmFiltrar = crmRender;
+window.facFiltrar = renderFacturacion;
 
 </script>
 </body>
