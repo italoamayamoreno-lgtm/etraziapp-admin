@@ -1151,6 +1151,8 @@
           <div class="card">
             <div class="card-header"><div class="card-title">Datos</div></div>
             <div class="card-body">
+              <div class="form-group"><label class="form-label">Cliente</label><select id="calc-cliente" onchange="calcRender()"><option value="">— Elegir cliente —</option></select></div>
+              <div class="form-group"><label class="form-label">Descripción del servicio (opcional)</label><input type="text" id="calc-concepto" placeholder="Ej: Taller de Habilidades Blandas" oninput="calcRender()"></div>
               <div class="form-group"><label class="form-label">Partir de</label>
                 <select id="calc-modo" onchange="calcRender()"><option value="base">Precio sin IGV (lo cotizado)</option><option value="total">Total con IGV</option></select></div>
               <div class="form-row">
@@ -2237,7 +2239,7 @@ window.navigate = function(view, el) {
   document.getElementById('topbar-title').textContent = titles[view] || view;
 
   if (view === 'clientes' && el && typeof crmBack === 'function') crmBack();
-  if (view === 'calculadora' && typeof calcRender === 'function') calcRender();
+  if (view === 'calculadora' && typeof calcPoblarClientes === 'function') { calcPoblarClientes(); calcRender(); }
 
   // Lazy-init: cada módulo carga sus datos/imágenes recién la primera vez que se abre su vista
   if (view === 'presentacion' && !presentacionInicializada) {
@@ -4081,7 +4083,7 @@ window.crmFacturaForm = function (cid, fid, pre) {
   campos.push(
     { id: 'numero', label: 'N° de comprobante (SUNAT)', value: f?.numero, placeholder: 'F001-00001', half: true },
     { id: 'estado', label: 'Estado', type: 'select', options: opts(FAC_ESTADOS), value: f?.estado || 'pendiente', half: true },
-    { id: 'concepto', label: 'Concepto', required: true, value: f?.concepto, placeholder: 'Ej: Taller de Habilidades Blandas' },
+    { id: 'concepto', label: 'Concepto', required: true, value: f?.concepto ?? pre?.concepto, placeholder: 'Ej: Taller de Habilidades Blandas' },
     { id: 'monto', label: 'Monto (con IGV)', type: 'number', value: f?.monto ?? pre?.monto, required: true, half: true },
     { id: 'moneda', label: 'Moneda', type: 'select', options: [['PEN', 'Soles (S/)'], ['USD', 'Dólares (US$)']], value: f?.moneda || pre?.moneda || 'PEN', half: true },
     { id: 'fechaEmision', label: 'Fecha de emisión', type: 'date', value: f?.fechaEmision || hoy(), half: true },
@@ -4183,6 +4185,7 @@ function updateDashboard() { renderDashboard(); }
 
 function crmOnDataChange() {
   crmRender();
+  calcPoblarClientes();
   renderDashboard();
   renderFacturacion();
   if (crmCurrentId && document.getElementById('crm-detail')?.style.display !== 'none') renderFicha();
@@ -4234,8 +4237,30 @@ window.facFiltrar = renderFacturacion;
 // ── CALCULADORA DE FACTURAS (IGV + detracción) ──────────────────────────
 const IGV_TASA = 18;
 const DETRACCION_MIN = 700; // S/ — la detracción aplica si el total supera este monto
+const CUENTA_DETRACCION = '00-058-604331'; // Cuenta de detracciones de Etrazia (Banco de la Nación)
+const LEYENDA_SPOT = 'Operación sujeta al Sistema de Pago de Obligaciones Tributarias con el Gobierno Central';
 let calcUltimo = null;
+let calcCopiables = [];
 const r2 = x => Math.round((x + Number.EPSILON) * 100) / 100;
+const plano = n => (Math.round(n * 100) / 100).toFixed(2);
+
+function calcPoblarClientes() {
+  const sel = document.getElementById('calc-cliente');
+  if (!sel) return;
+  const actual = sel.value;
+  sel.innerHTML = '<option value="">— Elegir cliente —</option>' +
+    clientes.slice().sort((a, b) => norm(a.nombre).localeCompare(norm(b.nombre)))
+      .map(c => `<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join('');
+  if (actual && clientes.some(c => c.id === actual)) sel.value = actual;
+  if (document.getElementById('view-calculadora')?.classList.contains('active')) calcRender();
+}
+window.calcPoblarClientes = calcPoblarClientes;
+
+window.calcCopiarItem = async function (i) {
+  const v = calcCopiables[i];
+  if (v == null) return;
+  try { await navigator.clipboard.writeText(v); showToast('Copiado.', 'success'); } catch { showToast('No se pudo copiar.', 'error'); }
+};
 
 window.calcRender = function () {
   const g = id => document.getElementById(id);
@@ -4248,18 +4273,21 @@ window.calcRender = function () {
   g('calc-tc-wrap').style.display = moneda === 'USD' ? 'block' : 'none';
   g('calc-tasa-otra-wrap').style.display = tasa === 'otra' ? 'block' : 'none';
   tasa = tasa === 'otra' ? (parseFloat(g('calc-tasa-otra').value) || 0) : parseFloat(tasa);
+  const cli = getCli(g('calc-cliente')?.value);
+  const concepto = (g('calc-concepto')?.value || '').trim();
 
   let base, igv, total;
   if (modo === 'base') { base = monto; igv = igvOn ? r2(base * IGV_TASA / 100) : 0; total = r2(base + igv); }
   else { total = monto; base = igvOn ? r2(total / (1 + IGV_TASA / 100)) : total; igv = r2(total - base); }
 
   const out = g('calc-result');
+  calcCopiables = [];
   if (!monto) { out.innerHTML = vacio('Ingresa un monto para calcular.'); calcUltimo = null; return; }
 
   const sim = moneda === 'USD' ? 'US$' : 'S/';
   const fm = n => sim + ' ' + n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fs = n => 'S/ ' + n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  let det = 0, aviso = '', neto = total, totalPEN = total;
+  let det = 0, aviso = '', totalPEN = total;
   if (moneda === 'USD') {
     if (!tc) aviso = 'Ingresa el tipo de cambio (SUNAT, venta del día anterior) para calcular la detracción en soles.';
     totalPEN = r2(total * tc);
@@ -4268,34 +4296,61 @@ window.calcRender = function () {
   if (aplica) det = Math.round(totalPEN * tasa / 100); // la detracción se redondea al sol
   if (tasa > 0 && totalPEN <= DETRACCION_MIN && !aviso) aviso = `No aplica detracción: el total no supera S/ ${DETRACCION_MIN}.`;
   const detEnMoneda = moneda === 'USD' && tc ? r2(det / tc) : det;
-  neto = r2(total - detEnMoneda);
+  const neto = r2(total - detEnMoneda);
+  const leyenda = `${LEYENDA_SPOT}. Detracción ${tasa}%: S/ ${plano(det)}. Cuenta de detracciones Banco de la Nación N° ${CUENTA_DETRACCION}`;
 
-  calcUltimo = { base, igv, total, moneda, det, tasa: aplica ? tasa : 0 };
-  const fila = (l, v, strong, color) => `<div class="crm-kv" style="${strong ? 'font-weight:600;font-size:15px' : ''}"><span style="${strong ? '' : 'color:var(--text1)'}">${l}</span><span class="td-mono" style="${color ? 'color:' + color : ''};${strong ? 'font-size:15px' : ''}">${v}</span></div>`;
-  out.innerHTML = `
-    ${fila('Precio sin IGV (base imponible)', fm(base))}
-    ${fila(igvOn ? `IGV ${IGV_TASA}%` : 'IGV (no aplica)', fm(igv))}
-    ${fila('TOTAL A COLOCAR EN LA FACTURA', fm(total), true, 'var(--accent)')}
-    <div style="height:10px"></div>
-    ${aplica ? `
-      ${fila(`Detracción ${tasa}% (sobre el total${moneda === 'USD' ? ', en soles' : ''})`, fs(det), false, 'var(--yellow)')}
-      ${fila('El cliente deposita en tu cuenta de detracciones (Banco de la Nación)', moneda === 'USD' ? fs(det) : fm(det))}
-      ${fila('El cliente te paga en tu cuenta bancaria normal', fm(neto), true, 'var(--green)')}
-      <div style="margin-top:12px;padding:12px;background:var(--bg2);border-radius:var(--radius-sm);font-size:12px;color:var(--text1);line-height:1.6">
-        <strong style="color:var(--text0)">Leyenda para la factura:</strong> “Operación sujeta al Sistema de Pago de Obligaciones Tributarias – Detracción ${tasa}%”, con tu N° de cuenta de detracciones del Banco de la Nación.
-      </div>` : `<div style="padding:12px;background:var(--bg2);border-radius:var(--radius-sm);font-size:12px;color:var(--text1)">${esc(aviso || 'Sin detracción: el cliente te paga el total completo.')}</div>`}
-    ${aplica ? '' : ''}`;
+  calcUltimo = { base, igv, total, moneda, det, tasa: aplica ? tasa : 0, cid: cli?.id || '', concepto };
+
+  // fila con botón copiar (copia el valor "plano", listo para pegar en SUNAT)
+  const fila = (l, mostrar, copiar, opt = {}) => {
+    let btn = '';
+    if (copiar != null) { calcCopiables.push(String(copiar)); btn = `<button class="btn btn-ghost btn-sm" style="padding:2px 8px;font-size:11px;margin-left:8px" onclick="calcCopiarItem(${calcCopiables.length - 1})">Copiar</button>`; }
+    return `<div class="crm-kv" style="align-items:center;${opt.strong ? 'font-weight:600' : ''}"><span style="${opt.strong ? '' : 'color:var(--text1)'}">${l}</span><span style="display:flex;align-items:center;text-align:right"><span class="td-mono" style="${opt.color ? 'color:' + opt.color : ''};${opt.strong ? 'font-size:15px' : ''}">${mostrar}</span>${btn}</span></div>`;
+  };
+  const titulo = t => `<div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);margin:14px 0 2px">${t}</div>`;
+
+  let html = titulo('Cliente (receptor)');
+  if (cli) {
+    html += fila('Razón social', esc(cli.nombre), cli.nombre);
+    html += cli.ruc ? fila('RUC', esc(cli.ruc), cli.ruc) : `<div class="crm-kv"><span style="color:var(--text1)">RUC</span><span style="color:var(--yellow);font-size:12px">Este cliente no tiene RUC en el CRM — <a href="#" onclick="event.preventDefault();crmGo('${cli.id}')" style="color:var(--accent)">agrégalo aquí</a></span></div>`;
+  } else html += `<div style="font-size:12px;color:var(--text1);padding:8px 0">Elige un cliente para traer su razón social y RUC.</div>`;
+  if (concepto) html += fila('Descripción', esc(concepto), concepto);
+
+  html += titulo('Importes');
+  html += fila('Valor de venta (sin IGV)', fm(base), plano(base));
+  html += fila(igvOn ? `IGV ${IGV_TASA}%` : 'IGV (no aplica)', fm(igv), plano(igv));
+  html += fila('TOTAL A COLOCAR EN LA FACTURA', fm(total), plano(total), { strong: true, color: 'var(--accent)' });
+
+  if (aplica) {
+    html += titulo('Detracción');
+    html += fila(`Detracción ${tasa}% (sobre el total${moneda === 'USD' ? ', en soles' : ''})`, fs(det), plano(det), { color: 'var(--yellow)' });
+    html += fila('Cuenta de detracciones (Banco de la Nación)', CUENTA_DETRACCION, CUENTA_DETRACCION);
+    html += fila('El cliente te paga en tu cuenta normal', fm(neto), plano(neto), { strong: true, color: 'var(--green)' });
+    calcCopiables.push(leyenda);
+    html += `<div style="margin-top:12px;padding:12px;background:var(--bg2);border-radius:var(--radius-sm);font-size:12px;line-height:1.6">
+      <div style="color:var(--text1);margin-bottom:6px">Leyenda / observación para la factura:</div>
+      <div style="color:var(--text0)">${esc(leyenda)}</div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="calcCopiarItem(${calcCopiables.length - 1})">Copiar leyenda</button>
+    </div>`;
+  } else {
+    html += `<div style="margin-top:12px;padding:12px;background:var(--bg2);border-radius:var(--radius-sm);font-size:12px;color:var(--text1)">${esc(aviso || 'Sin detracción: el cliente te paga el total completo.')}</div>`;
+  }
+  out.innerHTML = html;
 };
+
 window.calcCopiar = async function () {
   if (!calcUltimo) { showToast('Primero ingresa un monto.', 'error'); return; }
-  const c = calcUltimo, sim = c.moneda === 'USD' ? 'US$' : 'S/';
-  const n = x => x.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const txt = `Base imponible: ${sim} ${n(c.base)}\nIGV: ${sim} ${n(c.igv)}\nTotal factura: ${sim} ${n(c.total)}` + (c.det ? `\nDetracción ${c.tasa}%: S/ ${n(c.det)}\nPago al proveedor: ${sim} ${n(r2(c.total - (c.moneda === 'USD' ? 0 : c.det)))}` : '');
-  try { await navigator.clipboard.writeText(txt); showToast('Resumen copiado.', 'success'); } catch { showToast('No se pudo copiar.', 'error'); }
+  const c = calcUltimo, cli = getCli(c.cid), sim = c.moneda === 'USD' ? 'US$' : 'S/';
+  const l = [];
+  if (cli) { l.push(`Cliente: ${cli.nombre}`); if (cli.ruc) l.push(`RUC: ${cli.ruc}`); }
+  if (c.concepto) l.push(`Descripción: ${c.concepto}`);
+  l.push(`Valor de venta: ${sim} ${plano(c.base)}`, `IGV: ${sim} ${plano(c.igv)}`, `Total: ${sim} ${plano(c.total)}`);
+  if (c.det) l.push(`Detracción ${c.tasa}%: S/ ${plano(c.det)}`, `Cuenta de detracciones BN: ${CUENTA_DETRACCION}`, `Leyenda: ${LEYENDA_SPOT}`);
+  try { await navigator.clipboard.writeText(l.join('\n')); showToast('Resumen copiado.', 'success'); } catch { showToast('No se pudo copiar.', 'error'); }
 };
 window.calcRegistrar = function () {
   if (!calcUltimo) { showToast('Primero ingresa un monto.', 'error'); return; }
-  crmFacturaForm(null, null, { monto: calcUltimo.total, moneda: calcUltimo.moneda, detraccion: calcUltimo.det, detraccionPct: calcUltimo.tasa });
+  crmFacturaForm(calcUltimo.cid || null, null, { monto: calcUltimo.total, moneda: calcUltimo.moneda, detraccion: calcUltimo.det, detraccionPct: calcUltimo.tasa, concepto: calcUltimo.concepto });
 };
 
 </script>
