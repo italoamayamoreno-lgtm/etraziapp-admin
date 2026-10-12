@@ -1543,7 +1543,7 @@
             <div class="stat-value" id="stat-total-juegos">—</div>
           </div>
           <div class="stat-card green">
-            <div class="stat-label">Completaron el juego</div>
+            <div class="stat-label" id="stat-completados-label">Completaron el juego</div>
             <div class="stat-value" id="stat-completados">—</div>
           </div>
         </div>
@@ -2962,6 +2962,11 @@ const WORKERS = [
     url: "https://azzorti-embajadores-worker.italoamaya-moreno.workers.dev",
     storageKey: 'azzorti-admin-key',
   },
+  {
+    id: 'taller-ia',
+    url: "https://taller-ia-registro.italoamaya-moreno.workers.dev",
+    storageKey: 'taller-ia-admin-key',
+  },
 ];
 WORKERS.forEach(w => { w.adminKey = localStorage.getItem(w.storageKey) || ''; });
 
@@ -2979,6 +2984,7 @@ const GAME_LABELS = {
   'brujula-liderazgo': 'Brújula de Liderazgo',
   'guerrero-agil': 'Guerrero Ágil',
   'diagnostico-azzorti': 'Diagnóstico Azzorti',
+  'taller-ia': 'Taller IA gratuito',
 };
 
 // Columnas específicas por juego — se insertan solo cuando ese juego es el filtro activo,
@@ -2995,6 +3001,10 @@ const EXTRA_COLUMNS = {
     { label: 'Cambio', render: l => l.scores ? l.scores.cambio + '%' : '—' },
     { label: 'Conflictos', render: l => l.scores ? l.scores.conflictos + '%' : '—' },
   ],
+  'taller-ia': [
+    { label: 'Fuente', render: l => l.fuente || '—' },
+    { label: 'Acceso enviado', render: l => l.contactadoFecha ? new Date(l.contactadoFecha).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' }) : '—' },
+  ],
 };
 
 function getExtraColumns() {
@@ -3005,6 +3015,7 @@ function getExtraColumns() {
 function renderTableHead() {
   const headRow = document.getElementById('leads-thead-row');
   const informeTh = document.getElementById('thead-informe');
+  informeTh.textContent = currentFilter === 'taller-ia' ? 'WhatsApp' : 'Informe';
   headRow.querySelectorAll('.th-dynamic').forEach(th => th.remove());
   getExtraColumns().forEach(col => {
     const th = document.createElement('th');
@@ -3072,6 +3083,7 @@ window.fetchLeads = async function() {
           fallidos.push({ id: w.id, motivo: res.status === 401 ? 'clave incorrecta' : (data.error || 'error del servidor') });
           return [];
         }
+        if (data.config) w.config = data.config;
         return data.leads || [];
       } catch (e) {
         fallidos.push({ id: w.id, motivo: 'no se pudo conectar' });
@@ -3096,7 +3108,7 @@ window.fetchLeads = async function() {
 function buildFilterOptions() {
   const select = document.getElementById('filter-juego');
   const existing = new Set(Array.from(select.options).map(o => o.value));
-  const juegosPresentes = [...new Set(leadsCache.map(l => l.juego || 'brujula-liderazgo'))];
+  const juegosPresentes = [...new Set([...WORKERS.map(w => w.id), ...leadsCache.map(l => l.juego || 'brujula-liderazgo')])];
   juegosPresentes.forEach(j => {
     if (!existing.has(j)) {
       const opt = document.createElement('option');
@@ -3122,7 +3134,9 @@ function renderLeads() {
   const leads = getFiltered();
 
   document.getElementById('stat-total-juegos').textContent = leads.length;
-  document.getElementById('stat-completados').textContent = leads.filter(l => l.estado === 'completado').length;
+  const esTaller = currentFilter === 'taller-ia';
+  document.getElementById('stat-completados-label').textContent = esTaller ? 'Acceso enviado' : 'Completaron el juego';
+  document.getElementById('stat-completados').textContent = leads.filter(l => l.estado === (esTaller ? 'contactado' : 'completado')).length;
 
   renderTableHead();
   const extraCols = getExtraColumns();
@@ -3155,7 +3169,7 @@ function renderLeads() {
       '<td>' + escapeHtml(l.empresa || '—') + '</td>' +
       '<td>' + escapeHtml(l.cargo || '—') + '</td>' +
       '<td>' + (l.consentimiento ? '<span class="badge badge-green">Sí</span>' : '<span class="badge badge-red">No</span>') + '</td>' +
-      '<td>' + (l.estado === 'completado' ? '<span class="badge badge-accent">completado</span>' : '<span class="badge badge-blue">registrado</span>') + '</td>';
+      '<td>' + (l.estado === 'completado' ? '<span class="badge badge-accent">completado</span>' : (l.estado === 'contactado' ? '<span class="badge badge-green">contactado</span>' : '<span class="badge badge-blue">registrado</span>')) + '</td>';
 
     extraCols.forEach(col => {
       html += '<td>' + escapeHtml(String(col.render(l))) + '</td>';
@@ -3169,6 +3183,10 @@ function renderLeads() {
         informeCell = '<button class="btn btn-ghost btn-sm" onclick="downloadAzzortiReport(\'' + l.id + '\')">📄 PDF</button>';
       }
     }
+    if (juego === 'taller-ia') {
+      const yaEnviado = l.estado === 'contactado';
+      informeCell = '<button class="btn ' + (yaEnviado ? 'btn-ghost' : 'btn-primary') + ' btn-sm" onclick="sendTallerWhatsApp(\'' + l.id + '\')">' + (yaEnviado ? 'Reenviar WhatsApp' : 'WhatsApp') + '</button>';
+    }
     html += '<td>' + informeCell + '</td>';
 
     tr.innerHTML = html;
@@ -3178,6 +3196,51 @@ function renderLeads() {
   document.getElementById('check-all').checked = false;
   updateSelectedCount();
 }
+
+// ── TALLER IA: WhatsApp con el acceso ────────────────────────────────
+// El link de Zoom y el ebook NO están en este archivo (el repo es público): llegan del Worker
+// junto con la lista de leads, solo cuando la clave de admin es correcta.
+function buildTallerWhatsApp(lead, config) {
+  const nombre = String(lead.nombres || '').trim().split(/\s+/)[0] || '';
+  const digits = String(lead.telefonoCompleto || '').replace(/\D/g, '');
+  const lines = [
+    'Hola ' + nombre + ', soy Talo de Etrazia Academy. Ya estás inscrito al taller gratuito "Liderazgo en épocas de IA".',
+    '',
+    'Fechas: martes 20 y jueves 22 de octubre, de 7:30 a 9:30 pm (hora de Lima).',
+    'Link de Zoom (es el mismo para las dos sesiones): ' + config.zoomUrl,
+  ];
+  if (config.zoomMeetingId) lines.push('ID de reunión: ' + config.zoomMeetingId);
+  if (config.zoomPasscode) lines.push('Código de acceso: ' + config.zoomPasscode);
+  if (config.ebookUrl) {
+    lines.push('', 'Aquí tienes un ebook de regalo' + (config.ebookTitle ? ' ("' + config.ebookTitle + '")' : '') + ', se descarga con un clic: ' + config.ebookUrl);
+  }
+  lines.push('', 'Cualquier duda, escríbeme por aquí. Nos vemos el martes.');
+  return { digits, url: 'https://wa.me/' + digits + '?text=' + encodeURIComponent(lines.join('\n')) };
+}
+
+window.sendTallerWhatsApp = function(id) {
+  const lead = leadsCache.find(l => l.id === id);
+  const w = WORKERS.find(x => x.id === 'taller-ia');
+  if (!lead || !w) return;
+  if (!w.config || !w.config.zoomUrl) {
+    alert('Falta configurar ZOOM_URL en el Worker taller-ia-registro, o actualiza la lista con la clave correcta.');
+    return;
+  }
+  const msg = buildTallerWhatsApp(lead, w.config);
+  if (msg.digits.length < 8) {
+    alert('El teléfono de este inscrito no parece válido: ' + (lead.telefonoCompleto || 'vacío'));
+    return;
+  }
+  window.open(msg.url, '_blank', 'noopener');
+  // Marca al inscrito como contactado (sin bloquear la apertura de WhatsApp)
+  fetch(w.url + '/leads/contactado', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Key': w.adminKey },
+    body: JSON.stringify({ id }),
+  }).then(r => {
+    if (r.ok) { lead.estado = 'contactado'; lead.contactadoFecha = new Date().toISOString(); renderLeads(); }
+  }).catch(() => {});
+};
 
 function escapeHtml(str) {
   const div = document.createElement('div');
