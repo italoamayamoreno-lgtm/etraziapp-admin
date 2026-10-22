@@ -2967,6 +2967,11 @@ const WORKERS = [
     url: "https://taller-ia-registro.italoamaya-moreno.workers.dev",
     storageKey: 'taller-ia-admin-key',
   },
+  {
+    id: 'tienda-live',
+    url: "https://tienda-live-registro.italoamaya-moreno.workers.dev",
+    storageKey: 'tienda-live-admin-key',
+  },
 ];
 WORKERS.forEach(w => { w.adminKey = localStorage.getItem(w.storageKey) || ''; });
 
@@ -2985,6 +2990,7 @@ const GAME_LABELS = {
   'guerrero-agil': 'Guerrero Ágil',
   'diagnostico-azzorti': 'Diagnóstico Azzorti',
   'taller-ia': 'Taller IA gratuito',
+  'tienda-live': 'Live TikTok - Tienda',
 };
 
 // Columnas específicas por juego — se insertan solo cuando ese juego es el filtro activo,
@@ -3005,6 +3011,11 @@ const EXTRA_COLUMNS = {
     { label: 'Fuente', render: l => l.fuente || '—' },
     { label: 'Acceso enviado', render: l => l.contactadoFecha ? new Date(l.contactadoFecha).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' }) : '—' },
   ],
+  'tienda-live': [
+    { label: 'Rubro', render: l => l.rubro || '—' },
+    { label: 'Fuente', render: l => l.fuente || '—' },
+    { label: 'Contactado', render: l => l.contactadoFecha ? new Date(l.contactadoFecha).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' }) : '—' },
+  ],
 };
 
 function getExtraColumns() {
@@ -3015,7 +3026,7 @@ function getExtraColumns() {
 function renderTableHead() {
   const headRow = document.getElementById('leads-thead-row');
   const informeTh = document.getElementById('thead-informe');
-  informeTh.textContent = currentFilter === 'taller-ia' ? 'WhatsApp' : 'Informe';
+  informeTh.textContent = (currentFilter === 'taller-ia' || currentFilter === 'tienda-live') ? 'WhatsApp' : 'Informe';
   headRow.querySelectorAll('.th-dynamic').forEach(th => th.remove());
   getExtraColumns().forEach(col => {
     const th = document.createElement('th');
@@ -3135,8 +3146,9 @@ function renderLeads() {
 
   document.getElementById('stat-total-juegos').textContent = leads.length;
   const esTaller = currentFilter === 'taller-ia';
-  document.getElementById('stat-completados-label').textContent = esTaller ? 'Acceso enviado' : 'Completaron el juego';
-  document.getElementById('stat-completados').textContent = leads.filter(l => l.estado === (esTaller ? 'contactado' : 'completado')).length;
+  const esTienda = currentFilter === 'tienda-live';
+  document.getElementById('stat-completados-label').textContent = esTaller ? 'Acceso enviado' : (esTienda ? 'Contactados' : 'Completaron el juego');
+  document.getElementById('stat-completados').textContent = leads.filter(l => l.estado === ((esTaller || esTienda) ? 'contactado' : 'completado')).length;
 
   renderTableHead();
   const extraCols = getExtraColumns();
@@ -3187,6 +3199,10 @@ function renderLeads() {
       const yaEnviado = l.estado === 'contactado';
       informeCell = '<button class="btn ' + (yaEnviado ? 'btn-ghost' : 'btn-primary') + ' btn-sm" onclick="sendTallerWhatsApp(\'' + l.id + '\')">' + (yaEnviado ? 'Reenviar WhatsApp' : 'WhatsApp') + '</button>';
     }
+    if (juego === 'tienda-live') {
+      const yaContactado = l.estado === 'contactado';
+      informeCell = '<button class="btn ' + (yaContactado ? 'btn-ghost' : 'btn-primary') + ' btn-sm" onclick="sendTiendaWhatsApp(\'' + l.id + '\')">' + (yaContactado ? 'Reenviar WhatsApp' : 'WhatsApp') + '</button>';
+    }
     html += '<td>' + informeCell + '</td>';
 
     tr.innerHTML = html;
@@ -3233,6 +3249,39 @@ window.sendTallerWhatsApp = function(id) {
   }
   window.open(msg.url, '_blank', 'noopener');
   // Marca al inscrito como contactado (sin bloquear la apertura de WhatsApp)
+  fetch(w.url + '/leads/contactado', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Key': w.adminKey },
+    body: JSON.stringify({ id }),
+  }).then(r => {
+    if (r.ok) { lead.estado = 'contactado'; lead.contactadoFecha = new Date().toISOString(); renderLeads(); }
+  }).catch(() => {});
+};
+
+// ── LIVE TIKTOK · TIENDA: WhatsApp de seguimiento ───────────────────
+function buildTiendaWhatsApp(lead) {
+  const nombre = String(lead.nombres || '').trim().split(/\s+/)[0] || '';
+  const digits = String(lead.telefonoCompleto || '').replace(/\D/g, '');
+  const negocio = String(lead.empresa || '').trim();
+  const lines = [
+    'Hola ' + nombre + ', soy Talo de Etrazia. Gracias por dejar tus datos desde mi live de TikTok sobre tienda online, cobros y CRM.',
+    '',
+    'Para recomendarte lo mejor para ' + (negocio || 'tu negocio') + ': ¿qué vendes hoy y por qué canales (WhatsApp, redes, tienda física)?',
+  ];
+  return { digits, url: 'https://wa.me/' + digits + '?text=' + encodeURIComponent(lines.join('\n')) };
+}
+
+window.sendTiendaWhatsApp = function(id) {
+  const lead = leadsCache.find(l => l.id === id);
+  const w = WORKERS.find(x => x.id === 'tienda-live');
+  if (!lead || !w) return;
+  const msg = buildTiendaWhatsApp(lead);
+  if (msg.digits.length < 8) {
+    alert('El teléfono de este lead no parece válido: ' + (lead.telefonoCompleto || 'vacío'));
+    return;
+  }
+  window.open(msg.url, '_blank', 'noopener');
+  // Marca al lead como contactado (sin bloquear la apertura de WhatsApp)
   fetch(w.url + '/leads/contactado', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Admin-Key': w.adminKey },
