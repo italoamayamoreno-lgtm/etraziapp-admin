@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <!-- jsPDF: usado por el módulo Juegos para exportar el informe de Brújula de Liderazgo -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link rel="stylesheet" href="sportmatch/sm-admin.css">
 <style>
   /* ═══ RESET & TOKENS ══════════════════════════════════════════════════ */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -889,6 +890,31 @@
         </div>
         <span class="nav-label">Calculadora de facturas</span>
       </div>
+      <div class="nav-section-label">Ventures</div>
+      <div class="nav-item" id="nav-sportmatch-parent" data-view="sm-resumen" onclick="navigate('sm-resumen', this)">
+        <div class="nav-icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6c3.2 2.6 3.2 10.2 0 12.8"/><path d="M18.4 5.6c-3.2 2.6-3.2 10.2 0 12.8"/></svg>
+        </div>
+        <span class="nav-label">SportMatch</span>
+        <span class="nav-badge" id="badge-sportmatch" style="display:none">0</span>
+      </div>
+      <div class="nav-item nav-subitem" data-view="sm-negocios" onclick="navigate('sm-negocios', this)" style="padding-left:34px;">
+        <span class="nav-label">Negocios</span>
+        <span class="nav-badge" id="badge-sm-negocios" style="display:none">0</span>
+      </div>
+      <div class="nav-item nav-subitem" data-view="sm-cobros" onclick="navigate('sm-cobros', this)" style="padding-left:34px;">
+        <span class="nav-label">Cobros</span>
+      </div>
+      <div class="nav-item nav-subitem" data-view="sm-canchas" onclick="navigate('sm-canchas', this)" style="padding-left:34px;">
+        <span class="nav-label">Guía de canchas</span>
+      </div>
+      <div class="nav-item nav-subitem" data-view="sm-solicitudes" onclick="navigate('sm-solicitudes', this)" style="padding-left:34px;">
+        <span class="nav-label">Solicitudes</span>
+        <span class="nav-badge" id="badge-sm-solicitudes" style="display:none">0</span>
+      </div>
+      <div class="nav-item nav-subitem" data-view="sm-usuarios" onclick="navigate('sm-usuarios', this)" style="padding-left:34px;">
+        <span class="nav-label">Usuarios</span>
+      </div>
       <div class="nav-section-label">Sistema</div>
       <div class="nav-item" id="nav-cotizaciones-parent" data-view="cotizador">
         <div class="nav-icon">
@@ -1583,6 +1609,14 @@
       </div>
 
 
+      <!-- ──────────── SPORTMATCH (contenido lo arma sportmatch/sm-admin.js) ──────────── -->
+      <div class="view" id="view-sm-resumen"></div>
+      <div class="view" id="view-sm-negocios"></div>
+      <div class="view" id="view-sm-cobros"></div>
+      <div class="view" id="view-sm-canchas"></div>
+      <div class="view" id="view-sm-solicitudes"></div>
+      <div class="view" id="view-sm-usuarios"></div>
+
     </div><!-- /content -->
   </main>
 </div><!-- /app -->
@@ -2235,6 +2269,8 @@ window.navigate = function(view, el) {
     facturacion: 'Facturación', calculadora: 'Calculadora de facturas', usuarios: 'Usuarios y Permisos',
     cotizador: 'Nueva Cotización', historial: 'Cotizaciones', presentacion: 'Documento de Presentación',
     juegos: 'Juegos',
+    'sm-resumen': 'SportMatch', 'sm-negocios': 'SportMatch · Negocios', 'sm-cobros': 'SportMatch · Cobros',
+    'sm-canchas': 'SportMatch · Guía de canchas', 'sm-solicitudes': 'SportMatch · Solicitudes', 'sm-usuarios': 'SportMatch · Usuarios',
   };
   document.getElementById('topbar-title').textContent = titles[view] || view;
 
@@ -2246,6 +2282,14 @@ window.navigate = function(view, el) {
     presentacionInicializada = true;
     renderTabsPresentacion();
     renderDocumentoPresentacion();
+  }
+  // SportMatch: resalta el ítem padre y carga la vista (sportmatch/sm-admin.js)
+  if (view.startsWith('sm-')) {
+    const navSM = document.getElementById('nav-sportmatch-parent');
+    if (navSM) navSM.classList.add('active');
+    if (window.smAdmin) window.smAdmin.abrir(view);
+  } else if ((location.hash || '').startsWith('#sm-')) {
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
   }
   if (view === 'juegos' && !juegosInicializado) {
     juegosInicializado = true;
@@ -4466,5 +4510,6 @@ window.calcRegistrar = function () {
 };
 
 </script>
+<script type="module" src="sportmatch/sm-admin.js"></script>
 </body>
 </html>
