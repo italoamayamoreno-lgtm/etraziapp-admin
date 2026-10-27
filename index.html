@@ -902,18 +902,17 @@
         <span class="nav-label">Negocios</span>
         <span class="nav-badge" id="badge-sm-negocios" style="display:none">0</span>
       </div>
+      <div class="nav-item nav-subitem" data-view="sm-personas" onclick="navigate('sm-personas', this)" style="padding-left:34px;">
+        <span class="nav-label">Personas</span>
+      </div>
+      <div class="nav-item nav-subitem" data-view="sm-torneos" onclick="navigate('sm-torneos', this)" style="padding-left:34px;">
+        <span class="nav-label">Torneos</span>
+      </div>
       <div class="nav-item nav-subitem" data-view="sm-cobros" onclick="navigate('sm-cobros', this)" style="padding-left:34px;">
         <span class="nav-label">Cobros</span>
       </div>
       <div class="nav-item nav-subitem" data-view="sm-canchas" onclick="navigate('sm-canchas', this)" style="padding-left:34px;">
         <span class="nav-label">Guía de canchas</span>
-      </div>
-      <div class="nav-item nav-subitem" data-view="sm-solicitudes" onclick="navigate('sm-solicitudes', this)" style="padding-left:34px;">
-        <span class="nav-label">Solicitudes</span>
-        <span class="nav-badge" id="badge-sm-solicitudes" style="display:none">0</span>
-      </div>
-      <div class="nav-item nav-subitem" data-view="sm-usuarios" onclick="navigate('sm-usuarios', this)" style="padding-left:34px;">
-        <span class="nav-label">Usuarios</span>
       </div>
       <div class="nav-section-label">Sistema</div>
       <div class="nav-item" id="nav-cotizaciones-parent" data-view="cotizador">
@@ -1612,10 +1611,10 @@
       <!-- ──────────── SPORTMATCH (contenido lo arma sportmatch/sm-admin.js) ──────────── -->
       <div class="view" id="view-sm-resumen"></div>
       <div class="view" id="view-sm-negocios"></div>
+      <div class="view" id="view-sm-personas"></div>
+      <div class="view" id="view-sm-torneos"></div>
       <div class="view" id="view-sm-cobros"></div>
       <div class="view" id="view-sm-canchas"></div>
-      <div class="view" id="view-sm-solicitudes"></div>
-      <div class="view" id="view-sm-usuarios"></div>
 
     </div><!-- /content -->
   </main>
@@ -2270,7 +2269,7 @@ window.navigate = function(view, el) {
     cotizador: 'Nueva Cotización', historial: 'Cotizaciones', presentacion: 'Documento de Presentación',
     juegos: 'Juegos',
     'sm-resumen': 'SportMatch', 'sm-negocios': 'SportMatch · Negocios', 'sm-cobros': 'SportMatch · Cobros',
-    'sm-canchas': 'SportMatch · Guía de canchas', 'sm-solicitudes': 'SportMatch · Solicitudes', 'sm-usuarios': 'SportMatch · Usuarios',
+    'sm-canchas': 'SportMatch · Guía de canchas', 'sm-personas': 'SportMatch · Personas', 'sm-torneos': 'SportMatch · Torneos',
   };
   document.getElementById('topbar-title').textContent = titles[view] || view;
 

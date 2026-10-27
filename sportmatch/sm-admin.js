@@ -2,8 +2,8 @@
 // MÓDULO SPORTMATCH — Etraziapp Admin
 // Administra Sports Match (proyecto Firebase "sportmatch-mvp") desde este
 // panel. Los datos NO se copian: se leen y se cambian directo en Sports
-// Match, así que todo se refleja al instante en la app de jugadores y
-// negocios.
+// Match, así que todo se refleja al instante en la app de Personas y
+// Negocios. Los cobros confirmados pasan a Facturación de este panel.
 //
 // Acceso: con la sesión de Etrazia ya iniciada, se pide a la función
 // "accesoPanelEtrazia" de Sports Match una llave de administrador.
@@ -14,7 +14,7 @@ import {
   getAuth, onAuthStateChanged, signInWithCustomToken, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  getFirestore, collection, getDocs, doc, setDoc, updateDoc, deleteDoc, query, where, writeBatch
+  getFirestore, collection, getDocs, getDoc, doc, setDoc, addDoc, updateDoc, deleteDoc, query, where, writeBatch, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { DISTRITOS_LIMA } from "./distritos-lima.js";
 
@@ -53,14 +53,51 @@ const TIPOS_CLIC = [
 ];
 const totalClics = (f) => TIPOS_CLIC.reduce((s, t) => s + Number(f?.[t.clave] || 0), 0);
 const DEPORTES_GUIA = ["Tenis", "Pádel", "Fútbol", "Básket", "Varios"];
-const VISTAS = ["sm-resumen", "sm-negocios", "sm-cobros", "sm-canchas", "sm-solicitudes", "sm-usuarios"];
+const VISTAS = ["sm-resumen", "sm-negocios", "sm-personas", "sm-torneos", "sm-cobros", "sm-canchas"];
+
+// ── Tarifas: cada parámetro es { tipo: "%" | "S/", valor } · en 0 o vacío no se cobra ──
+const r2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+const param = (p) => (p && Number(p.valor) > 0 ? { tipo: p.tipo === "S/" ? "S/" : "%", valor: Number(p.valor) } : null);
+const textoParam = (p, porUnidad) => { const q = param(p); return q ? (q.tipo === "%" ? `${q.valor}%` : `${soles(q.valor)} ${porUnidad}`) : "—"; };
+// Monto a cobrar: si es %, sobre la base; si es S/, por cada unidad
+const cargo = (p, base, unidades) => { const q = param(p); return !q ? 0 : r2(q.tipo === "%" ? base * q.valor / 100 : q.valor * unidades); };
+function planDe(n) {
+  const p = n.plan || {};
+  return {
+    setup: Number(p.setup) || 0, membresia: Number(p.membresia) || 0,
+    marketplace: p.marketplace !== undefined ? p.marketplace : (p.comision != null ? { tipo: "%", valor: Number(p.comision) } : null),
+    reservas: p.reservas || null, torneoInicial: p.torneoInicial || null, torneoInscripcion: p.torneoInscripcion || null
+  };
+}
+function funcionesDe(n) {
+  if (n && n.funciones) return { canchas: !!n.funciones.canchas, marketplace: !!n.funciones.marketplace };
+  return { canchas: !n || n.tipo !== "Tienda", marketplace: !n || n.tipo !== "Canchas" };
+}
+const textoFunciones = (n) => { const f = funcionesDe(n); return [f.canchas ? "Canchas" : "", f.marketplace ? "Marketplace" : ""].filter(Boolean).join(" + ") || "—"; };
+// Lo que le toca a Sports Match por un torneo, según la tarifa guardada al crearlo
+function cargoTorneo(t) {
+  const n = (t.inscritos || []).length;
+  const recaudado = r2((Number(t.precio) || 0) * n);
+  const tf = t.tarifa || {};
+  const inicial = param(tf.inicial) ? (param(tf.inicial).tipo === "%" ? r2(recaudado * param(tf.inicial).valor / 100) : param(tf.inicial).valor) : 0;
+  const inscripcion = cargo(tf.inscripcion, recaudado, n);
+  return { inscritos: n, recaudado, inicial, inscripcion, total: r2(inicial + inscripcion) };
+}
+const textoTarifaTorneo = (tf) => {
+  const a = param(tf?.inicial), b = param(tf?.inscripcion);
+  const p = [];
+  if (a) p.push(a.tipo === "%" ? `${a.valor}% de lo recaudado` : `${soles(a.valor)} por torneo`);
+  if (b) p.push(b.tipo === "%" ? `${b.valor}% por inscripción` : `${soles(b.valor)} por inscrito`);
+  return p.join(" + ") || "Sin tarifa";
+};
 
 // ── Estado ─────────────────────────────────────────────────────────────
 const E = {
   conectado: false, conectando: null, error: null, cargado: false, cargando: null,
-  usuarios: [], partidos: [], grupos: [], torneos: [], canchas: [], solicitudes: [], negocios: [],
-  sedes: [], pedidos: [], reservas: [], cobros: [], clicsDiarios: [], clicsMes: {},
-  mesClics: mesActual(), mesCobros: mesActual(), tabNegocios: "pendiente", verHistorial: false,
+  usuarios: [], partidos: [], grupos: [], torneos: [], canchas: [], negocios: [],
+  sedes: [], productos: [], pedidos: [], reservas: [], cobros: [], clicsDiarios: [], clicsMes: {},
+  tarifas: {}, privados: {},
+  mesClics: mesActual(), mesCobros: mesActual(), tabNegocios: "pendiente", tabTorneos: "vigentes",
   vistaActual: null, actualizado: null
 };
 
@@ -144,17 +181,23 @@ async function cargar() {
       leer("grupos", collection(db, "grupos"), fallos),
       leer("torneos", collection(db, "torneos"), fallos),
       leer("guía de canchas", collection(db, "canchas"), fallos),
-      leer("solicitudes", collection(db, "solicitudesCanchas"), fallos),
       leer("negocios", collection(db, "negocios"), fallos),
       leer("sedes", collection(db, "sedes"), fallos),
       leer("pedidos", collection(db, "pedidos"), fallos),
       leer("reservas", collection(db, "reservas"), fallos),
       leer("cobros", collection(db, "cobros"), fallos),
       leer("contactos diarios", query(collection(db, "clicsDiarios"), where("dia", ">=", desde)), fallos),
-      leerClicsMes(E.mesClics)
+      leerClicsMes(E.mesClics),
+      getDoc(doc(db, "config", "tarifas")).then((d) => (d.exists() ? d.data() : {})).catch(() => { fallos.push("tarifas"); return {}; })
     ]);
-    [E.usuarios, E.partidos, E.grupos, E.torneos, E.canchas, E.solicitudes, E.negocios,
-      E.sedes, E.pedidos, E.reservas, E.cobros, E.clicsDiarios, E.clicsMes] = r;
+    [E.usuarios, E.partidos, E.grupos, E.torneos, E.canchas, E.negocios,
+      E.sedes, E.pedidos, E.reservas, E.cobros, E.clicsDiarios, E.clicsMes, E.tarifas] = r;
+    // Datos de contacto (privados) solo de las Personas que organizan torneos: los necesitas para cobrarles
+    const organizadores = [...new Set(E.torneos.filter((t) => !t.negocioId).map((t) => t.creadorId).filter(Boolean))];
+    await Promise.all(organizadores.filter((u) => !E.privados[u]).map(async (u) => {
+      try { const d = await getDoc(doc(db, "usuarios", u, "privado", "datos")); E.privados[u] = d.exists() ? d.data() : {}; }
+      catch (e) { E.privados[u] = {}; }
+    }));
     E.fallos = fallos;
     E.cargado = true;
     E.actualizado = new Date();
@@ -171,11 +214,9 @@ async function recargar() {
 // ── Badges del menú ────────────────────────────────────────────────────
 function actualizarBadges() {
   const negPend = E.negocios.filter((n) => (n.estado || "pendiente") === "pendiente").length;
-  const solPend = E.solicitudes.filter((s) => s.estado === "pendiente").length;
   const poner = (id, n) => { const b = $(id); if (!b) return; b.textContent = n; b.style.display = n ? "" : "none"; };
-  poner("badge-sportmatch", negPend + solPend);
+  poner("badge-sportmatch", negPend);
   poner("badge-sm-negocios", negPend);
-  poner("badge-sm-solicitudes", solPend);
 }
 
 // ── Entrada pública: navigate() de index.html llama a abrir(vista) ─────
@@ -220,10 +261,11 @@ function cabecera(titulo, sub, acciones = "") {
 function pintar(vista) {
   const cont = $("view-" + vista);
   if (!cont) return;
-  const f = { "sm-resumen": vResumen, "sm-negocios": vNegocios, "sm-cobros": vCobros, "sm-canchas": vCanchas, "sm-solicitudes": vSolicitudes, "sm-usuarios": vUsuarios }[vista];
+  const f = { "sm-resumen": vResumen, "sm-negocios": vNegocios, "sm-personas": vPersonas, "sm-torneos": vTorneos, "sm-cobros": vCobros, "sm-canchas": vCanchas }[vista];
   cont.innerHTML = f();
   if (vista === "sm-canchas") pintarTablaCanchas();
-  if (vista === "sm-usuarios") pintarTablaUsuarios();
+  if (vista === "sm-personas") pintarTablaPersonas();
+  if (vista === "sm-torneos") pintarTablaTorneos();
 }
 
 // ── Gráficos simples ───────────────────────────────────────────────────
@@ -251,7 +293,7 @@ function vResumen() {
   const activos = E.partidos.filter((p) => p.estado !== "cancelado" && p.fecha && p.hora && new Date(`${p.fecha}T${p.hora}`) >= ahora);
   const torneosAb = E.torneos.filter((t) => t.estado === "abierto").length;
   const contactosMes = E.clicsDiarios.filter((d) => String(d.dia).startsWith(mes)).reduce((s, d) => s + totalClics(d), 0);
-  const solPend = E.solicitudes.filter((s) => s.estado === "pendiente").length;
+  const porCobrar = filasCobros(mes).filter((f) => !f.registro).reduce((a, f) => a + f.total, 0);
 
   const kpi = (color, etq, valor, sub) => `<div class="stat-card ${color}"><div class="stat-label">${etq}</div><div class="stat-value">${valor}</div><div class="stat-sub">${sub}</div></div>`;
 
@@ -271,16 +313,16 @@ function vResumen() {
 
   return cabecera("SportMatch · Resumen", `Cómo va la app este mes (${nombreMes(mes)}). Las cifras se leen en vivo de Sports Match.`) + `
     <div class="grid-4 mb-4">
-      ${kpi("accent", "Usuarios", fmt(E.usuarios.length), `+${fmt(nuevos7)} en 7 días`)}
+      ${kpi("accent", "Personas", fmt(E.usuarios.length), `+${fmt(nuevos7)} en 7 días`)}
       ${kpi("green", "Negocios verificados", fmt(negVer), negPend ? `${negPend} por verificar` : "todo al día")}
       ${kpi("blue", "Reservas del mes", fmt(resMes.length), `${fmt(resConf.length)} con pago confirmado`)}
-      ${kpi("accent", "Ventas Market del mes", soles(totalVentas), `${fmt(ventasMes.length)} pedidos confirmados`)}
+      ${kpi("accent", "Ventas Marketplace del mes", soles(totalVentas), `${fmt(ventasMes.length)} pedidos confirmados`)}
     </div>
     <div class="grid-4 mb-6">
       ${kpi("blue", "Partidos activos", fmt(activos.length), `${fmt(E.partidos.filter((p) => String(p.creadoEn || "").startsWith(mes)).length)} creados este mes`)}
       ${kpi("green", "Torneos abiertos", fmt(torneosAb), `${fmt(E.torneos.length)} en total`)}
       ${kpi("accent", "Contactos a canchas", fmt(contactosMes), "desde la guía, este mes")}
-      ${kpi(solPend ? "red" : "green", "Solicitudes de la guía", fmt(solPend), solPend ? "por revisar" : "todo al día")}
+      ${kpi("green", "Por cobrar este mes", soles(porCobrar), "a Negocios y Personas")}
     </div>
     <div class="card mb-4"><div class="card-header"><div class="card-title">Contactos a canchas · últimos 30 días</div><span class="td-mono">Total ${fmt(total30)}</span></div>
       <div class="card-body">${total30 === 0 ? `<div class="sm-vacio">Todavía no hay contactos. Aparecerán cuando la gente use los botones de la guía de canchas.</div>` : `
@@ -289,20 +331,54 @@ function vResumen() {
       </div></div>
     <div class="grid-2">
       <div class="card"><div class="card-header"><div class="card-title">Canchas más contactadas · ${esc(nombreMes(E.mesClics))}</div></div><div class="card-body">${barrasH(top, "Aún no hay contactos en este mes.")}</div></div>
-      <div class="card"><div class="card-header"><div class="card-title">Usuarios por distrito</div></div><div class="card-body">${barrasH(Object.entries(cuentaDist).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([d, n]) => ({ etiqueta: d, valor: n })), "Todavía no hay usuarios registrados.")}</div></div>
+      <div class="card"><div class="card-header"><div class="card-title">Personas por distrito</div></div><div class="card-body">${barrasH(Object.entries(cuentaDist).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([d, n]) => ({ etiqueta: d, valor: n })), "Todavía no hay personas registradas.")}</div></div>
       <div class="card"><div class="card-header"><div class="card-title">Partidos activos por deporte</div></div><div class="card-body">${barrasH(["Tenis", "Pádel", "Fútbol", "Básket"].map((d) => ({ etiqueta: d, valor: activos.filter((p) => p.deporte === d).length })), "No hay partidos activos ahora.")}</div></div>
       <div class="card"><div class="card-header"><div class="card-title">Contactos por tipo · ${esc(nombreMes(mes))}</div></div><div class="card-body">${barrasH(TIPOS_CLIC.map((t) => ({ etiqueta: t.texto, valor: E.clicsDiarios.filter((d) => String(d.dia).startsWith(mes)).reduce((s, d) => s + Number(d[t.clave] || 0), 0) })))}</div></div>
     </div>`;
 }
 
 // ═════════════════════════ NEGOCIOS ═════════════════════════
+const PARAMS_NEGOCIO = [
+  { clave: "marketplace", titulo: "Marketplace", pct: "% de las ventas confirmadas del mes", monto: "S/ por cada pedido confirmado", unidad: "por pedido" },
+  { clave: "reservas", titulo: "Reservas de cancha", pct: "% del valor de las reservas pagadas", monto: "S/ por cada reserva pagada", unidad: "por reserva" },
+  { clave: "torneoInicial", titulo: "Torneo · por publicarlo", pct: "% de lo recaudado en inscripciones", monto: "S/ fijo por cada torneo", unidad: "por torneo" },
+  { clave: "torneoInscripcion", titulo: "Torneo · por inscripción", pct: "% de cada inscripción", monto: "S/ por cada inscrito aceptado", unidad: "por inscrito" }
+];
+
+function campoParam(p, valor) {
+  const q = valor || {};
+  const tipo = q.tipo === "S/" ? "S/" : "%";
+  return `<div class="sm-param" data-param="${p.clave}">
+    <div class="sm-param-titulo"><b>${p.titulo}</b><small data-ayuda>${tipo === "%" ? p.pct : p.monto}</small></div>
+    <div class="sm-param-campos">
+      <select data-tipo data-pct="${esc(p.pct)}" data-monto="${esc(p.monto)}"><option value="%" ${tipo === "%" ? "selected" : ""}>%</option><option value="S/" ${tipo === "S/" ? "selected" : ""}>S/</option></select>
+      <input type="number" min="0" step="0.5" data-valor value="${q.valor > 0 ? esc(q.valor) : ""}" placeholder="0">
+    </div></div>`;
+}
+function leerParam(cont, clave) {
+  const caja = cont.querySelector(`[data-param="${clave}"]`);
+  const valor = Number(caja.querySelector("[data-valor]").value);
+  const tipo = caja.querySelector("[data-tipo]").value;
+  if (!(valor > 0)) return null;
+  if (tipo === "%" && valor > 100) throw new Error("El porcentaje debe estar entre 0 y 100.");
+  return { tipo, valor };
+}
+
 function datosMesNegocio(n, mes) {
-  const plan = n.plan || {};
+  const plan = planDe(n);
   const ventas = E.pedidos.filter((p) => p.negocioId === n.id && ["confirmado", "entregado"].includes(p.estado) && p.mes === mes);
-  const totalVentas = ventas.reduce((a, p) => a + (Number(p.total) || 0), 0);
-  const comision = Math.round(totalVentas * (Number(plan.comision) || 0)) / 100;
-  const reservas = E.reservas.filter((r) => r.negocioId === n.id && String(r.fecha).startsWith(mes) && r.origen === "app" && ["reservado", "confirmado"].includes(r.estado)).length;
-  return { plan, ventas: ventas.length, totalVentas, comision, reservas };
+  const totalVentas = r2(ventas.reduce((a, p) => a + (Number(p.total) || 0), 0));
+  const delMes = E.reservas.filter((r) => r.negocioId === n.id && String(r.fecha).startsWith(mes) && r.origen === "app");
+  const pagadas = delMes.filter((r) => r.estado === "confirmado");
+  const montoReservas = r2(pagadas.reduce((a, r) => a + (Number(r.precio) || 0), 0));
+  const torneos = E.torneos.filter((t) => t.negocioId === n.id && t.estado !== "cancelado" && String(t.fechaInicio).startsWith(mes))
+    .map((t) => ({ t, ...cargoTorneo(t) }));
+  return {
+    plan, pedidos: ventas.length, totalVentas, marketplace: cargo(plan.marketplace, totalVentas, ventas.length),
+    reservasMes: delMes.filter((r) => ["reservado", "confirmado"].includes(r.estado)).length,
+    reservasPagadas: pagadas.length, montoReservas, reservas: cargo(plan.reservas, montoReservas, pagadas.length),
+    torneos, cargoTorneos: r2(torneos.reduce((a, x) => a + x.total, 0))
+  };
 }
 
 function vNegocios() {
@@ -315,7 +391,7 @@ function vNegocios() {
   const badge = (n) => est(n) === "verificado" ? `<span class="badge badge-green">Verificado</span>`
     : est(n) === "rechazado" ? `<span class="badge badge-red">Desactivado</span>` : `<span class="badge badge-yellow">Por verificar</span>`;
 
-  return cabecera("SportMatch · Negocios", "Clubes y tiendas que se registraron en \"Tengo un negocio\". Llámalos para verificar sus datos antes de activarlos: solo los verificados aparecen para los jugadores.") + `
+  return cabecera("SportMatch · Negocios", "Los Negocios se registran desde la app. Llámalos para verificar sus datos antes de activarlos: solo los verificados aparecen para las Personas. Aquí también defines lo que le cobras a cada uno.") + `
     <div class="crm-tabs">${tabs.map(([k, l]) => `<button class="crm-tab ${E.tabNegocios === k ? "active" : ""}" data-sm="tab-negocios" data-tab="${k}">${l} <span class="crm-count">${cuenta(k)}</span></button>`).join("")}</div>
     ${lista.length ? `<div class="sm-grid-negocios">${lista.map((n) => {
       const d = datosMesNegocio(n, mes);
@@ -323,23 +399,25 @@ function vNegocios() {
       return `<div class="card sm-negocio" data-negocio="${esc(n.id)}">
         <div class="card-header"><div class="card-title">${esc(n.nombre || "Sin nombre")}</div>${badge(n)}</div>
         <div class="card-body">
-          <div class="crm-kv"><span>Tipo</span><b>${esc(n.tipo || "—")}${(n.deportes || []).length ? " · " + esc(n.deportes.join(", ")) : ""}</b></div>
+          <div class="crm-kv"><span>Usa</span><b>${esc(textoFunciones(n))}${(n.deportes || []).length ? " · " + esc(n.deportes.join(", ")) : ""}</b></div>
           <div class="crm-kv"><span>Ubicación</span><b>${esc(n.distrito || "—")} · ${esc(n.direccion || "")}</b></div>
           <div class="crm-kv"><span>Responsable</span><b>${esc(n.responsable || "—")}</b></div>
           <div class="crm-kv"><span>WhatsApp</span><b>${n.telefono ? `<a href="https://wa.me/51${esc(String(n.telefono).replace(/\D/g, "").slice(-9))}" target="_blank" rel="noopener">${esc(n.telefono)}</a>` : "—"}</b></div>
           <div class="crm-kv"><span>Correo · RUC</span><b>${esc(n.correo || "—")} · ${esc(n.ruc || "—")}</b></div>
-          <div class="crm-kv"><span>Registrado</span><b>${fechaCorta(n.creadoEn)}${n.revisadoEn ? ` · revisado ${fechaCorta(n.revisadoEn)}` : ""}</b></div>
-          <div class="crm-kv"><span>Este mes</span><b>${fmt(sedes)} sedes · ${fmt(d.reservas)} reservas · ${soles(d.totalVentas)} en Market</b></div>
+          <div class="crm-kv"><span>Registrado</span><b>${fechaCorta(n.creadoEn)}${n.verificadoEn ? ` · verificado ${fechaCorta(n.verificadoEn)}` : ""}</b></div>
+          <div class="crm-kv"><span>Este mes</span><b>${fmt(sedes)} sedes · ${fmt(d.reservasMes)} reservas · ${soles(d.totalVentas)} en Marketplace · ${fmt(d.torneos.length)} torneos</b></div>
           <div class="sm-plan">
-            <div class="form-label" style="margin:14px 0 8px">Plan del negocio</div>
+            <div class="form-label" style="margin:16px 0 4px">Lo que le cobras</div>
+            <div class="section-sub" style="margin-bottom:10px">Elige % o S/ en cada comisión. Lo que quede en 0 o vacío no se cobra.</div>
             <div class="sm-plan-campos">
-              <label><span>Monto inicial (S/)</span><input type="number" min="0" step="1" data-plan="setup" value="${esc(d.plan.setup ?? "")}" placeholder="0"></label>
-              <label><span>Membresía mensual (S/)</span><input type="number" min="0" step="1" data-plan="membresia" value="${esc(d.plan.membresia ?? "")}" placeholder="0"></label>
-              <label><span>% de ventas Market</span><input type="number" min="0" max="100" step="0.5" data-plan="comision" value="${esc(d.plan.comision ?? "")}" placeholder="0"></label>
+              <label><span>Monto inicial (S/, una sola vez)</span><input type="number" min="0" step="1" data-fijo="setup" value="${d.plan.setup > 0 ? esc(d.plan.setup) : ""}" placeholder="0"></label>
+              <label><span>Membresía mensual (S/)</span><input type="number" min="0" step="1" data-fijo="membresia" value="${d.plan.membresia > 0 ? esc(d.plan.membresia) : ""}" placeholder="0"></label>
             </div>
+            <div class="sm-params">${PARAMS_NEGOCIO.map((p) => campoParam(p, d.plan[p.clave])).join("")}</div>
+            <div class="section-sub" style="margin-top:8px">Las tarifas de torneo se aplican a los torneos que el negocio publique desde que las guardes.</div>
           </div>
           <div class="sm-acciones">
-            <button class="btn btn-ghost btn-sm" data-sm="guardar-plan" data-id="${esc(n.id)}">Guardar plan</button>
+            <button class="btn btn-ghost btn-sm" data-sm="guardar-plan" data-id="${esc(n.id)}">Guardar</button>
             ${est(n) !== "verificado" ? `<button class="btn btn-green btn-sm" data-sm="estado-negocio" data-estado="verificado" data-id="${esc(n.id)}">✓ Verificar</button>` : ""}
             ${est(n) !== "rechazado" ? `<button class="btn btn-danger btn-sm" data-sm="estado-negocio" data-estado="rechazado" data-id="${esc(n.id)}">${est(n) === "verificado" ? "Desactivar" : "Rechazar"}</button>` : ""}
           </div>
@@ -349,22 +427,25 @@ function vNegocios() {
 
 async function guardarPlan(id, boton) {
   const tarjeta = boton.closest("[data-negocio]");
-  const plan = {};
-  tarjeta.querySelectorAll("[data-plan]").forEach((i) => { plan[i.dataset.plan] = i.value === "" ? null : Number(i.value); });
-  if (plan.comision != null && (plan.comision < 0 || plan.comision > 100)) { aviso("El % de ventas debe estar entre 0 y 100.", "error"); return; }
+  const fijo = (k) => { const v = Number(tarjeta.querySelector(`[data-fijo="${k}"]`).value); return v > 0 ? v : 0; };
+  let plan;
+  try {
+    plan = { setup: fijo("setup"), membresia: fijo("membresia") };
+    PARAMS_NEGOCIO.forEach((p) => { plan[p.clave] = leerParam(tarjeta, p.clave); });
+  } catch (e) { aviso(e.message, "error"); return; }
   boton.disabled = true;
   try {
     await updateDoc(doc(db, "negocios", id), { plan, revisadoEn: new Date().toISOString() });
     const n = E.negocios.find((x) => x.id === id); if (n) n.plan = plan;
-    aviso("Plan guardado.", "success");
-  } catch (e) { console.error(e); aviso("No se pudo guardar el plan.", "error"); }
+    aviso("Guardado.", "success");
+  } catch (e) { console.error(e); aviso("No se pudo guardar.", "error"); }
   boton.disabled = false;
 }
 
 async function cambiarEstadoNegocio(id, nuevo) {
   const n = E.negocios.find((x) => x.id === id);
   const ok = await confirmar(nuevo === "verificado"
-    ? `¿Verificar a <b>${esc(n?.nombre)}</b>?<br><span class="td-mono">Sus sedes y productos aparecerán para los jugadores.</span>`
+    ? `¿Verificar a <b>${esc(n?.nombre)}</b>?<br><span class="td-mono">Sus sedes, productos y torneos aparecerán para las Personas.</span>`
     : `¿Desactivar a <b>${esc(n?.nombre)}</b>?<br><span class="td-mono">Sus sedes y productos dejarán de verse en la app.</span>`,
     nuevo === "verificado" ? "Verificar" : "Desactivar", nuevo !== "verificado");
   if (!ok) return;
@@ -373,107 +454,235 @@ async function cambiarEstadoNegocio(id, nuevo) {
     const cambios = { estado: nuevo, revisadoEn: ahora };
     if (nuevo === "verificado" && !n?.verificadoEn) cambios.verificadoEn = ahora;
     await updateDoc(doc(db, "negocios", id), cambios);
-    const visible = nuevo === "verificado";
+    // Se muestra solo lo que el negocio tiene activo (Canchas y/o Marketplace)
+    const f = funcionesDe(n);
+    const verificado = nuevo === "verificado";
     const [sedes, productos] = await Promise.all([
       getDocs(query(collection(db, "sedes"), where("negocioId", "==", id))),
       getDocs(query(collection(db, "productos"), where("negocioId", "==", id)))
     ]);
     if (!sedes.empty || !productos.empty) {
       const lote = writeBatch(db);
-      sedes.forEach((d) => lote.update(d.ref, { visible }));
-      productos.forEach((d) => lote.update(d.ref, { visible }));
+      sedes.forEach((d) => lote.update(d.ref, { visible: verificado && f.canchas }));
+      productos.forEach((d) => lote.update(d.ref, { visible: verificado && f.marketplace }));
       await lote.commit();
     }
     if (n) Object.assign(n, cambios);
-    E.sedes.forEach((s) => { if (s.negocioId === id) s.visible = visible; });
-    aviso(visible ? "Negocio verificado: ya aparece para los jugadores." : "Negocio desactivado.", "success");
+    E.sedes.forEach((s) => { if (s.negocioId === id) s.visible = verificado && f.canchas; });
+    aviso(verificado ? "Negocio verificado: ya aparece para las Personas." : "Negocio desactivado.", "success");
     actualizarBadges();
     pintar("sm-negocios");
   } catch (e) { console.error(e); aviso("No se pudo actualizar el negocio.", "error"); }
 }
 
 // ═════════════════════════ COBROS ═════════════════════════
+// Una fila por Negocio verificado y por cada Persona que organizó torneos en el mes.
 function filasCobros(mes) {
   const finMes = mes + "-31";
-  return E.negocios
-    .filter((n) => n.estado === "verificado" && String(n.verificadoEn || n.creadoEn || "").slice(0, 10) <= finMes)
-    .map((n) => {
-      const d = datosMesNegocio(n, mes);
-      const registro = E.cobros.find((c) => c.id === `${n.id}_${mes}`);
-      const setupCobradoAntes = E.cobros.some((c) => c.negocioId === n.id && c.mes !== mes && Number(c.setup) > 0);
-      const setup = registro ? Number(registro.setup || 0) : (setupCobradoAntes ? 0 : Number(d.plan.setup) || 0);
-      const membresia = registro ? Number(registro.membresia || 0) : Number(d.plan.membresia) || 0;
-      const comision = registro ? Number(registro.comision || 0) : d.comision;
-      const total = registro ? Number(registro.total || 0) : Math.round((setup + membresia + comision) * 100) / 100;
-      return { n, d, registro, setup, membresia, comision, total, ventas: registro ? Number(registro.ventas || 0) : d.totalVentas, pct: registro ? registro.comisionPct : d.plan.comision };
-    })
-    .sort((a, b) => (a.registro ? 1 : 0) - (b.registro ? 1 : 0) || b.total - a.total);
+  const filas = [];
+  const total = (x) => r2(x.setup + x.membresia + x.marketplace + x.reservas + x.torneos);
+  const desdeRegistro = (c) => ({ setup: Number(c.setup) || 0, membresia: Number(c.membresia) || 0, marketplace: Number(c.marketplace) || 0, reservas: Number(c.reservas) || 0, torneos: Number(c.torneos) || 0 });
+
+  E.negocios.filter((n) => n.estado === "verificado" && String(n.verificadoEn || n.creadoEn || "").slice(0, 10) <= finMes).forEach((n) => {
+    const d = datosMesNegocio(n, mes);
+    const clave = `negocio_${n.id}_${mes}`;
+    const registro = E.cobros.find((c) => c.id === clave);
+    const setupCobrado = E.cobros.some((c) => c.tipo === "negocio" && c.quienId === n.id && c.mes !== mes && Number(c.setup) > 0);
+    const v = registro ? desdeRegistro(registro)
+      : { setup: setupCobrado ? 0 : d.plan.setup, membresia: d.plan.membresia, marketplace: d.marketplace, reservas: d.reservas, torneos: d.cargoTorneos };
+    filas.push({ clave, tipo: "negocio", id: n.id, nombre: n.nombre || "Negocio", distrito: n.distrito || "", documento: n.ruc ? "RUC " + n.ruc : "",
+      correo: n.correo || "", telefono: n.telefono || "", ...v, total: registro ? Number(registro.total) || 0 : total(v), registro, d, n });
+  });
+
+  const porPersona = {};
+  E.torneos.filter((t) => !t.negocioId && t.estado !== "cancelado" && String(t.fechaInicio).startsWith(mes))
+    .forEach((t) => { (porPersona[t.creadorId] = porPersona[t.creadorId] || []).push(t); });
+  Object.entries(porPersona).forEach(([uid, lista]) => {
+    const clave = `persona_${uid}_${mes}`;
+    const registro = E.cobros.find((c) => c.id === clave);
+    const cargos = lista.map((t) => ({ t, ...cargoTorneo(t) }));
+    const torneos = r2(cargos.reduce((a, x) => a + x.total, 0));
+    if (!registro && torneos <= 0) return;
+    const u = E.usuarios.find((x) => x.id === uid) || {};
+    const pr = E.privados[uid] || {};
+    const v = registro ? desdeRegistro(registro) : { setup: 0, membresia: 0, marketplace: 0, reservas: 0, torneos };
+    filas.push({ clave, tipo: "persona", id: uid, nombre: u.nombre || lista[0].creadorNombre || "Persona", distrito: u.distrito || "",
+      documento: pr.numeroDocumento ? `${pr.tipoDocumento || "DNI"} ${pr.numeroDocumento}` : "", correo: pr.correo || "", telefono: pr.telefono || "",
+      ...v, total: registro ? Number(registro.total) || 0 : total(v), registro, cargos });
+  });
+
+  // Cobros ya registrados que ya no calzan con los datos de hoy (ej. un torneo que luego se canceló)
+  E.cobros.filter((c) => c.mes === mes && !filas.some((f) => f.clave === c.id)).forEach((c) => {
+    filas.push({ clave: c.id, tipo: c.tipo, id: c.quienId, nombre: c.nombre, distrito: c.distrito || "", documento: c.documento || "",
+      correo: c.correo || "", telefono: c.telefono || "", ...desdeRegistro(c), total: Number(c.total) || 0, registro: c });
+  });
+
+  return filas.sort((a, b) => (a.registro ? 1 : 0) - (b.registro ? 1 : 0) || b.total - a.total || a.nombre.localeCompare(b.nombre, "es"));
 }
 
 function vCobros() {
   const mes = E.mesCobros;
   const filas = filasCobros(mes);
-  const porCobrar = filas.filter((f) => !f.registro).reduce((a, f) => a + f.total, 0);
-  const cobrado = filas.filter((f) => f.registro).reduce((a, f) => a + f.total, 0);
-  const sinPlan = filas.filter((f) => !f.n.plan || (!f.n.plan.membresia && !f.n.plan.setup && !f.n.plan.comision)).length;
+  const pend = filas.filter((f) => !f.registro), hechos = filas.filter((f) => f.registro);
+  const porCobrar = r2(pend.reduce((a, f) => a + f.total, 0));
+  const cobrado = r2(hechos.reduce((a, f) => a + f.total, 0));
+  const sinPlan = filas.filter((f) => f.tipo === "negocio" && !f.registro && f.total === 0).length;
+  const tp = E.tarifas || {};
   const sel = `<select data-sm="mes-cobros" style="width:auto">${ultimosMeses(12).map((m) => `<option value="${m}" ${m === mes ? "selected" : ""}>${esc(nombreMes(m))}</option>`).join("")}</select>`;
+  const celda = (v) => v ? soles(v) : `<span style="color:var(--text2)">—</span>`;
 
-  return cabecera("SportMatch · Cobros", "Lo que cada negocio verificado debe pagar en el mes: monto inicial (solo una vez), membresía y % de sus ventas confirmadas en el Market. Las reservas de cancha no pagan comisión por ahora.", sel +
+  return cabecera("SportMatch · Cobros", "Lo que te debe cada Negocio y cada Persona en el mes, según sus tarifas. Al marcar \"Cobrado\", el cobro pasa a Facturación como cobrado (sin SUNAT).", sel +
       `<button class="btn btn-ghost btn-sm" data-sm="csv-cobros">⬇ Descargar Excel</button>`) + `
     <div class="grid-3 mb-4">
-      <div class="stat-card accent"><div class="stat-label">Por cobrar</div><div class="stat-value">${soles(porCobrar)}</div><div class="stat-sub">${fmt(filas.filter((f) => !f.registro).length)} negocios</div></div>
-      <div class="stat-card green"><div class="stat-label">Cobrado</div><div class="stat-value">${soles(cobrado)}</div><div class="stat-sub">${fmt(filas.filter((f) => f.registro).length)} negocios</div></div>
-      <div class="stat-card blue"><div class="stat-label">Total del mes</div><div class="stat-value">${soles(porCobrar + cobrado)}</div><div class="stat-sub">${esc(nombreMes(mes))}</div></div>
+      <div class="stat-card accent"><div class="stat-label">Por cobrar</div><div class="stat-value">${soles(porCobrar)}</div><div class="stat-sub">${fmt(pend.length)} pendientes</div></div>
+      <div class="stat-card green"><div class="stat-label">Cobrado</div><div class="stat-value">${soles(cobrado)}</div><div class="stat-sub">${fmt(hechos.length)} cobros</div></div>
+      <div class="stat-card blue"><div class="stat-label">Total del mes</div><div class="stat-value">${soles(r2(porCobrar + cobrado))}</div><div class="stat-sub">${esc(nombreMes(mes))}</div></div>
     </div>
-    ${sinPlan ? `<div class="sm-banner mb-4">${fmt(sinPlan)} negocio(s) verificados todavía no tienen plan. Configúralo en <a href="#" data-sm="ir" data-vista="sm-negocios">Negocios</a>.</div>` : ""}
-    <div class="card"><div class="table-wrap">
-      ${filas.length ? `<table><thead><tr><th>Negocio</th><th>Monto inicial</th><th>Membresía</th><th>Ventas Market</th><th>Comisión</th><th>Total</th><th>Estado</th><th></th></tr></thead><tbody>
+    ${sinPlan ? `<div class="sm-banner mb-4">${fmt(sinPlan)} negocio(s) verificado(s) no tienen nada por cobrar este mes. Revisa sus tarifas en <a href="#" data-sm="ir" data-vista="sm-negocios">Negocios</a>.</div>` : ""}
+    <div class="card mb-4"><div class="table-wrap">
+      ${filas.length ? `<table><thead><tr><th>Quién</th><th>Monto inicial</th><th>Membresía</th><th>Marketplace</th><th>Reservas</th><th>Torneos</th><th>Total</th><th>Estado</th><th></th></tr></thead><tbody>
       ${filas.map((f) => `<tr>
-        <td class="td-name">${esc(f.n.nombre)}<div class="td-mono">${esc(f.n.distrito || "")}</div></td>
-        <td class="td-mono">${f.setup ? soles(f.setup) : "—"}</td>
-        <td class="td-mono">${soles(f.membresia)}</td>
-        <td class="td-mono">${soles(f.ventas)}</td>
-        <td class="td-mono">${soles(f.comision)}${f.pct ? ` <span style="color:var(--text2)">(${esc(f.pct)}%)</span>` : ""}</td>
+        <td class="td-name">${esc(f.nombre)}<div class="td-mono">${f.tipo === "negocio" ? "Negocio" : "Persona"}${f.distrito ? " · " + esc(f.distrito) : ""}</div></td>
+        <td class="td-mono">${celda(f.setup)}</td>
+        <td class="td-mono">${celda(f.membresia)}</td>
+        <td class="td-mono">${celda(f.marketplace)}</td>
+        <td class="td-mono">${celda(f.reservas)}</td>
+        <td class="td-mono">${celda(f.torneos)}</td>
         <td class="td-name">${soles(f.total)}</td>
         <td>${f.registro ? `<span class="badge badge-green">Cobrado</span><div class="td-mono">${fechaCorta(f.registro.cobradoEn)}</div>` : `<span class="badge badge-yellow">Pendiente</span>`}</td>
-        <td style="text-align:right;white-space:nowrap">${f.registro
-          ? `<button class="btn btn-ghost btn-sm" data-sm="deshacer-cobro" data-id="${esc(f.registro.id)}">Deshacer</button>`
-          : `<button class="btn btn-green btn-sm" data-sm="marcar-cobro" data-id="${esc(f.n.id)}" ${f.total > 0 ? "" : "disabled title='No hay monto por cobrar'"}>Marcar cobrado</button>`}</td>
-      </tr>`).join("")}</tbody></table>` : `<div class="empty-state"><h3>Sin cobros este mes</h3><p>Aquí aparecerán los negocios verificados.</p></div>`}
+        <td style="text-align:right;white-space:nowrap">
+          <button class="btn btn-ghost btn-sm" data-sm="ver-cobro" data-clave="${esc(f.clave)}">Detalle</button>
+          ${f.registro
+            ? `<button class="btn btn-ghost btn-sm" data-sm="deshacer-cobro" data-id="${esc(f.clave)}">Deshacer</button>`
+            : `<button class="btn btn-green btn-sm" data-sm="marcar-cobro" data-clave="${esc(f.clave)}" ${f.total > 0 ? "" : "disabled title='No hay monto por cobrar'"}>Marcar cobrado</button>`}</td>
+      </tr>`).join("")}</tbody></table>` : `<div class="empty-state"><h3>Sin cobros este mes</h3><p>Aquí aparecerán los Negocios verificados y las Personas que organicen torneos con tarifa.</p></div>`}
     </div></div>
-    <p class="section-sub" style="margin-top:12px">Al marcar "Cobrado" se guarda una foto de los montos de ese momento. La boleta o factura se emite desde SUNAT y la registras en Facturación.</p>`;
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">Tarifa general para Personas que organizan torneos</div></div>
+      <div class="card-body" id="smTarifasPersonas">
+        <div class="section-sub" style="margin-bottom:12px">Se aplica a todas las Personas. Lo que quede en 0 o vacío no se cobra. Cada torneo guarda la tarifa vigente cuando se publica; si la cambias, aplica a los torneos nuevos.</div>
+        <div class="sm-params">${PARAMS_NEGOCIO.filter((p) => p.clave.startsWith("torneo")).map((p) => campoParam(p, tp[p.clave])).join("")}</div>
+        <div class="sm-acciones"><button class="btn btn-primary btn-sm" data-sm="guardar-tarifas">Guardar tarifa</button>
+          ${tp.actualizadoEn ? `<span class="td-mono" style="align-self:center">Actualizada ${fechaCorta(tp.actualizadoEn)}</span>` : ""}</div>
+      </div>
+    </div>`;
 }
 
-async function marcarCobro(negocioId, boton) {
-  const mes = E.mesCobros;
-  const f = filasCobros(mes).find((x) => x.n.id === negocioId);
+function verDetalleCobro(clave) {
+  const f = filasCobros(E.mesCobros).find((x) => x.clave === clave);
   if (!f) return;
-  const ok = await confirmar(`¿Marcar como cobrado <b>${soles(f.total)}</b> a <b>${esc(f.n.nombre)}</b> por ${esc(nombreMes(mes))}?`, "Marcar cobrado");
+  const fila = (k, v) => `<div class="crm-kv"><span>${k}</span><b>${v}</b></div>`;
+  const listaTorneos = (cargos) => cargos && cargos.length ? `<div class="form-label" style="margin:16px 0 6px">Torneos del mes</div>
+    <div class="table-wrap"><table><thead><tr><th>Torneo</th><th>Inscritos</th><th>Recaudado</th><th>Tarifa</th><th>Cargo</th></tr></thead><tbody>
+    ${cargos.map((c) => `<tr><td class="td-name">${esc(c.t.nombre)}<div class="td-mono">${esc(c.t.fechaInicio)}</div></td><td class="td-mono">${fmt(c.inscritos)}</td><td class="td-mono">${soles(c.recaudado)}</td><td class="td-mono">${esc(textoTarifaTorneo(c.t.tarifa))}</td><td class="td-name">${soles(c.total)}</td></tr>`).join("")}
+    </tbody></table></div>` : "";
+  let cuerpo = "";
+  if (f.registro) cuerpo += `<div class="sm-banner mb-4">Cobrado el ${fechaCorta(f.registro.cobradoEn)}. Estos montos quedaron guardados al momento de cobrar${f.registro.facturacion ? " y están en Facturación" : ""}.</div>`;
+  cuerpo += fila("Tipo", f.tipo === "negocio" ? "Negocio" : "Persona") + (f.documento ? fila("Documento", esc(f.documento)) : "") +
+    (f.telefono ? fila("Teléfono", `<a href="https://wa.me/51${esc(String(f.telefono).replace(/\D/g, "").slice(-9))}" target="_blank" rel="noopener">${esc(f.telefono)}</a>`) : "") +
+    (f.correo ? fila("Correo", esc(f.correo)) : "");
+  if (f.tipo === "negocio" && f.d) {
+    const p = f.d.plan;
+    cuerpo += `<div class="form-label" style="margin:16px 0 6px">Cálculo de ${esc(nombreMes(E.mesCobros))}</div>` +
+      fila("Monto inicial", f.setup ? soles(f.setup) : (p.setup ? "Ya cobrado antes" : "—")) +
+      fila("Membresía", soles(f.membresia)) +
+      fila(`Marketplace (${textoParam(p.marketplace, "por pedido")})`, `${soles(f.d.totalVentas)} vendidos en ${fmt(f.d.pedidos)} pedidos → <b>${soles(f.marketplace)}</b>`) +
+      fila(`Reservas (${textoParam(p.reservas, "por reserva")})`, `${fmt(f.d.reservasPagadas)} reservas pagadas por ${soles(f.d.montoReservas)} → <b>${soles(f.reservas)}</b>`) +
+      fila("Torneos", soles(f.torneos)) + listaTorneos(f.d.torneos);
+  } else if (f.cargos) cuerpo += listaTorneos(f.cargos);
+  cuerpo += `<div class="crm-kv" style="font-size:15px"><span>Total</span><b>${soles(f.total)}</b></div>`;
+  modal(esc(f.nombre), cuerpo, `<button class="btn btn-ghost" data-sm="cerrar-modal">Cerrar</button>`, 680);
+}
+
+// Pasa el cobro a Facturación (CRM de Etrazia): crea el cliente la primera vez
+const edb = () => getFirestore(getApp());
+const hoyLocal = () => hoyISO();
+async function registrarEnFacturacion(f, mes, clave) {
+  const smId = `${f.tipo}:${f.id}`;
+  const snap = await getDocs(query(collection(edb(), "clientes"), where("smId", "==", smId)));
+  let clienteId, facturas;
+  if (snap.empty) {
+    const ref = await addDoc(collection(edb(), "clientes"), {
+      nombre: f.nombre, ruc: f.tipo === "negocio" ? String(f.documento || "").replace(/^RUC\s*/, "") : "", estado: "cliente",
+      email: f.correo || "", telefono: f.telefono || "", web: "",
+      notas: `Cliente de SportMatch (${f.tipo === "negocio" ? "Negocio" : "Persona"}${f.documento && f.tipo === "persona" ? " · " + f.documento : ""}). Creado automáticamente al registrar su primer cobro.`,
+      contactos: [], interacciones: [], documentos: [], activos: [], facturas: [], cotizacionesVinculadas: [],
+      origen: "SportMatch", smId, createdAt: serverTimestamp()
+    });
+    clienteId = ref.id; facturas = [];
+  } else { clienteId = snap.docs[0].id; facturas = snap.docs[0].data().facturas || []; }
+  const partes = [["Monto inicial", f.setup], ["Membresía", f.membresia], ["Marketplace", f.marketplace], ["Reservas", f.reservas], ["Torneos", f.torneos]]
+    .filter(([, v]) => v > 0).map(([k]) => k);
+  const item = {
+    id: "sm-" + clave, numero: "", concepto: `SportMatch · ${partes.join(" + ")} · ${nombreMes(mes)}`, monto: f.total, moneda: "PEN",
+    fechaEmision: hoyLocal(), estado: "pagada", fechaPago: hoyLocal(), detraccion: 0, detraccionPct: 0, origen: "SportMatch", cobroId: clave
+  };
+  await updateDoc(doc(edb(), "clientes", clienteId), { facturas: [...facturas.filter((x) => x.id !== item.id), item] });
+  return { clienteId, facturaId: item.id };
+}
+async function quitarDeFacturacion(fac) {
+  if (!fac?.clienteId) return;
+  const ref = doc(edb(), "clientes", fac.clienteId);
+  const c = await getDoc(ref);
+  if (!c.exists()) return;
+  await updateDoc(ref, { facturas: (c.data().facturas || []).filter((x) => x.id !== fac.facturaId) });
+}
+
+async function marcarCobro(clave, boton) {
+  const mes = E.mesCobros;
+  const f = filasCobros(mes).find((x) => x.clave === clave);
+  if (!f || f.registro) return;
+  const ok = await confirmar(`¿Marcar como cobrado <b>${soles(f.total)}</b> a <b>${esc(f.nombre)}</b> por ${esc(nombreMes(mes))}?<br>
+    <span class="td-mono">Se registra en Facturación como cobrado${f.tipo === "persona" ? "" : ""}. Si es su primer cobro, se crea como cliente en tu CRM.</span>`, "Marcar cobrado");
   if (!ok) return;
   boton.disabled = true;
-  const id = `${negocioId}_${mes}`;
+  let fac = null;
+  try { fac = await registrarEnFacturacion(f, mes, clave); }
+  catch (e) { console.error(e); aviso("No se pudo registrar en Facturación. No se marcó el cobro.", "error"); boton.disabled = false; return; }
   const datos = {
-    negocioId, negocioNombre: f.n.nombre || "", mes, setup: f.setup, membresia: f.membresia,
-    ventas: f.ventas, comisionPct: Number(f.pct) || 0, comision: f.comision, total: f.total,
-    estado: "cobrado", cobradoEn: new Date().toISOString()
+    tipo: f.tipo, quienId: f.id, nombre: f.nombre, distrito: f.distrito, documento: f.documento, correo: f.correo, telefono: f.telefono, mes,
+    setup: f.setup, membresia: f.membresia, marketplace: f.marketplace, reservas: f.reservas, torneos: f.torneos, total: f.total,
+    estado: "cobrado", cobradoEn: new Date().toISOString(), facturacion: fac
   };
   try {
-    await setDoc(doc(db, "cobros", id), datos);
-    E.cobros.push({ id, ...datos });
-    aviso("Cobro registrado.", "success");
+    await setDoc(doc(db, "cobros", clave), datos);
+    E.cobros.push({ id: clave, ...datos });
+    aviso("Cobro registrado y enviado a Facturación.", "success");
     pintar("sm-cobros");
-  } catch (e) { console.error(e); aviso("No se pudo registrar el cobro.", "error"); boton.disabled = false; }
+  } catch (e) {
+    console.error(e);
+    await quitarDeFacturacion(fac).catch(() => {});
+    aviso("No se pudo registrar el cobro.", "error");
+    boton.disabled = false;
+  }
 }
 
-async function deshacerCobro(id) {
-  const ok = await confirmar("¿Deshacer este cobro? Volverá a quedar como pendiente.", "Deshacer", true);
+async function deshacerCobro(clave) {
+  const c = E.cobros.find((x) => x.id === clave);
+  const ok = await confirmar("¿Deshacer este cobro? Volverá a quedar pendiente y se quitará de Facturación.", "Deshacer", true);
   if (!ok) return;
   try {
-    await deleteDoc(doc(db, "cobros", id));
-    E.cobros = E.cobros.filter((c) => c.id !== id);
+    await quitarDeFacturacion(c?.facturacion);
+    await deleteDoc(doc(db, "cobros", clave));
+    E.cobros = E.cobros.filter((x) => x.id !== clave);
     aviso("Cobro deshecho.", "success");
     pintar("sm-cobros");
   } catch (e) { console.error(e); aviso("No se pudo deshacer.", "error"); }
+}
+
+async function guardarTarifasPersonas(boton) {
+  const cont = $("smTarifasPersonas");
+  let datos;
+  try { datos = { torneoInicial: leerParam(cont, "torneoInicial"), torneoInscripcion: leerParam(cont, "torneoInscripcion"), actualizadoEn: new Date().toISOString() }; }
+  catch (e) { aviso(e.message, "error"); return; }
+  boton.disabled = true;
+  try {
+    await setDoc(doc(db, "config", "tarifas"), datos);
+    E.tarifas = datos;
+    aviso("Tarifa guardada. Aplica a los torneos que las Personas publiquen desde ahora.", "success");
+    pintar("sm-cobros");
+  } catch (e) { console.error(e); aviso("No se pudo guardar la tarifa.", "error"); boton.disabled = false; }
 }
 
 function descargarCSV(nombre, cab, filas) {
@@ -541,19 +750,12 @@ function pintarTablaCanchas() {
 
 const slug = (s) => norm(s).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 70);
 
-function abrirEditorCancha(cancha, solicitud = null) {
-  const c = cancha || {
-    s: solicitud && DEPORTES_GUIA.includes(solicitud.deporte) ? solicitud.deporte : "Tenis",
-    n: solicitud?.nombre || "", d: solicitud?.distrito || "", a: solicitud?.direccion || "",
-    t: solicitud?.telefono ? [solicitud.telefono] : [], x: "",
-    activa: true, verificada: !!solicitud, autorizo: !!solicitud?.autoriza, destacada: false,
-    notas: solicitud ? `Registrada por ${solicitud.contacto || "—"} el ${fechaCorta(solicitud.creadoEn)} desde el formulario de la guía.` : ""
-  };
+function abrirEditorCancha(cancha) {
+  const c = cancha || { s: "Tenis", n: "", d: "", a: "", t: [], x: "", activa: true, verificada: false, autorizo: false, destacada: false, notas: "" };
   const distritos = !c.d || DISTRITOS_LIMA.includes(c.d) ? DISTRITOS_LIMA : [c.d, ...DISTRITOS_LIMA];
-  const titulo = solicitud ? "Aprobar solicitud" : cancha ? "Editar cancha" : "Nueva cancha";
+  const titulo = cancha ? "Editar cancha" : "Nueva cancha";
   const check = (id, val, txt, sub) => `<label class="sm-check"><input type="checkbox" id="${id}" ${val ? "checked" : ""}><span><b>${txt}</b><small>${sub}</small></span></label>`;
   modal(titulo, `
-    ${solicitud ? `<div class="sm-banner mb-4">Revisa y corrige los datos antes de publicar. Al guardar, la cancha aparece en la guía.</div>` : ""}
     <div class="form-row">
       <div class="form-group"><label class="form-label">Deporte</label><select id="ecDeporte">${DEPORTES_GUIA.map((d) => `<option ${d === c.s ? "selected" : ""}>${d}</option>`).join("")}</select></div>
       <div class="form-group"><label class="form-label">Distrito</label><select id="ecDistrito"><option value="">Selecciona</option>${distritos.map((d) => `<option ${d === c.d ? "selected" : ""}>${esc(d)}</option>`).join("")}</select></div>
@@ -572,7 +774,7 @@ function abrirEditorCancha(cancha, solicitud = null) {
     </div>
     <div class="form-group" style="margin-top:14px"><label class="form-label">Notas internas (no se publican)</label><textarea id="ecNotas" rows="3" maxlength="600">${esc(c.notas || "")}</textarea></div>
     <div class="login-err" id="ecError"></div>`,
-  `<button class="btn btn-ghost" data-sm="cerrar-modal">Cancelar</button><button class="btn btn-primary" id="ecGuardar">${solicitud ? "Aprobar y publicar" : "Guardar"}</button>`);
+  `<button class="btn btn-ghost" data-sm="cerrar-modal">Cancelar</button><button class="btn btn-primary" id="ecGuardar">Guardar</button>`);
 
   $("ecGuardar").addEventListener("click", async () => {
     const datos = {
@@ -591,17 +793,12 @@ function abrirEditorCancha(cancha, solicitud = null) {
         Object.assign(cancha, datos);
       } else {
         const id = `${slug(`${datos.s}-${datos.n}-${datos.d}`)}-${Date.now().toString(36)}`;
-        const nueva = { ...datos, orden: 10000, creadoEn: datos.actualizadoEn, origen: solicitud ? "formulario de la guía" : "creada en el panel" };
+        const nueva = { ...datos, orden: 10000, creadoEn: datos.actualizadoEn, origen: "creada en el panel" };
         await setDoc(doc(db, "canchas", id), nueva);
         E.canchas.push({ id, ...nueva });
-        if (solicitud) {
-          await updateDoc(doc(db, "solicitudesCanchas", solicitud.id), { estado: "aprobada", canchaId: id, revisadoEn: datos.actualizadoEn });
-          solicitud.estado = "aprobada"; solicitud.canchaId = id;
-        }
       }
       cerrarModal();
-      aviso(solicitud ? "Solicitud aprobada y publicada." : "Cancha guardada.", "success");
-      actualizarBadges();
+      aviso("Cancha guardada.", "success");
       pintar(E.vistaActual);
     } catch (e) {
       console.error(e);
@@ -636,67 +833,154 @@ En ${nombreMes(u.mes)}, ${c.n} recibió ${fmt(totalClics(u))} contactos de jugad
   });
 }
 
-// ═════════════════════════ SOLICITUDES ═════════════════════════
-function vSolicitudes() {
-  const pend = E.solicitudes.filter((s) => s.estado === "pendiente");
-  const lista = (E.verHistorial ? E.solicitudes : pend).slice().sort((a, b) => String(b.creadoEn).localeCompare(String(a.creadoEn)));
-  return cabecera("SportMatch · Solicitudes", "Canchas que pidieron aparecer en la guía desde el formulario \"Registrar mi cancha\".",
-      `<button class="btn btn-ghost btn-sm" data-sm="historial">${E.verHistorial ? "Ver solo pendientes" : "Ver historial"}</button>`) +
-    (lista.length ? `<div class="sm-grid-negocios">${lista.map((s) => {
-      const b = s.estado === "pendiente" ? `<span class="badge badge-yellow">Pendiente</span>` : s.estado === "aprobada" ? `<span class="badge badge-green">Aprobada</span>` : `<span class="badge badge-red">Rechazada</span>`;
-      return `<div class="card"><div class="card-header"><div class="card-title">${esc(s.nombre)}</div>${b}</div><div class="card-body">
-        <div class="crm-kv"><span>Deporte · Distrito</span><b>${esc(s.deporte)} · ${esc(s.distrito)}</b></div>
-        <div class="crm-kv"><span>Dirección</span><b>${esc(s.direccion)}</b></div>
-        <div class="crm-kv"><span>Teléfono</span><b>${esc(s.telefono)}</b></div>
-        <div class="crm-kv"><span>Contacto</span><b>${esc(s.contacto)} · ${s.autoriza ? "autorizó publicar" : `<span style="color:var(--red)">no autorizó</span>`}</b></div>
-        ${s.tipo ? `<div class="crm-kv"><span>Negocio</span><b>${esc(s.tipo)}${s.ruc ? " · RUC " + esc(s.ruc) : ""}</b></div>` : ""}
-        ${s.correo ? `<div class="crm-kv"><span>Correo</span><b>${esc(s.correo)}</b></div>` : ""}
-        <div class="crm-kv"><span>Recibida</span><b>${fechaCorta(s.creadoEn)}</b></div>
-        ${s.estado === "pendiente" ? `<div class="sm-acciones">
-          <button class="btn btn-green btn-sm" data-sm="aprobar-sol" data-id="${esc(s.id)}">Revisar y aprobar</button>
-          <button class="btn btn-danger btn-sm" data-sm="rechazar-sol" data-id="${esc(s.id)}">Rechazar</button></div>` : ""}
-      </div></div>`;
-    }).join("")}</div>`
-      : `<div class="card"><div class="empty-state"><h3>${E.verHistorial ? "Todavía no llegan solicitudes" : "No hay solicitudes pendientes"}</h3><p>Cuando una cancha use "Registrar mi cancha", aparecerá aquí.</p></div></div>`);
+// ═════════════════════════ TORNEOS ═════════════════════════
+function grupoTorneo(t) {
+  if (t.estado === "cancelado") return "cancelados";
+  return String(t.fechaInicio) >= hoyISO() ? "vigentes" : "pasados";
+}
+function organizadorDe(t) {
+  if (t.negocioId) { const n = E.negocios.find((x) => x.id === t.negocioId); return { tipo: "Negocio", nombre: n?.nombre || t.creadorNombre || "Negocio" }; }
+  const u = E.usuarios.find((x) => x.id === t.creadorId);
+  return { tipo: "Persona", nombre: u?.nombre || t.creadorNombre || "Persona" };
 }
 
-async function rechazarSolicitud(id) {
-  const ok = await confirmar("¿Rechazar esta solicitud? No se publicará en la guía.", "Rechazar", true);
+function vTorneos() {
+  const cuenta = (g) => E.torneos.filter((t) => grupoTorneo(t) === g).length;
+  const tabs = [["vigentes", "Vigentes"], ["pasados", "Pasados"], ["cancelados", "Cancelados"]];
+  return cabecera("SportMatch · Torneos", "Todos los torneos de Personas y Negocios. Ellos los manejan libremente; desde aquí puedes editarlos, cancelarlos o eliminarlos.") + `
+    <div class="crm-tabs">${tabs.map(([k, l]) => `<button class="crm-tab ${E.tabTorneos === k ? "active" : ""}" data-sm="tab-torneos" data-tab="${k}">${l} <span class="crm-count">${cuenta(k)}</span></button>`).join("")}</div>
+    <div class="filter-bar mb-4">
+      <div class="search-wrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="search-input" id="smTBuscar" type="search" placeholder="Buscar por torneo, lugar u organizador"></div>
+      <select id="smTOrganiza" style="width:auto"><option value="">Organiza: todos</option><option value="Negocio">Negocios</option><option value="Persona">Personas</option></select>
+    </div>
+    <div class="card"><div class="table-wrap"><table>
+      <thead><tr><th>Torneo</th><th>Organiza</th><th>Fecha</th><th>Inscritos</th><th>Inscripción</th><th>Tarifa SportMatch</th><th>Estado</th><th></th></tr></thead>
+      <tbody id="smTablaTorneos"></tbody></table></div></div>`;
+}
+
+function pintarTablaTorneos() {
+  const tb = $("smTablaTorneos"); if (!tb) return;
+  const txt = norm($("smTBuscar")?.value.trim()), org = $("smTOrganiza")?.value;
+  const filas = E.torneos.filter((t) => grupoTorneo(t) === E.tabTorneos)
+    .map((t) => ({ t, o: organizadorDe(t) }))
+    .filter(({ t, o }) => (!org || o.tipo === org) && (!txt || norm(`${t.nombre} ${t.lugar} ${t.distrito} ${o.nombre}`).includes(txt)))
+    .sort((a, b) => E.tabTorneos === "vigentes"
+      ? String(a.t.fechaInicio + a.t.hora).localeCompare(String(b.t.fechaInicio + b.t.hora))
+      : String(b.t.fechaInicio + b.t.hora).localeCompare(String(a.t.fechaInicio + a.t.hora)));
+  const estado = (t) => t.estado === "cancelado" ? `<span class="badge badge-red">Cancelado</span>`
+    : t.estado === "cerrado" ? `<span class="badge badge-blue">Inscripciones cerradas</span>` : `<span class="badge badge-green">Abierto</span>`;
+  tb.innerHTML = filas.length ? filas.map(({ t, o }) => `<tr>
+    <td><div class="td-name">${esc(t.nombre)}</div><div class="td-mono">${esc(t.deporte)} · ${t.modalidad === "dobles" ? "Dobles" : "Singles"}${t.visibilidad === "privado" ? " · Privado" : ""} · ${esc(t.distrito || "")}</div></td>
+    <td><div class="td-name">${esc(o.nombre)}</div><div class="td-mono">${o.tipo}</div></td>
+    <td class="td-mono">${esc(t.fechaInicio)} ${esc(t.hora || "")}</td>
+    <td class="td-mono">${fmt((t.inscritos || []).length)} / ${fmt(t.cupos)}${(t.pendientes || []).length ? `<div>${fmt(t.pendientes.length)} por aceptar</div>` : ""}</td>
+    <td class="td-mono">${Number(t.precio) ? soles(t.precio) : "Gratis"}</td>
+    <td class="td-mono">${esc(textoTarifaTorneo(t.tarifa))}</td>
+    <td>${estado(t)}</td>
+    <td style="text-align:right;white-space:nowrap">
+      <a class="btn btn-ghost btn-sm" href="${URL_APP}/detalle-torneo.html?id=${encodeURIComponent(t.id)}" target="_blank" rel="noopener">Ver ↗</a>
+      <button class="btn btn-ghost btn-sm" data-sm="editar-torneo" data-id="${esc(t.id)}">Editar</button>
+      ${t.estado !== "cancelado" ? `<button class="btn btn-danger btn-sm" data-sm="cancelar-torneo" data-id="${esc(t.id)}">Cancelar</button>` : ""}
+      <button class="btn btn-danger btn-sm" data-sm="eliminar-torneo" data-id="${esc(t.id)}" title="Eliminar">✕</button></td>
+  </tr>`).join("") : `<tr><td colspan="8"><div class="sm-vacio">${E.torneos.length ? "No hay torneos con esos filtros." : "Todavía no se ha creado ningún torneo."}</div></td></tr>`;
+}
+
+function abrirEditorTorneo(t) {
+  if (!t) return;
+  const distritos = !t.distrito || DISTRITOS_LIMA.includes(t.distrito) ? DISTRITOS_LIMA : [t.distrito, ...DISTRITOS_LIMA];
+  modal("Editar torneo", `
+    <div class="form-group"><label class="form-label">Nombre</label><input id="etNombre" maxlength="80" value="${esc(t.nombre)}"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Fecha de inicio</label><input type="date" id="etFecha" value="${esc(t.fechaInicio)}"></div>
+      <div class="form-group"><label class="form-label">Hora</label><input type="time" id="etHora" value="${esc(t.hora)}"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Lugar</label><input id="etLugar" maxlength="120" value="${esc(t.lugar)}"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Distrito</label><select id="etDistrito">${distritos.map((d) => `<option ${d === t.distrito ? "selected" : ""}>${esc(d)}</option>`).join("")}</select></div>
+      <div class="form-group"><label class="form-label">Inscripciones</label><select id="etEstado">
+        <option value="abierto" ${t.estado === "abierto" ? "selected" : ""}>Abiertas</option>
+        <option value="cerrado" ${t.estado === "cerrado" ? "selected" : ""}>Cerradas</option>
+        ${t.estado === "cancelado" ? `<option value="cancelado" selected>Cancelado</option>` : ""}</select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Cupos</label><input type="number" id="etCupos" min="2" max="128" value="${esc(t.cupos)}"></div>
+      <div class="form-group"><label class="form-label">Inscripción (S/)</label><input type="number" id="etPrecio" min="0" step="1" value="${esc(t.precio || 0)}"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Reglas o detalles</label><textarea id="etDescripcion" rows="3" maxlength="800">${esc(t.descripcion || "")}</textarea></div>
+    <div class="section-sub">La tarifa de SportMatch de este torneo (${esc(textoTarifaTorneo(t.tarifa))}) no se cambia: es la que estaba vigente cuando se publicó.</div>
+    <div class="login-err" id="etError"></div>`,
+  `<button class="btn btn-ghost" data-sm="cerrar-modal">Cancelar</button><button class="btn btn-primary" id="etGuardar">Guardar</button>`);
+  $("etGuardar").addEventListener("click", async () => {
+    const cambios = {
+      nombre: $("etNombre").value.trim(), fechaInicio: $("etFecha").value, hora: $("etHora").value, lugar: $("etLugar").value.trim(),
+      distrito: $("etDistrito").value, estado: $("etEstado").value, cupos: Number($("etCupos").value), precio: Number($("etPrecio").value) || 0,
+      descripcion: $("etDescripcion").value.trim(), editadoPorAdminEn: new Date().toISOString()
+    };
+    if (cambios.nombre.length < 4 || !cambios.fechaInicio || !cambios.hora || cambios.lugar.length < 3) { $("etError").textContent = "Completa nombre, fecha, hora y lugar."; return; }
+    if (!(cambios.cupos >= 2 && cambios.cupos <= 128)) { $("etError").textContent = "Los cupos deben estar entre 2 y 128."; return; }
+    $("etGuardar").disabled = true;
+    try {
+      await updateDoc(doc(db, "torneos", t.id), cambios);
+      Object.assign(t, cambios);
+      cerrarModal();
+      aviso("Torneo actualizado.", "success");
+      pintar("sm-torneos");
+    } catch (e) { console.error(e); $("etGuardar").disabled = false; $("etError").textContent = "No se pudo guardar. Inténtalo de nuevo."; }
+  });
+}
+
+async function cancelarTorneo(id) {
+  const t = E.torneos.find((x) => x.id === id);
+  const ok = await confirmar(`¿Cancelar <b>${esc(t?.nombre)}</b>?<br><span class="td-mono">Se avisará a las personas inscritas. No se puede deshacer.</span>`, "Cancelar torneo", true);
   if (!ok) return;
   try {
-    const ahora = new Date().toISOString();
-    await updateDoc(doc(db, "solicitudesCanchas", id), { estado: "rechazada", revisadoEn: ahora });
-    const s = E.solicitudes.find((x) => x.id === id); if (s) s.estado = "rechazada";
-    aviso("Solicitud rechazada.", "success");
-    actualizarBadges();
-    pintar("sm-solicitudes");
-  } catch (e) { console.error(e); aviso("No se pudo actualizar.", "error"); }
+    await updateDoc(doc(db, "torneos", id), { estado: "cancelado", canceladoPorAdminEn: new Date().toISOString() });
+    if (t) t.estado = "cancelado";
+    aviso("Torneo cancelado.", "success");
+    pintar("sm-torneos");
+  } catch (e) { console.error(e); aviso("No se pudo cancelar.", "error"); }
 }
 
-// ═════════════════════════ USUARIOS ═════════════════════════
-function vUsuarios() {
+async function eliminarTorneo(id) {
+  const t = E.torneos.find((x) => x.id === id);
+  const ok = await confirmar(`¿Eliminar <b>${esc(t?.nombre)}</b> por completo?<br><span class="td-mono">Se borran el torneo y sus inscripciones. No se puede deshacer. Si solo quieres detenerlo, usa Cancelar.</span>`, "Eliminar", true);
+  if (!ok) return;
+  try {
+    const ins = await getDocs(collection(db, "torneos", id, "inscripciones"));
+    if (!ins.empty) { const lote = writeBatch(db); ins.forEach((d) => lote.delete(d.ref)); await lote.commit(); }
+    await deleteDoc(doc(db, "torneos", id));
+    E.torneos = E.torneos.filter((x) => x.id !== id);
+    aviso("Torneo eliminado.", "success");
+    pintar("sm-torneos");
+  } catch (e) { console.error(e); aviso("No se pudo eliminar.", "error"); }
+}
+
+// ═════════════════════════ PERSONAS ═════════════════════════
+function vPersonas() {
   const distritos = [...new Set(E.usuarios.map((u) => u.distrito).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
-  return cabecera("SportMatch · Usuarios", "Jugadores registrados. Por privacidad no se muestran DNI, teléfono, dirección ni correo.") + `
+  return cabecera("SportMatch · Personas", "Las Personas registradas en la app. Por privacidad aquí no se muestran DNI, teléfono, dirección ni correo.") + `
     <div class="filter-bar mb-4">
       <div class="search-wrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input class="search-input" id="smUBuscar" type="search" placeholder="Buscar por nombre"></div>
       <select id="smUDistrito" style="width:auto"><option value="">Todos los distritos</option>${distritos.map((d) => `<option>${esc(d)}</option>`).join("")}</select>
-      <select id="smUEstado" style="width:auto"><option value="">Todos</option><option value="activos">Activos</option><option value="suspendidos">Suspendidos</option></select>
+      <select id="smUEstado" style="width:auto"><option value="">Todas</option><option value="activos">Activas</option><option value="suspendidos">Suspendidas</option></select>
     </div>
-    <div class="section-sub mb-4" id="smResumenUsuarios"></div>
+    <div class="section-sub mb-4" id="smResumenPersonas"></div>
     <div class="card"><div class="table-wrap"><table>
-      <thead><tr><th>Usuario</th><th>Distrito</th><th>Deportes</th><th>Registro</th><th>Partidos creados</th><th>Estado</th><th></th></tr></thead>
-      <tbody id="smTablaUsuarios"></tbody></table></div></div>`;
+      <thead><tr><th>Persona</th><th>Distrito</th><th>Deportes</th><th>Registro</th><th>Partidos creados</th><th>Torneos organizados</th><th>Estado</th><th></th></tr></thead>
+      <tbody id="smTablaPersonas"></tbody></table></div></div>`;
 }
 
-function pintarTablaUsuarios() {
-  const tb = $("smTablaUsuarios"); if (!tb) return;
+function pintarTablaPersonas() {
+  const tb = $("smTablaPersonas"); if (!tb) return;
   const t = norm($("smUBuscar")?.value.trim()), dis = $("smUDistrito")?.value, est = $("smUEstado")?.value;
-  const creados = {}; E.partidos.forEach((p) => { if (p.creadorId) creados[p.creadorId] = (creados[p.creadorId] || 0) + 1; });
+  const partidos = {}; E.partidos.forEach((p) => { if (p.creadorId) partidos[p.creadorId] = (partidos[p.creadorId] || 0) + 1; });
+  const torneos = {}; E.torneos.forEach((x) => { if (!x.negocioId && x.creadorId) torneos[x.creadorId] = (torneos[x.creadorId] || 0) + 1; });
   const filas = E.usuarios.filter((u) => (!t || norm(u.nombre).includes(t)) && (!dis || u.distrito === dis) &&
     (!est || (est === "suspendidos" ? u.suspendido : !u.suspendido)))
     .sort((a, b) => String(b.creadoEn || "").localeCompare(String(a.creadoEn || "")));
-  $("smResumenUsuarios").textContent = `${fmt(filas.length)} de ${fmt(E.usuarios.length)} usuarios`;
+  $("smResumenPersonas").textContent = `${fmt(filas.length)} de ${fmt(E.usuarios.length)} personas`;
   tb.innerHTML = filas.length ? filas.map((u) => {
     const ini = esc(String(u.nombre || "?").trim().charAt(0).toUpperCase());
     const foto = u.foto && /^https:\/\//.test(u.foto) ? `<img class="sm-avatar" src="${esc(u.foto)}" alt="">` : `<span class="sm-avatar">${ini}</span>`;
@@ -705,27 +989,28 @@ function pintarTablaUsuarios() {
       <td>${esc(u.distrito || "—")}</td>
       <td>${esc((u.deportes || []).join(", ") || "—")}</td>
       <td class="td-mono">${fechaCorta(u.creadoEn)}</td>
-      <td class="td-mono">${fmt(creados[u.id])}</td>
-      <td>${u.suspendido ? `<span class="badge badge-red">Suspendido</span>` : `<span class="badge badge-green">Activo</span>`}</td>
+      <td class="td-mono">${fmt(partidos[u.id])}</td>
+      <td class="td-mono">${fmt(torneos[u.id])}</td>
+      <td>${u.suspendido ? `<span class="badge badge-red">Suspendida</span>` : `<span class="badge badge-green">Activa</span>`}</td>
       <td style="text-align:right">${u.suspendido
         ? `<button class="btn btn-ghost btn-sm" data-sm="suspender" data-id="${esc(u.id)}" data-valor="no">Reactivar</button>`
         : `<button class="btn btn-danger btn-sm" data-sm="suspender" data-id="${esc(u.id)}" data-valor="si">Suspender</button>`}</td>
     </tr>`;
-  }).join("") : `<tr><td colspan="7"><div class="sm-vacio">No hay usuarios con esos filtros.</div></td></tr>`;
+  }).join("") : `<tr><td colspan="8"><div class="sm-vacio">${E.usuarios.length ? "No hay personas con esos filtros." : "Todavía no hay personas registradas."}</div></td></tr>`;
 }
 
 async function suspenderUsuario(id, suspender) {
   const u = E.usuarios.find((x) => x.id === id);
   const ok = await confirmar(suspender
-    ? `¿Suspender a <b>${esc(u?.nombre || "este usuario")}</b>? No podrá entrar a la app hasta que lo reactives.`
-    : `¿Reactivar a <b>${esc(u?.nombre || "este usuario")}</b>?`, suspender ? "Suspender" : "Reactivar", suspender);
+    ? `¿Suspender a <b>${esc(u?.nombre || "esta persona")}</b>? No podrá entrar a la app hasta que la reactives.`
+    : `¿Reactivar a <b>${esc(u?.nombre || "esta persona")}</b>?`, suspender ? "Suspender" : "Reactivar", suspender);
   if (!ok) return;
   try {
     await updateDoc(doc(db, "usuarios", id), { suspendido: suspender, suspendidoEn: suspender ? new Date().toISOString() : null });
     if (u) u.suspendido = suspender;
-    aviso(suspender ? "Usuario suspendido." : "Usuario reactivado.", "success");
-    pintarTablaUsuarios();
-  } catch (e) { console.error(e); aviso("No se pudo actualizar el usuario.", "error"); }
+    aviso(suspender ? "Persona suspendida." : "Persona reactivada.", "success");
+    pintarTablaPersonas();
+  } catch (e) { console.error(e); aviso("No se pudo actualizar.", "error"); }
 }
 
 // ── Modales propios (con el estilo del panel) ──────────────────────────
@@ -761,14 +1046,20 @@ document.addEventListener("click", async (e) => {
   if (a === "tab-negocios") { E.tabNegocios = b.dataset.tab; return pintar("sm-negocios"); }
   if (a === "guardar-plan") return guardarPlan(id, b);
   if (a === "estado-negocio") return cambiarEstadoNegocio(id, b.dataset.estado);
-  if (a === "marcar-cobro") return marcarCobro(id, b);
+  if (a === "marcar-cobro") return marcarCobro(b.dataset.clave, b);
   if (a === "deshacer-cobro") return deshacerCobro(id);
+  if (a === "ver-cobro") return verDetalleCobro(b.dataset.clave);
+  if (a === "guardar-tarifas") return guardarTarifasPersonas(b);
   if (a === "csv-cobros") {
     const f = filasCobros(E.mesCobros);
     return descargarCSV(`sportmatch-cobros-${E.mesCobros}.csv`,
-      ["Negocio", "Distrito", "RUC", "Monto inicial", "Membresía", "Ventas Market", "% comisión", "Comisión", "Total", "Estado"],
-      f.map((x) => [x.n.nombre, x.n.distrito, x.n.ruc, x.setup, x.membresia, x.ventas, x.pct || 0, x.comision, x.total, x.registro ? "Cobrado" : "Pendiente"]));
+      ["Tipo", "Nombre", "Distrito", "RUC / Documento", "Monto inicial", "Membresía", "Marketplace", "Reservas", "Torneos", "Total", "Estado"],
+      f.map((x) => [x.tipo === "negocio" ? "Negocio" : "Persona", x.nombre, x.distrito, x.documento, x.setup, x.membresia, x.marketplace, x.reservas, x.torneos, x.total, x.registro ? "Cobrado" : "Pendiente"]));
   }
+  if (a === "editar-torneo") return abrirEditorTorneo(E.torneos.find((t) => t.id === id));
+  if (a === "cancelar-torneo") return cancelarTorneo(id);
+  if (a === "eliminar-torneo") return eliminarTorneo(id);
+  if (a === "tab-torneos") { E.tabTorneos = b.dataset.tab; return pintar("sm-torneos"); }
   if (a === "nueva-cancha") return abrirEditorCancha(null);
   if (a === "editar-cancha") return abrirEditorCancha(E.canchas.find((c) => c.id === id));
   if (a === "reporte-cancha") return abrirReporte(E.canchas.find((c) => c.id === id));
@@ -777,15 +1068,13 @@ document.addEventListener("click", async (e) => {
       ["Deporte", "Nombre", "Distrito", "Dirección", "Teléfonos", "Visible", "Verificada", "Autorizó", "Destacada", `WhatsApp (${E.mesClics})`, "Llamar", "Cómo llegar", "Armar partido", "Total contactos", "Notas"],
       canchasFiltradas().map((c) => { const cl = E.clicsMes[c.id] || {}; return [c.s, c.n, c.d, c.a, (c.t || []).join(" / "), c.activa !== false ? "Sí" : "No", c.verificada ? "Sí" : "No", c.autorizo ? "Sí" : "No", c.destacada ? "Sí" : "No", cl.whatsapp || 0, cl.llamar || 0, cl.mapa || 0, cl.armar || 0, totalClics(cl), c.notas || ""]; }));
   }
-  if (a === "historial") { E.verHistorial = !E.verHistorial; return pintar("sm-solicitudes"); }
-  if (a === "aprobar-sol") return abrirEditorCancha(null, E.solicitudes.find((s) => s.id === id));
-  if (a === "rechazar-sol") return rechazarSolicitud(id);
   if (a === "suspender") return suspenderUsuario(id, b.dataset.valor === "si");
 });
 
 document.addEventListener("input", (e) => {
   if (["smFBuscar", "smFDeporte", "smFDistrito", "smFEstado"].includes(e.target.id)) pintarTablaCanchas();
-  if (["smUBuscar", "smUDistrito", "smUEstado"].includes(e.target.id)) pintarTablaUsuarios();
+  if (["smUBuscar", "smUDistrito", "smUEstado"].includes(e.target.id)) pintarTablaPersonas();
+  if (["smTBuscar", "smTOrganiza"].includes(e.target.id)) pintarTablaTorneos();
 });
 document.addEventListener("change", async (e) => {
   if (e.target.id === "smFMes") {
@@ -795,6 +1084,10 @@ document.addEventListener("change", async (e) => {
     pintarTablaCanchas();
   }
   if (e.target.dataset?.sm === "mes-cobros") { E.mesCobros = e.target.value; pintar("sm-cobros"); }
+  if (e.target.matches?.("[data-tipo]")) {
+    const ayuda = e.target.closest(".sm-param")?.querySelector("[data-ayuda]");
+    if (ayuda) ayuda.textContent = e.target.value === "%" ? e.target.dataset.pct : e.target.dataset.monto;
+  }
 });
 
 function irA(vista) {

@@ -13,7 +13,7 @@
 .sm-grid-negocios { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 16px; }
 .sm-negocio .crm-kv b, .sm-grid-negocios .crm-kv b { font-weight: 500; text-align: right; overflow-wrap: anywhere; }
 .sm-grid-negocios .crm-kv span:first-child { color: var(--text1); white-space: nowrap; }
-.sm-plan-campos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.sm-plan-campos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .sm-plan-campos label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--text1); }
 .sm-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .sm-sellos { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -50,3 +50,12 @@
   #view-sm-resumen .grid-4, #view-sm-cobros .grid-3 { grid-template-columns: 1fr 1fr; }
   #view-sm-resumen .stat-value, #view-sm-cobros .stat-value { font-size: 22px; }
 }
+
+/* Tarifas (% o S/) */
+.sm-params { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.sm-param { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.sm-param-titulo { display: flex; flex-direction: column; font-size: 12.5px; line-height: 1.35; }
+.sm-param-titulo small { color: var(--text1); font-size: 11.5px; }
+.sm-param-campos { display: grid; grid-template-columns: 64px 1fr; gap: 8px; }
+.sm-param-campos select, .sm-param-campos input { background: var(--bg1); }
+@media (max-width: 600px) { .sm-params { grid-template-columns: 1fr; } }
