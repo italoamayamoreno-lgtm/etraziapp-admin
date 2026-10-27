@@ -27,7 +27,7 @@ const SM_CONFIG = {
   appId: "1:52272351294:web:833bc5a7fcfcd59444e96f"
 };
 const URL_ACCESO = "https://us-central1-sportmatch-mvp.cloudfunctions.net/accesoPanelEtrazia";
-const URL_APP = "https://sportmatch-mvp.web.app";
+const URL_APP = "https://sportsmatch.etraziapp.com";
 
 const smApp = initializeApp(SM_CONFIG, "sportmatch");
 const smAuth = getAuth(smApp);
