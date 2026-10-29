@@ -3025,6 +3025,11 @@ const WORKERS = [
     url: "https://tienda-live-registro.italoamaya-moreno.workers.dev",
     storageKey: 'tienda-live-admin-key',
   },
+  {
+    id: 'charla-3-nov',
+    url: "https://charla-registro.italoamaya-moreno.workers.dev",
+    storageKey: 'charla-admin-key',
+  },
 ];
 WORKERS.forEach(w => { w.adminKey = localStorage.getItem(w.storageKey) || ''; });
 
@@ -3044,6 +3049,7 @@ const GAME_LABELS = {
   'diagnostico-azzorti': 'Diagnóstico Azzorti',
   'taller-ia': 'Taller IA gratuito',
   'tienda-live': 'Live TikTok - Tienda',
+  'charla-3-nov': 'Charla 3 de noviembre',
 };
 
 // Columnas específicas por juego — se insertan solo cuando ese juego es el filtro activo,
@@ -3064,6 +3070,11 @@ const EXTRA_COLUMNS = {
     { label: 'Fuente', render: l => l.fuente || '—' },
     { label: 'Acceso enviado', render: l => l.contactadoFecha ? new Date(l.contactadoFecha).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' }) : '—' },
   ],
+  'charla-3-nov': [
+    { label: 'Cómo se enteró', render: l => l.comoSeEntero || '—' },
+    { label: 'Fuente', render: l => l.fuente || '—' },
+    { label: 'Zoom enviado', render: l => l.contactadoFecha ? new Date(l.contactadoFecha).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' }) : '—' },
+  ],
   'tienda-live': [
     { label: 'Rubro', render: l => l.rubro || '—' },
     { label: 'Fuente', render: l => l.fuente || '—' },
@@ -3079,7 +3090,7 @@ function getExtraColumns() {
 function renderTableHead() {
   const headRow = document.getElementById('leads-thead-row');
   const informeTh = document.getElementById('thead-informe');
-  informeTh.textContent = (currentFilter === 'taller-ia' || currentFilter === 'tienda-live') ? 'WhatsApp' : 'Informe';
+  informeTh.textContent = (currentFilter === 'taller-ia' || currentFilter === 'tienda-live' || currentFilter === 'charla-3-nov') ? 'WhatsApp' : 'Informe';
   headRow.querySelectorAll('.th-dynamic').forEach(th => th.remove());
   getExtraColumns().forEach(col => {
     const th = document.createElement('th');
@@ -3200,8 +3211,9 @@ function renderLeads() {
   document.getElementById('stat-total-juegos').textContent = leads.length;
   const esTaller = currentFilter === 'taller-ia';
   const esTienda = currentFilter === 'tienda-live';
-  document.getElementById('stat-completados-label').textContent = esTaller ? 'Acceso enviado' : (esTienda ? 'Contactados' : 'Completaron el juego');
-  document.getElementById('stat-completados').textContent = leads.filter(l => l.estado === ((esTaller || esTienda) ? 'contactado' : 'completado')).length;
+  const esCharla = currentFilter === 'charla-3-nov';
+  document.getElementById('stat-completados-label').textContent = esTaller ? 'Acceso enviado' : (esCharla ? 'Zoom enviado' : (esTienda ? 'Contactados' : 'Completaron el juego'));
+  document.getElementById('stat-completados').textContent = leads.filter(l => l.estado === ((esTaller || esTienda || esCharla) ? 'contactado' : 'completado')).length;
 
   renderTableHead();
   const extraCols = getExtraColumns();
@@ -3252,6 +3264,10 @@ function renderLeads() {
       const yaEnviado = l.estado === 'contactado';
       informeCell = '<button class="btn ' + (yaEnviado ? 'btn-ghost' : 'btn-primary') + ' btn-sm" onclick="sendTallerWhatsApp(\'' + l.id + '\')">' + (yaEnviado ? 'Reenviar WhatsApp' : 'WhatsApp') + '</button>';
     }
+    if (juego === 'charla-3-nov') {
+      const yaEnviado = l.estado === 'contactado';
+      informeCell = '<button class="btn ' + (yaEnviado ? 'btn-ghost' : 'btn-primary') + ' btn-sm" onclick="sendCharlaWhatsApp(\'' + l.id + '\')">' + (yaEnviado ? 'Reenviar Zoom' : 'Enviar Zoom') + '</button>';
+    }
     if (juego === 'tienda-live') {
       const yaContactado = l.estado === 'contactado';
       informeCell = '<button class="btn ' + (yaContactado ? 'btn-ghost' : 'btn-primary') + ' btn-sm" onclick="sendTiendaWhatsApp(\'' + l.id + '\')">' + (yaContactado ? 'Reenviar WhatsApp' : 'WhatsApp') + '</button>';
@@ -3296,6 +3312,48 @@ window.sendTallerWhatsApp = function(id) {
     return;
   }
   const msg = buildTallerWhatsApp(lead, w.config);
+  if (msg.digits.length < 8) {
+    alert('El teléfono de este inscrito no parece válido: ' + (lead.telefonoCompleto || 'vacío'));
+    return;
+  }
+  window.open(msg.url, '_blank', 'noopener');
+  // Marca al inscrito como contactado (sin bloquear la apertura de WhatsApp)
+  fetch(w.url + '/leads/contactado', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Key': w.adminKey },
+    body: JSON.stringify({ id }),
+  }).then(r => {
+    if (r.ok) { lead.estado = 'contactado'; lead.contactadoFecha = new Date().toISOString(); renderLeads(); }
+  }).catch(() => {});
+};
+
+// ── CHARLA 3 DE NOVIEMBRE: WhatsApp con el link de Zoom ──────────────
+// El link de Zoom NO está en este archivo (el repo es público): llega del Worker junto con
+// la lista de inscritos, solo cuando la clave de admin es correcta.
+function buildCharlaWhatsApp(lead, config) {
+  const nombre = String(lead.nombres || '').trim().split(/\s+/)[0] || '';
+  const digits = String(lead.telefonoCompleto || '').replace(/\D/g, '');
+  const lines = [
+    'Hola ' + nombre + ', soy Talo de Etrazia. Ya quedó confirmada tu participación en la charla "Creamos squads, tribus y chapters... y aun así seguimos decidiendo como hace veinte años".',
+    '',
+    'Fecha: martes 3 de noviembre, de 8:00 a 10:00 pm (hora de Lima).',
+    'Link de Zoom: ' + config.zoomUrl,
+  ];
+  if (config.zoomMeetingId) lines.push('ID de reunión: ' + config.zoomMeetingId);
+  if (config.zoomPasscode) lines.push('Código de acceso: ' + config.zoomPasscode);
+  lines.push('', 'Cualquier duda, escríbeme por aquí. Nos vemos el martes.');
+  return { digits, url: 'https://wa.me/' + digits + '?text=' + encodeURIComponent(lines.join('\n')) };
+}
+
+window.sendCharlaWhatsApp = function(id) {
+  const lead = leadsCache.find(l => l.id === id);
+  const w = WORKERS.find(x => x.id === 'charla-3-nov');
+  if (!lead || !w) return;
+  if (!w.config || !w.config.zoomUrl) {
+    alert('Todavía no hay link de Zoom guardado en el Worker charla-registro (variable ZOOM_URL). Agrégalo y luego toca "Actualizar" en esta página.');
+    return;
+  }
+  const msg = buildCharlaWhatsApp(lead, w.config);
   if (msg.digits.length < 8) {
     alert('El teléfono de este inscrito no parece válido: ' + (lead.telefonoCompleto || 'vacío'));
     return;
@@ -3413,13 +3471,14 @@ window.deleteAll = async function() {
 // ── CSV ──────────────────────────────────────────────────────────────
 window.downloadCSV = function() {
   const leads = getFiltered();
-  const headers = ['Juego', 'Fecha', 'Nombres', 'Apellidos', 'Correo', 'Teléfono', 'Empresa', 'Cargo', 'Consentimiento', 'Estado', 'Arquetipo real', 'Arquetipo ideal', 'Nivel embajadora', 'Comunicación', 'Escucha', 'Gestión del cambio', 'Identif. conflictos'];
+  const headers = ['Juego', 'Fecha', 'Nombres', 'Apellidos', 'Correo', 'Teléfono', 'Empresa', 'Cargo', 'Consentimiento', 'Estado', 'Arquetipo real', 'Arquetipo ideal', 'Nivel embajadora', 'Comunicación', 'Escucha', 'Gestión del cambio', 'Identif. conflictos', 'Cómo se enteró'];
   const rows = leads.map(l => [
     GAME_LABELS[l.juego || 'brujula-liderazgo'] || l.juego, l.fecha, l.nombres || '', l.apellidos || '', l.correo,
     l.telefonoCompleto || '', l.empresa || '', l.cargo || '', l.consentimiento ? 'Sí' : 'No',
     l.estado, l.arquetipoReal || '', l.arquetipoIdeal || '', l.nivelEmbajadora || '',
     l.scores ? l.scores.comunicacion : '', l.scores ? l.scores.escucha : '',
-    l.scores ? l.scores.cambio : '', l.scores ? l.scores.conflictos : ''
+    l.scores ? l.scores.cambio : '', l.scores ? l.scores.conflictos : '',
+    l.comoSeEntero || ''
   ]);
   let csv = headers.join(',') + '\n';
   rows.forEach(row => { csv += row.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',') + '\n'; });
