@@ -59,3 +59,20 @@
 .sm-param-campos { display: grid; grid-template-columns: 64px 1fr; gap: 8px; }
 .sm-param-campos select, .sm-param-campos input { background: var(--bg1); }
 @media (max-width: 600px) { .sm-params { grid-template-columns: 1fr; } }
+
+/* Personas: contacto, novedades y bienvenida */
+.badge-gray { background: var(--bg3); color: var(--text1); }
+.badge-gray::before { background: var(--text2); }
+.sm-contacto { display: flex; flex-direction: column; gap: 4px; min-width: 190px; }
+.sm-contacto-fila { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text0); text-decoration: none; white-space: nowrap; }
+a.sm-contacto-fila:hover { color: var(--accent); }
+.sm-contacto-fila.sm-sin { color: var(--text2); }
+.sm-ic { display: inline-flex; width: 22px; height: 22px; align-items: center; justify-content: center; border-radius: 6px; background: var(--bg3); color: var(--text1); flex-shrink: 0; }
+.sm-ic-wa { background: rgba(37, 211, 102, 0.14); color: #25D366; }
+.sm-btn-wa { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.sm-btn-wa .sm-ic { width: auto; height: auto; background: none; color: inherit; }
+.btn-ghost.sm-btn-wa .sm-ic-wa { color: #25D366; }
+.sm-enviada { background: none; border: none; padding: 0; color: var(--green); font-size: 12.5px; font-family: var(--font-mono); cursor: pointer; white-space: nowrap; }
+.sm-enviada:hover { text-decoration: underline; }
+#sm-modal textarea { width: 100%; resize: vertical; }
+.sm-con-avatar .td-mono { white-space: nowrap; }

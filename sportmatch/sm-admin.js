@@ -96,7 +96,7 @@ const E = {
   conectado: false, conectando: null, error: null, cargado: false, cargando: null,
   usuarios: [], partidos: [], grupos: [], torneos: [], canchas: [], negocios: [],
   sedes: [], productos: [], pedidos: [], reservas: [], cobros: [], clicsDiarios: [], clicsMes: {},
-  tarifas: {}, privados: {},
+  tarifas: {}, privados: {}, seguimiento: {}, mensajes: {},
   mesClics: mesActual(), mesCobros: mesActual(), tabNegocios: "pendiente", tabTorneos: "vigentes",
   vistaActual: null, actualizado: null
 };
@@ -192,12 +192,18 @@ async function cargar() {
     ]);
     [E.usuarios, E.partidos, E.grupos, E.torneos, E.canchas, E.negocios,
       E.sedes, E.pedidos, E.reservas, E.cobros, E.clicsDiarios, E.clicsMes, E.tarifas] = r;
-    // Datos de contacto (privados) solo de las Personas que organizan torneos: los necesitas para cobrarles
-    const organizadores = [...new Set(E.torneos.filter((t) => !t.negocioId).map((t) => t.creadorId).filter(Boolean))];
-    await Promise.all(organizadores.filter((u) => !E.privados[u]).map(async (u) => {
+    // Datos de contacto (privados) de cada Persona: celular, correo y si acepta novedades.
+    // Solo los ve el superadmin; las demás Personas de la app nunca los ven.
+    const ids = [...new Set(E.usuarios.map((u) => u.id).concat(E.torneos.filter((t) => !t.negocioId).map((t) => t.creadorId)).filter(Boolean))];
+    E.privados = {};
+    await Promise.all(ids.map(async (u) => {
       try { const d = await getDoc(doc(db, "usuarios", u, "privado", "datos")); E.privados[u] = d.exists() ? d.data() : {}; }
       catch (e) { E.privados[u] = {}; }
     }));
+    // A quién ya se le dio la bienvenida, y el mensaje de bienvenida guardado
+    const seg = await leer("seguimiento", collection(db, "seguimientoPersonas"), []);
+    E.seguimiento = {}; seg.forEach((x) => { E.seguimiento[x.id] = x; });
+    E.mensajes = await getDoc(doc(db, "config", "mensajes")).then((d) => (d.exists() ? d.data() : {})).catch(() => ({}));
     E.fallos = fallos;
     E.cargado = true;
     E.actualizado = new Date();
@@ -957,46 +963,150 @@ async function eliminarTorneo(id) {
 }
 
 // ═════════════════════════ PERSONAS ═════════════════════════
+const celular9 = (t) => { const d = String(t || "").replace(/\D/g, "").replace(/^51(?=9\d{8}$)/, ""); return /^9\d{8}$/.test(d) ? d : ""; };
+const celularVisible = (d) => (d ? `${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6)}` : "");
+const primerNombre = (u) => String(u.nombres || u.nombre || "").trim().split(/\s+/)[0] || "";
+const MENSAJE_BIENVENIDA = `¡Hola {nombre}! 👋 Soy Italo, de Sports Match. Gracias por crear tu cuenta 🎾
+
+Ya puedes armar partidos, unirte a grupos, inscribirte en torneos y encontrar canchas cerca de ti: ${URL_APP}
+
+Si tienes cualquier duda o idea, escríbeme por aquí. ¡Nos vemos en la cancha!`;
+const mensajeBienvenida = () => E.mensajes?.bienvenidaWhatsApp || MENSAJE_BIENVENIDA;
+
+// Cada Persona con sus datos de contacto ya resueltos
+function personaCompleta(u) {
+  const pr = E.privados[u.id] || {};
+  return { u, cel: celular9(pr.telefono), correo: String(pr.correo || "").trim(), novedades: pr.aceptaNovedades === true, bienvenida: E.seguimiento[u.id]?.bienvenidaEn || null };
+}
+function personasFiltradas() {
+  const t = norm($("smUBuscar")?.value.trim()), dis = $("smUDistrito")?.value, est = $("smUEstado")?.value;
+  const nov = $("smUNovedades")?.value, bien = $("smUBienvenida")?.value;
+  const tDig = String($("smUBuscar")?.value || "").replace(/\D/g, "");
+  return E.usuarios.map(personaCompleta).filter(({ u, cel, correo, novedades, bienvenida }) =>
+    (!t || norm(u.nombre).includes(t) || norm(correo).includes(t) || (tDig.length >= 3 && cel.includes(tDig))) &&
+    (!dis || u.distrito === dis) &&
+    (!est || (est === "suspendidos" ? u.suspendido : !u.suspendido)) &&
+    (!nov || (nov === "si" ? novedades : !novedades)) &&
+    (!bien || (bien === "enviada" ? bienvenida : !bienvenida)))
+    .sort((a, b) => String(b.u.creadoEn || "").localeCompare(String(a.u.creadoEn || "")));
+}
+
 function vPersonas() {
   const distritos = [...new Set(E.usuarios.map((u) => u.distrito).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
-  return cabecera("SportMatch · Personas", "Las Personas registradas en la app. Por privacidad aquí no se muestran DNI, teléfono, dirección ni correo.") + `
+  return cabecera("SportMatch · Personas", "Las Personas registradas en la app, con su celular y correo para contactarlas. Estos datos solo los ves tú: las demás Personas de la app no los ven.",
+    `<button class="btn btn-ghost btn-sm" data-sm="copiar-correos" title="Copia los correos de quienes aceptaron recibir novedades">✉ Copiar correos</button>
+     <button class="btn btn-primary btn-sm" data-sm="csv-personas">⬇ Descargar contactos</button>`) + `
     <div class="filter-bar mb-4">
       <div class="search-wrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input class="search-input" id="smUBuscar" type="search" placeholder="Buscar por nombre"></div>
+        <input class="search-input" id="smUBuscar" type="search" placeholder="Nombre, correo o celular"></div>
       <select id="smUDistrito" style="width:auto"><option value="">Todos los distritos</option>${distritos.map((d) => `<option>${esc(d)}</option>`).join("")}</select>
-      <select id="smUEstado" style="width:auto"><option value="">Todas</option><option value="activos">Activas</option><option value="suspendidos">Suspendidas</option></select>
+      <select id="smUEstado" style="width:auto"><option value="">Activas y suspendidas</option><option value="activos">Activas</option><option value="suspendidos">Suspendidas</option></select>
+      <select id="smUNovedades" style="width:auto"><option value="">Novedades: todas</option><option value="si">Aceptan novedades</option><option value="no">No aceptan</option></select>
+      <select id="smUBienvenida" style="width:auto"><option value="">Bienvenida: todas</option><option value="pendiente">Bienvenida pendiente</option><option value="enviada">Bienvenida enviada</option></select>
     </div>
     <div class="section-sub mb-4" id="smResumenPersonas"></div>
     <div class="card"><div class="table-wrap"><table>
-      <thead><tr><th>Persona</th><th>Distrito</th><th>Deportes</th><th>Registro</th><th>Partidos creados</th><th>Torneos organizados</th><th>Estado</th><th></th></tr></thead>
-      <tbody id="smTablaPersonas"></tbody></table></div></div>`;
+      <thead><tr><th>Persona</th><th>Contacto</th><th>Distrito</th><th>Deportes</th><th>Actividad</th><th>Novedades</th><th>Bienvenida</th><th>Estado</th><th></th></tr></thead>
+      <tbody id="smTablaPersonas"></tbody></table></div></div>
+    <div class="section-sub" style="margin-top:12px">Para un correo masivo usa <b>Copiar correos</b> y pégalos en <b>CCO</b> (copia oculta), así nadie ve los correos de los demás. Solo se copian las Personas activas que aceptaron recibir novedades.</div>`;
 }
 
 function pintarTablaPersonas() {
   const tb = $("smTablaPersonas"); if (!tb) return;
-  const t = norm($("smUBuscar")?.value.trim()), dis = $("smUDistrito")?.value, est = $("smUEstado")?.value;
   const partidos = {}; E.partidos.forEach((p) => { if (p.creadorId) partidos[p.creadorId] = (partidos[p.creadorId] || 0) + 1; });
   const torneos = {}; E.torneos.forEach((x) => { if (!x.negocioId && x.creadorId) torneos[x.creadorId] = (torneos[x.creadorId] || 0) + 1; });
-  const filas = E.usuarios.filter((u) => (!t || norm(u.nombre).includes(t)) && (!dis || u.distrito === dis) &&
-    (!est || (est === "suspendidos" ? u.suspendido : !u.suspendido)))
-    .sort((a, b) => String(b.creadoEn || "").localeCompare(String(a.creadoEn || "")));
-  $("smResumenPersonas").textContent = `${fmt(filas.length)} de ${fmt(E.usuarios.length)} personas`;
-  tb.innerHTML = filas.length ? filas.map((u) => {
+  const filas = personasFiltradas();
+  const conNov = filas.filter((f) => f.novedades && !f.u.suspendido && f.correo).length;
+  const pend = filas.filter((f) => !f.bienvenida && !f.u.suspendido).length;
+  $("smResumenPersonas").textContent = `${fmt(filas.length)} de ${fmt(E.usuarios.length)} personas · ${fmt(conNov)} aceptan novedades · ${fmt(pend)} sin bienvenida`;
+  tb.innerHTML = filas.length ? filas.map(({ u, cel, correo, novedades, bienvenida }) => {
     const ini = esc(String(u.nombre || "?").trim().charAt(0).toUpperCase());
     const foto = u.foto && /^https:\/\//.test(u.foto) ? `<img class="sm-avatar" src="${esc(u.foto)}" alt="">` : `<span class="sm-avatar">${ini}</span>`;
-    return `<tr>
-      <td><div class="sm-con-avatar">${foto}<span class="td-name">${esc(u.nombre || "Sin nombre")}</span></div></td>
+    const np = partidos[u.id] || 0, nt = torneos[u.id] || 0;
+    return `<tr data-persona="${esc(u.id)}">
+      <td><div class="sm-con-avatar">${foto}<div><div class="td-name">${esc(u.nombre || "Sin nombre")}</div><div class="td-mono">Desde ${fechaCorta(u.creadoEn)}</div></div></div></td>
+      <td><div class="sm-contacto">
+        ${cel ? `<a class="sm-contacto-fila" href="https://wa.me/51${cel}" target="_blank" rel="noopener" title="Escribir por WhatsApp"><span class="sm-ic sm-ic-wa">${ICONO_WA}</span>${celularVisible(cel)}</a>` : `<span class="sm-contacto-fila sm-sin">Sin celular</span>`}
+        ${correo ? `<a class="sm-contacto-fila" href="mailto:${esc(correo)}" title="Escribir un correo"><span class="sm-ic">${ICONO_MAIL}</span>${esc(correo)}</a>` : `<span class="sm-contacto-fila sm-sin">Sin correo</span>`}
+      </div></td>
       <td>${esc(u.distrito || "—")}</td>
       <td>${esc((u.deportes || []).join(", ") || "—")}</td>
-      <td class="td-mono">${fechaCorta(u.creadoEn)}</td>
-      <td class="td-mono">${fmt(partidos[u.id])}</td>
-      <td class="td-mono">${fmt(torneos[u.id])}</td>
+      <td class="td-mono" style="white-space:nowrap">${fmt(np)} ${np === 1 ? "partido" : "partidos"}<br>${fmt(nt)} ${nt === 1 ? "torneo" : "torneos"}</td>
+      <td>${novedades ? `<span class="badge badge-green">Acepta</span>` : `<span class="badge badge-gray">No</span>`}</td>
+      <td>${bienvenida
+        ? `<button class="sm-enviada" data-sm="bienvenida" data-id="${esc(u.id)}" title="Volver a enviar">✓ ${fechaCorta(bienvenida)}</button>`
+        : (cel ? `<button class="btn btn-ghost btn-sm sm-btn-wa" data-sm="bienvenida" data-id="${esc(u.id)}"><span class="sm-ic sm-ic-wa">${ICONO_WA}</span>Dar la bienvenida</button>` : `<span class="td-mono">Sin celular</span>`)}</td>
       <td>${u.suspendido ? `<span class="badge badge-red">Suspendida</span>` : `<span class="badge badge-green">Activa</span>`}</td>
       <td style="text-align:right">${u.suspendido
         ? `<button class="btn btn-ghost btn-sm" data-sm="suspender" data-id="${esc(u.id)}" data-valor="no">Reactivar</button>`
         : `<button class="btn btn-danger btn-sm" data-sm="suspender" data-id="${esc(u.id)}" data-valor="si">Suspender</button>`}</td>
     </tr>`;
-  }).join("") : `<tr><td colspan="8"><div class="sm-vacio">${E.usuarios.length ? "No hay personas con esos filtros." : "Todavía no hay personas registradas."}</div></td></tr>`;
+  }).join("") : `<tr><td colspan="9"><div class="sm-vacio">${E.usuarios.length ? "No hay personas con esos filtros." : "Todavía no hay personas registradas."}</div></td></tr>`;
+}
+
+const ICONO_WA = `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg>`;
+const ICONO_MAIL = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>`;
+
+// ── Bienvenida por WhatsApp (manual): abre WhatsApp con el mensaje listo y la marca como enviada ──
+function abrirBienvenida(id) {
+  const u = E.usuarios.find((x) => x.id === id); if (!u) return;
+  const { cel, bienvenida } = personaCompleta(u);
+  if (!cel) return aviso("Esta persona no tiene un celular válido.", "error");
+  const nombre = primerNombre(u);
+  const texto = mensajeBienvenida().replace(/\{nombre\}/g, nombre);
+  modal(`Bienvenida a ${esc(u.nombre || "")}`, `
+    ${bienvenida ? `<div class="sm-banner" style="margin-bottom:12px">Ya le diste la bienvenida el ${fechaCorta(bienvenida)}. Puedes volver a enviarla si hace falta.</div>` : ""}
+    <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text1)">Mensaje (puedes editarlo antes de enviar)
+      <textarea id="smTextoBienvenida" rows="9" style="font-size:13px;line-height:1.6">${esc(texto)}</textarea></label>
+    <label class="sm-check" style="margin-top:12px"><input type="checkbox" id="smGuardarMensaje"><span>Usar este mensaje para todas las bienvenidas<small>Donde va el nombre se pondrá el de cada persona.</small></span></label>
+    <div class="td-mono" style="margin-top:10px">Se abrirá WhatsApp con el mensaje escrito para ${celularVisible(cel)}. Solo tienes que presionar enviar.</div>`,
+    `<button class="btn btn-ghost" data-sm="cerrar-modal">Cancelar</button>
+     <button class="btn btn-primary sm-btn-wa" id="smEnviarBienvenida"><span class="sm-ic">${ICONO_WA}</span>Abrir WhatsApp</button>`, 520);
+  $("smEnviarBienvenida").addEventListener("click", async () => {
+    const final = $("smTextoBienvenida").value.trim();
+    if (!final) return aviso("Escribe un mensaje.", "error");
+    // Se abre primero (si no, el navegador bloquea la ventana) y luego se guarda
+    window.open(`https://wa.me/51${cel}?text=${encodeURIComponent(final)}`, "_blank", "noopener");
+    const guardar = $("smGuardarMensaje").checked;
+    cerrarModal();
+    try {
+      const ahora = new Date().toISOString();
+      const quien = etraziaAuth()?.currentUser?.email || "";
+      await setDoc(doc(db, "seguimientoPersonas", id), { bienvenidaEn: ahora, bienvenidaPor: quien }, { merge: true });
+      E.seguimiento[id] = { ...(E.seguimiento[id] || {}), bienvenidaEn: ahora, bienvenidaPor: quien };
+      if (guardar) {
+        const plantilla = nombre ? final.split(nombre).join("{nombre}") : final;
+        await setDoc(doc(db, "config", "mensajes"), { bienvenidaWhatsApp: plantilla }, { merge: true });
+        E.mensajes = { ...E.mensajes, bienvenidaWhatsApp: plantilla };
+      }
+      aviso("Bienvenida marcada como enviada.", "success");
+    } catch (e) {
+      console.error(e);
+      aviso("WhatsApp se abrió, pero no se pudo marcar como enviada. Revisa que las reglas de SportMatch estén publicadas.", "error");
+    }
+    pintarTablaPersonas();
+  });
+}
+
+function descargarContactos() {
+  const f = personasFiltradas();
+  if (!f.length) return aviso("No hay personas con esos filtros.", "error");
+  descargarCSV(`sportmatch-contactos-${hoyISO()}.csv`,
+    ["Nombre", "Nombres", "Apellidos", "Correo", "Celular", "WhatsApp", "Distrito", "Deportes", "Registro", "Acepta novedades", "Bienvenida", "Estado"],
+    f.map(({ u, cel, correo, novedades, bienvenida }) => [u.nombre || "", u.nombres || "", u.apellidos || "", correo, cel ? celularVisible(cel) : "", cel ? `https://wa.me/51${cel}` : "",
+      u.distrito || "", (u.deportes || []).join(", "), fechaCorta(u.creadoEn), novedades ? "Sí" : "No", bienvenida ? fechaCorta(bienvenida) : "Pendiente", u.suspendido ? "Suspendida" : "Activa"]));
+  aviso(`Se descargaron ${f.length} contactos.`, "success");
+}
+
+async function copiarCorreos() {
+  const lista = [...new Set(personasFiltradas().filter((f) => f.novedades && !f.u.suspendido && /@/.test(f.correo)).map((f) => f.correo.toLowerCase()))];
+  if (!lista.length) return aviso("Ninguna persona de esta lista aceptó recibir novedades todavía.", "error");
+  const texto = lista.join(", ");
+  try { await navigator.clipboard.writeText(texto); aviso(`Se copiaron ${lista.length} correos. Pégalos en CCO (copia oculta).`, "success"); }
+  catch (e) {
+    modal("Correos para envío masivo", `<div class="section-sub" style="margin-bottom:8px">Copia este texto y pégalo en <b>CCO</b> (copia oculta).</div>
+      <textarea rows="8" readonly style="font-size:12px" onfocus="this.select()">${esc(texto)}</textarea>`, `<button class="btn btn-primary" data-sm="cerrar-modal">Listo</button>`, 520);
+  }
 }
 
 async function suspenderUsuario(id, suspender) {
@@ -1069,11 +1179,14 @@ document.addEventListener("click", async (e) => {
       canchasFiltradas().map((c) => { const cl = E.clicsMes[c.id] || {}; return [c.s, c.n, c.d, c.a, (c.t || []).join(" / "), c.activa !== false ? "Sí" : "No", c.verificada ? "Sí" : "No", c.autorizo ? "Sí" : "No", c.destacada ? "Sí" : "No", cl.whatsapp || 0, cl.llamar || 0, cl.mapa || 0, cl.armar || 0, totalClics(cl), c.notas || ""]; }));
   }
   if (a === "suspender") return suspenderUsuario(id, b.dataset.valor === "si");
+  if (a === "bienvenida") return abrirBienvenida(id);
+  if (a === "csv-personas") return descargarContactos();
+  if (a === "copiar-correos") return copiarCorreos();
 });
 
 document.addEventListener("input", (e) => {
   if (["smFBuscar", "smFDeporte", "smFDistrito", "smFEstado"].includes(e.target.id)) pintarTablaCanchas();
-  if (["smUBuscar", "smUDistrito", "smUEstado"].includes(e.target.id)) pintarTablaPersonas();
+  if (["smUBuscar", "smUDistrito", "smUEstado", "smUNovedades", "smUBienvenida"].includes(e.target.id)) pintarTablaPersonas();
   if (["smTBuscar", "smTOrganiza"].includes(e.target.id)) pintarTablaTorneos();
 });
 document.addEventListener("change", async (e) => {

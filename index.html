@@ -525,7 +525,17 @@
   .mobile-menu-btn { display: none; }
   .sidebar-overlay { display: none; }
   @media (max-width: 600px) {
-    #sidebar { position: fixed; z-index: 20; height: 100vh; transform: translateX(-100%); transition: transform var(--transition); }
+    #sidebar { position: fixed; z-index: 20; height: 100vh; height: 100dvh; transform: translateX(-100%); transition: transform var(--transition); }
+    /* En celular la página baja con el desplazamiento normal del teléfono
+       (antes la altura fija de pantalla cortaba el final de las listas). */
+    html, body { height: auto; }
+    html { overflow-x: hidden; overflow-y: auto; }
+    body { overflow: visible; }
+    #app { height: auto; min-height: 100vh; min-height: 100dvh; }
+    #main { overflow: visible; min-width: 0; }
+    #content { overflow: visible; }
+    #topbar { position: sticky; top: 0; }
+    .preview-panel { position: static; }
     #sidebar.mobile-open { transform: translateX(0); }
     #sidebar.collapsed { width: var(--sidebar-w); min-width: var(--sidebar-w); }
     .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
@@ -3936,7 +3946,7 @@ window.openCrm = function (id) {
   document.getElementById('crm-list').style.display = 'none';
   document.getElementById('crm-detail').style.display = 'block';
   renderFicha();
-  const ct = document.getElementById('content'); if (ct) ct.scrollTop = 0;
+  const ct = document.getElementById('content'); if (ct) ct.scrollTop = 0; try { window.scrollTo(0, 0); } catch (e) {}
 };
 window.crmBack = function () {
   crmCurrentId = null;
