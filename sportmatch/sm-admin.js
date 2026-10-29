@@ -28,6 +28,7 @@ const SM_CONFIG = {
 };
 const URL_ACCESO = "https://us-central1-sportmatch-mvp.cloudfunctions.net/accesoPanelEtrazia";
 const URL_APP = "https://sportsmatch.etraziapp.com";
+const URL_ELIMINAR = "https://us-central1-sportmatch-mvp.cloudfunctions.net/eliminarCuentaPersona";
 
 const smApp = initializeApp(SM_CONFIG, "sportmatch");
 const smAuth = getAuth(smApp);
@@ -1037,9 +1038,10 @@ function pintarTablaPersonas() {
         ? `<button class="sm-enviada" data-sm="bienvenida" data-id="${esc(u.id)}" title="Volver a enviar">✓ ${fechaCorta(bienvenida)}</button>`
         : (cel ? `<button class="btn btn-ghost btn-sm sm-btn-wa" data-sm="bienvenida" data-id="${esc(u.id)}"><span class="sm-ic sm-ic-wa">${ICONO_WA}</span>Dar la bienvenida</button>` : `<span class="td-mono">Sin celular</span>`)}</td>
       <td>${u.suspendido ? `<span class="badge badge-red">Suspendida</span>` : `<span class="badge badge-green">Activa</span>`}</td>
-      <td style="text-align:right">${u.suspendido
+      <td><div class="sm-acciones-fila">${u.suspendido
         ? `<button class="btn btn-ghost btn-sm" data-sm="suspender" data-id="${esc(u.id)}" data-valor="no">Reactivar</button>`
-        : `<button class="btn btn-danger btn-sm" data-sm="suspender" data-id="${esc(u.id)}" data-valor="si">Suspender</button>`}</td>
+        : `<button class="btn btn-danger btn-sm" data-sm="suspender" data-id="${esc(u.id)}" data-valor="si">Suspender</button>`}
+        <button class="btn btn-ghost btn-sm sm-btn-eliminar" data-sm="eliminar-cuenta" data-id="${esc(u.id)}" title="Eliminar la cuenta">Eliminar</button></div></td>
     </tr>`;
   }).join("") : `<tr><td colspan="9"><div class="sm-vacio">${E.usuarios.length ? "No hay personas con esos filtros." : "Todavía no hay personas registradas."}</div></td></tr>`;
 }
@@ -1107,6 +1109,75 @@ async function copiarCorreos() {
     modal("Correos para envío masivo", `<div class="section-sub" style="margin-bottom:8px">Copia este texto y pégalo en <b>CCO</b> (copia oculta).</div>
       <textarea rows="8" readonly style="font-size:12px" onfocus="this.select()">${esc(texto)}</textarea>`, `<button class="btn btn-primary" data-sm="cerrar-modal">Listo</button>`, 520);
   }
+}
+
+// ── Eliminar cuenta: primero revisa qué pasará, luego pide escribir el nombre ──
+async function llamarEliminar(cuerpo) {
+  const token = await smAuth.currentUser.getIdToken();
+  let r;
+  try { r = await fetch(URL_ELIMINAR, { method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) }); }
+  catch (e) { return { c: 0, b: { error: "sin-conexion" } }; }
+  return { c: r.status, b: await r.json().catch(() => ({})) };
+}
+const plural = (n, uno, varios) => `${fmt(n)} ${n === 1 ? uno : varios}`;
+
+async function abrirEliminar(id) {
+  const u = E.usuarios.find((x) => x.id === id); if (!u) return;
+  const nombre = String(u.nombre || "").trim() || "Sin nombre";
+  modal("Eliminar cuenta", cargandoHTML("Revisando la cuenta…").replace('class="card"', 'class=""'), `<button class="btn btn-ghost" data-sm="cerrar-modal">Cancelar</button>`, 520);
+  const r = await llamarEliminar({ uid: id, soloRevisar: true });
+  if (!$("sm-modal")?.classList.contains("open")) return;
+  if (r.c === 404) {
+    E.usuarios = E.usuarios.filter((x) => x.id !== id); cerrarModal(); pintarTablaPersonas();
+    return aviso("Esa cuenta ya no existe.", "info");
+  }
+  if (r.c !== 200) {
+    return modal("Eliminar cuenta", `<div class="sm-banner sm-banner-error">${r.b.error === "sin-conexion" ? "No se pudo conectar con SportMatch. Revisa tu internet." :
+      "No se pudo revisar la cuenta. Si recién publicaste los cambios de SportMatch, espera unos minutos y reintenta."}</div>`,
+      `<button class="btn btn-ghost" data-sm="cerrar-modal">Cerrar</button>`, 520);
+  }
+  if (r.b.bloqueos?.length) {
+    return modal("No se puede eliminar todavía", `<div style="line-height:1.7;margin-bottom:10px"><b>${esc(nombre)}</b> no se puede eliminar por ahora:</div>
+      <ul style="margin:0 0 0 18px;line-height:1.8">${r.b.bloqueos.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>`,
+      `<button class="btn btn-primary" data-sm="cerrar-modal">Entendido</button>`, 520);
+  }
+  const x = r.b.resumen || {};
+  const efectos = [
+    x.partidosCancelados ? `Se cancelan ${plural(x.partidosCancelados, "partido futuro que organiza", "partidos futuros que organiza")} y se avisa a los jugadores.` : "",
+    x.partidosQueSale ? `Sale de ${plural(x.partidosQueSale, "partido futuro", "partidos futuros")}.` : "",
+    x.gruposQueSale ? `Sale de ${plural(x.gruposQueSale, "grupo", "grupos")}${x.gruposConNuevoAdmin ? ` (en ${plural(x.gruposConNuevoAdmin, "grupo que administra pasa", "grupos que administra pasa")} el cargo a otro integrante)` : ""}.` : "",
+    x.gruposBorrados ? `Se ${x.gruposBorrados === 1 ? "borra" : "borran"} ${plural(x.gruposBorrados, "grupo donde estaba solo", "grupos donde estaba solo")}.` : "",
+    x.chats ? `Sale de ${plural(x.chats, "chat", "chats")}; sus mensajes quedan como "Usuario eliminado".` : "",
+    x.torneosQueSale ? `Sale de ${plural(x.torneosQueSale, "torneo que todavía no se juega", "torneos que todavía no se juegan")}.` : "",
+    x.equipoNegocio ? `Deja de ser parte del personal de ${plural(x.equipoNegocio, "negocio", "negocios")}.` : ""
+  ].filter(Boolean);
+  modal("Eliminar cuenta", `
+    <div style="line-height:1.7">Vas a eliminar la cuenta de <b>${esc(nombre)}</b>. Se borran su acceso, perfil, datos privados y foto, y su correo queda libre para registrarse de nuevo. <b>No se puede deshacer.</b></div>
+    ${efectos.length ? `<ul style="margin:10px 0 0 18px;line-height:1.8;font-size:13px">${efectos.map((e) => `<li>${esc(e)}</li>`).join("")}</ul>` : ""}
+    <div class="td-mono" style="margin-top:10px">Se conservan sus reservas, compras y torneos ya jugados (historial de los negocios y de tus cobros).</div>
+    <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text1);margin-top:16px">Para confirmar, escribe el nombre: <b style="color:var(--text0)">${esc(nombre)}</b>
+      <input type="text" id="smNombreEliminar" autocomplete="off"></label>`,
+    `<button class="btn btn-ghost" data-sm="cerrar-modal">Cancelar</button><button class="btn btn-danger" id="smConfirmarEliminar" disabled>Eliminar cuenta</button>`, 540);
+  const inp = $("smNombreEliminar"), btn = $("smConfirmarEliminar");
+  const igual = () => norm(inp.value.trim().replace(/\s+/g, " ")) === norm(nombre.replace(/\s+/g, " "));
+  inp.addEventListener("input", () => { btn.disabled = !igual(); });
+  inp.focus();
+  btn.addEventListener("click", async () => {
+    if (!igual()) return;
+    btn.disabled = true; btn.textContent = "Eliminando…"; inp.disabled = true;
+    const f = await llamarEliminar({ uid: id });
+    if (f.c === 200 || f.c === 404) {
+      cerrarModal();
+      E.usuarios = E.usuarios.filter((y) => y.id !== id);
+      delete E.privados[id]; delete E.seguimiento[id];
+      aviso(`Cuenta de ${nombre} eliminada.`, "success");
+      // Partidos, grupos y torneos cambiaron: se vuelven a leer
+      await recargar();
+      return;
+    }
+    btn.textContent = "Eliminar cuenta"; btn.disabled = false; inp.disabled = false;
+    aviso(f.c === 409 ? "No se puede eliminar todavía: " + (f.b.bloqueos || []).join(" ") : "No se pudo eliminar. Intenta de nuevo en un momento.", "error");
+  });
 }
 
 async function suspenderUsuario(id, suspender) {
@@ -1180,6 +1251,7 @@ document.addEventListener("click", async (e) => {
   }
   if (a === "suspender") return suspenderUsuario(id, b.dataset.valor === "si");
   if (a === "bienvenida") return abrirBienvenida(id);
+  if (a === "eliminar-cuenta") return abrirEliminar(id);
   if (a === "csv-personas") return descargarContactos();
   if (a === "copiar-correos") return copiarCorreos();
 });

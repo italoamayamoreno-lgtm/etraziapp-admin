@@ -76,3 +76,6 @@ a.sm-contacto-fila:hover { color: var(--accent); }
 .sm-enviada:hover { text-decoration: underline; }
 #sm-modal textarea { width: 100%; resize: vertical; }
 .sm-con-avatar .td-mono { white-space: nowrap; }
+.sm-acciones-fila { display: flex; gap: 6px; justify-content: flex-end; }
+.btn.sm-btn-eliminar { color: var(--red); }
+.btn.sm-btn-eliminar:hover { background: var(--red-bg); }
