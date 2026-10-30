@@ -915,6 +915,12 @@
       <div class="nav-item nav-subitem" data-view="sm-personas" onclick="navigate('sm-personas', this)" style="padding-left:34px;">
         <span class="nav-label">Personas</span>
       </div>
+      <div class="nav-item nav-subitem" data-view="sm-partidos" onclick="navigate('sm-partidos', this)" style="padding-left:34px;">
+        <span class="nav-label">Partidos</span>
+      </div>
+      <div class="nav-item nav-subitem" data-view="sm-grupos" onclick="navigate('sm-grupos', this)" style="padding-left:34px;">
+        <span class="nav-label">Grupos</span>
+      </div>
       <div class="nav-item nav-subitem" data-view="sm-torneos" onclick="navigate('sm-torneos', this)" style="padding-left:34px;">
         <span class="nav-label">Torneos</span>
       </div>
@@ -1622,6 +1628,8 @@
       <div class="view" id="view-sm-resumen"></div>
       <div class="view" id="view-sm-negocios"></div>
       <div class="view" id="view-sm-personas"></div>
+      <div class="view" id="view-sm-partidos"></div>
+      <div class="view" id="view-sm-grupos"></div>
       <div class="view" id="view-sm-torneos"></div>
       <div class="view" id="view-sm-cobros"></div>
       <div class="view" id="view-sm-canchas"></div>
@@ -2279,7 +2287,7 @@ window.navigate = function(view, el) {
     cotizador: 'Nueva Cotización', historial: 'Cotizaciones', presentacion: 'Documento de Presentación',
     juegos: 'Juegos',
     'sm-resumen': 'SportMatch', 'sm-negocios': 'SportMatch · Negocios', 'sm-cobros': 'SportMatch · Cobros',
-    'sm-canchas': 'SportMatch · Guía de canchas', 'sm-personas': 'SportMatch · Personas', 'sm-torneos': 'SportMatch · Torneos',
+    'sm-canchas': 'SportMatch · Guía de canchas', 'sm-personas': 'SportMatch · Personas', 'sm-torneos': 'SportMatch · Torneos', 'sm-partidos': 'SportMatch · Partidos', 'sm-grupos': 'SportMatch · Grupos',
   };
   document.getElementById('topbar-title').textContent = titles[view] || view;
 

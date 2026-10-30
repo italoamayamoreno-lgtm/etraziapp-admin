@@ -14,7 +14,7 @@ import {
   getAuth, onAuthStateChanged, signInWithCustomToken, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  getFirestore, collection, getDocs, getDoc, doc, setDoc, addDoc, updateDoc, deleteDoc, query, where, writeBatch, serverTimestamp
+  getFirestore, collection, getDocs, getDoc, doc, setDoc, addDoc, updateDoc, deleteDoc, query, where, writeBatch, serverTimestamp, arrayRemove
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { DISTRITOS_LIMA } from "./distritos-lima.js";
 
@@ -54,7 +54,7 @@ const TIPOS_CLIC = [
 ];
 const totalClics = (f) => TIPOS_CLIC.reduce((s, t) => s + Number(f?.[t.clave] || 0), 0);
 const DEPORTES_GUIA = ["Tenis", "Pádel", "Fútbol", "Básket", "Varios"];
-const VISTAS = ["sm-resumen", "sm-negocios", "sm-personas", "sm-torneos", "sm-cobros", "sm-canchas"];
+const VISTAS = ["sm-resumen", "sm-negocios", "sm-personas", "sm-partidos", "sm-grupos", "sm-torneos", "sm-cobros", "sm-canchas"];
 
 // ── Tarifas: cada parámetro es { tipo: "%" | "S/", valor } · en 0 o vacío no se cobra ──
 const r2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
@@ -98,7 +98,7 @@ const E = {
   usuarios: [], partidos: [], grupos: [], torneos: [], canchas: [], negocios: [],
   sedes: [], productos: [], pedidos: [], reservas: [], cobros: [], clicsDiarios: [], clicsMes: {},
   tarifas: {}, privados: {}, seguimiento: {}, mensajes: {},
-  mesClics: mesActual(), mesCobros: mesActual(), tabNegocios: "pendiente", tabTorneos: "vigentes",
+  mesClics: mesActual(), mesCobros: mesActual(), tabNegocios: "pendiente", tabTorneos: "vigentes", tabPartidos: "proximos",
   vistaActual: null, actualizado: null
 };
 
@@ -268,11 +268,13 @@ function cabecera(titulo, sub, acciones = "") {
 function pintar(vista) {
   const cont = $("view-" + vista);
   if (!cont) return;
-  const f = { "sm-resumen": vResumen, "sm-negocios": vNegocios, "sm-personas": vPersonas, "sm-torneos": vTorneos, "sm-cobros": vCobros, "sm-canchas": vCanchas }[vista];
+  const f = { "sm-resumen": vResumen, "sm-negocios": vNegocios, "sm-personas": vPersonas, "sm-torneos": vTorneos, "sm-partidos": vPartidos, "sm-grupos": vGrupos, "sm-cobros": vCobros, "sm-canchas": vCanchas }[vista];
   cont.innerHTML = f();
   if (vista === "sm-canchas") pintarTablaCanchas();
   if (vista === "sm-personas") pintarTablaPersonas();
   if (vista === "sm-torneos") pintarTablaTorneos();
+  if (vista === "sm-partidos") pintarTablaPartidos();
+  if (vista === "sm-grupos") pintarTablaGrupos();
 }
 
 // ── Gráficos simples ───────────────────────────────────────────────────
@@ -963,6 +965,162 @@ async function eliminarTorneo(id) {
   } catch (e) { console.error(e); aviso("No se pudo eliminar.", "error"); }
 }
 
+// ═════════════════════════ PARTIDOS (moderación) ═════════════════════════
+const nombrePersona = (uid) => E.usuarios.find((u) => u.id === uid)?.nombre || "Cuenta eliminada";
+const textoNivelEvento = (n) => (!n || n === "Cualquiera" ? "Todos los niveles" : n);
+const finPartido = (p) => `${p.fecha || ""}T${p.hora || "00:00"}`;
+const ahoraISO = () => ahoraLima().toISOString().slice(0, 16);
+function grupoPartido(p) {
+  if (p.estado === "cancelado") return "cancelados";
+  return finPartido(p) >= ahoraISO() ? "proximos" : "pasados";
+}
+function opcionesDistritos(lista) {
+  return [...new Set(lista.map((x) => x.distrito).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es")).map((d) => `<option>${esc(d)}</option>`).join("");
+}
+function vPartidos() {
+  const cuenta = (g) => E.partidos.filter((p) => grupoPartido(p) === g).length;
+  const tabs = [["proximos", "Próximos"], ["pasados", "Pasados"], ["cancelados", "Cancelados"]];
+  return cabecera("SportMatch · Partidos", "Todos los partidos que arman las Personas. Si alguno es indebido o hay un reporte, puedes cancelarlo: a los jugadores les llega el aviso.") + `
+    <div class="crm-tabs">${tabs.map(([k, l]) => `<button class="crm-tab ${E.tabPartidos === k ? "active" : ""}" data-sm="tab-partidos" data-tab="${k}">${l} <span class="crm-count">${cuenta(k)}</span></button>`).join("")}</div>
+    <div class="filter-bar mb-4">
+      <div class="search-wrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="search-input" id="smPBuscar" type="search" placeholder="Buscar por lugar u organizador"></div>
+      <select id="smPDeporte" style="width:auto"><option value="">Todos los deportes</option><option>Tenis</option><option>Pádel</option></select>
+      <select id="smPDistrito" style="width:auto"><option value="">Todos los distritos</option>${opcionesDistritos(E.partidos)}</select>
+    </div>
+    <div class="section-sub mb-4" id="smResumenPartidos"></div>
+    <div class="card"><div class="table-wrap"><table>
+      <thead><tr><th>Partido</th><th>Organiza</th><th>Fecha</th><th>Jugadores</th><th>Tipo</th><th>Estado</th><th></th></tr></thead>
+      <tbody id="smTablaPartidos"></tbody></table></div></div>`;
+}
+function pintarTablaPartidos() {
+  const tb = $("smTablaPartidos"); if (!tb) return;
+  const txt = norm($("smPBuscar")?.value.trim()), dep = $("smPDeporte")?.value, dis = $("smPDistrito")?.value;
+  const filas = E.partidos.filter((p) => grupoPartido(p) === E.tabPartidos)
+    .filter((p) => (!dep || p.deporte === dep) && (!dis || p.distrito === dis) && (!txt || norm(`${p.lugar} ${p.distrito} ${nombrePersona(p.creadorId)}`).includes(txt)))
+    .sort((a, b) => E.tabPartidos === "proximos" ? finPartido(a).localeCompare(finPartido(b)) : finPartido(b).localeCompare(finPartido(a)));
+  $("smResumenPartidos").textContent = `${fmt(filas.length)} ${filas.length === 1 ? "partido" : "partidos"}`;
+  const grupoDe = (id) => E.grupos.find((g) => g.id === id);
+  tb.innerHTML = filas.length ? filas.map((p) => {
+    const n = (p.jugadores || []).length;
+    const tipo = [p.visibilidad === "privado" ? "Privado" : "Público", p.grupoId ? `Grupo: ${grupoDe(p.grupoId)?.nombre || "—"}` : ""].filter(Boolean).join(" · ");
+    const estado = p.estado === "cancelado"
+      ? `<span class="badge badge-red">Cancelado</span>${p.motivoCancelacion ? `<div class="td-mono" style="margin-top:4px;max-width:220px;white-space:normal">${esc(p.motivoCancelacion)}${p.canceladoPor === "etrazia" ? " (por Sports Match)" : ""}</div>` : ""}`
+      : grupoPartido(p) === "pasados" ? `<span class="badge badge-gray">Jugado</span>` : (n >= Number(p.cupos || 0) ? `<span class="badge badge-blue">Completo</span>` : `<span class="badge badge-green">Abierto</span>`);
+    return `<tr data-partido="${esc(p.id)}">
+      <td><div class="td-name">${esc(p.lugar || "—")}</div><div class="td-mono">${esc(p.deporte || "")} · ${esc(textoNivelEvento(p.nivel))} · ${esc(p.distrito || "")}</div></td>
+      <td>${esc(nombrePersona(p.creadorId))}</td>
+      <td class="td-mono" style="white-space:nowrap">${esc(p.fecha || "")} ${esc(p.hora || "")}</td>
+      <td class="td-mono">${fmt(n)} / ${fmt(p.cupos)}</td>
+      <td class="td-mono">${esc(tipo)}</td>
+      <td>${estado}</td>
+      <td style="text-align:right;white-space:nowrap">
+        <a class="btn btn-ghost btn-sm" href="${URL_APP}/detalle-partido.html?id=${encodeURIComponent(p.id)}" target="_blank" rel="noopener">Ver ↗</a>
+        <button class="btn btn-ghost btn-sm" data-sm="jugadores-partido" data-id="${esc(p.id)}">Jugadores</button>
+        ${p.estado !== "cancelado" && grupoPartido(p) === "proximos" ? `<button class="btn btn-danger btn-sm" data-sm="cancelar-partido" data-id="${esc(p.id)}">Cancelar</button>` : ""}</td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="7"><div class="sm-vacio">${E.partidos.length ? "No hay partidos con esos filtros." : "Todavía no se ha armado ningún partido."}</div></td></tr>`;
+}
+function listaPersonasHTML(uids, extra) {
+  return uids.length ? `<div class="sm-lista-personas">${uids.map((uid) => {
+    const u = E.usuarios.find((x) => x.id === uid);
+    return `<div class="sm-fila-persona"><div><div class="td-name">${esc(u?.nombre || "Cuenta eliminada")}</div><div class="td-mono">${esc(u?.distrito || "")}</div></div>${extra ? extra(uid) : ""}</div>`;
+  }).join("")}</div>` : `<div class="sm-vacio">Nadie por ahora.</div>`;
+}
+function verJugadoresPartido(id) {
+  const p = E.partidos.find((x) => x.id === id); if (!p) return;
+  const org = (uid) => (uid === p.creadorId ? `<span class="badge badge-blue">Organiza</span>` : "");
+  modal(`Jugadores · ${esc(p.lugar || "")}`, `<div class="td-mono" style="margin-bottom:12px">${esc(p.deporte || "")} · ${esc(p.fecha || "")} ${esc(p.hora || "")} · ${fmt((p.jugadores || []).length)} de ${fmt(p.cupos)}</div>${listaPersonasHTML(p.jugadores || [], org)}`,
+    `<button class="btn btn-primary" data-sm="cerrar-modal">Listo</button>`, 480);
+}
+function cancelarPartido(id) {
+  const p = E.partidos.find((x) => x.id === id); if (!p) return;
+  modal("Cancelar partido", `<div style="line-height:1.7">Vas a cancelar el partido de <b>${esc(p.deporte || "")}</b> en <b>${esc(p.lugar || "")}</b> (${esc(p.fecha || "")} ${esc(p.hora || "")}), organizado por <b>${esc(nombrePersona(p.creadorId))}</b>.</div>
+    <div class="td-mono" style="margin:8px 0 14px">A todos los jugadores, incluido quien lo organiza, les llega el aviso con el motivo.</div>
+    <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text1)">Motivo (lo verán los jugadores)
+      <textarea id="smMotivoPartido" rows="3" placeholder="Ej. El partido no cumple las normas de Sports Match"></textarea></label>`,
+    `<button class="btn btn-ghost" data-sm="cerrar-modal">Volver</button><button class="btn btn-danger" id="smConfirmarCancelarPartido">Cancelar partido</button>`, 500);
+  $("smConfirmarCancelarPartido").addEventListener("click", async () => {
+    const motivo = $("smMotivoPartido").value.trim();
+    if (!motivo) return aviso("Escribe el motivo.", "error");
+    const btn = $("smConfirmarCancelarPartido"); btn.disabled = true; btn.textContent = "Cancelando…";
+    try {
+      const cambios = { estado: "cancelado", motivoCancelacion: motivo, canceladoPor: "etrazia", canceladoEn: new Date().toISOString() };
+      await updateDoc(doc(db, "partidos", id), cambios);
+      Object.assign(p, cambios);
+      cerrarModal(); aviso("Partido cancelado. Los jugadores recibirán el aviso.", "success");
+      pintar("sm-partidos");
+    } catch (e) { console.error(e); btn.disabled = false; btn.textContent = "Cancelar partido"; aviso("No se pudo cancelar. Revisa que las reglas de SportMatch estén publicadas.", "error"); }
+  });
+}
+
+// ═════════════════════════ GRUPOS (moderación) ═════════════════════════
+function vGrupos() {
+  return cabecera("SportMatch · Grupos", "Todos los grupos de la app. Puedes ver sus integrantes, sacar a alguien o eliminar un grupo si es indebido.") + `
+    <div class="filter-bar mb-4">
+      <div class="search-wrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="search-input" id="smGBuscar" type="search" placeholder="Buscar por nombre o admin"></div>
+      <select id="smGDeporte" style="width:auto"><option value="">Todos los deportes</option><option>Tenis</option><option>Pádel</option></select>
+      <select id="smGDistrito" style="width:auto"><option value="">Todos los distritos</option>${opcionesDistritos(E.grupos)}</select>
+    </div>
+    <div class="section-sub mb-4" id="smResumenGrupos"></div>
+    <div class="card"><div class="table-wrap"><table>
+      <thead><tr><th>Grupo</th><th>Admin</th><th>Distrito</th><th>Integrantes</th><th>Tipo</th><th>Creado</th><th></th></tr></thead>
+      <tbody id="smTablaGrupos"></tbody></table></div></div>`;
+}
+function pintarTablaGrupos() {
+  const tb = $("smTablaGrupos"); if (!tb) return;
+  const txt = norm($("smGBuscar")?.value.trim()), dep = $("smGDeporte")?.value, dis = $("smGDistrito")?.value;
+  const filas = E.grupos.filter((g) => (!dep || g.deporte === dep) && (!dis || g.distrito === dis) && (!txt || norm(`${g.nombre} ${nombrePersona(g.adminId)}`).includes(txt)))
+    .sort((a, b) => String(b.creadoEn || "").localeCompare(String(a.creadoEn || "")));
+  $("smResumenGrupos").textContent = `${fmt(filas.length)} ${filas.length === 1 ? "grupo" : "grupos"}`;
+  tb.innerHTML = filas.length ? filas.map((g) => `<tr data-grupo="${esc(g.id)}">
+      <td><div class="td-name">${esc(g.nombre || "Sin nombre")}</div><div class="td-mono">${esc(g.deporte || "")} · ${esc(textoNivelEvento(g.nivel))}</div>${g.descripcion ? `<div class="td-mono" style="max-width:260px;white-space:normal;margin-top:2px">${esc(String(g.descripcion).slice(0, 120))}</div>` : ""}</td>
+      <td>${esc(nombrePersona(g.adminId))}</td>
+      <td>${esc(g.distrito || "—")}</td>
+      <td class="td-mono">${fmt((g.integrantes || []).length)}</td>
+      <td class="td-mono">${g.visibilidad === "cerrado" ? "Cerrado" : "Abierto"}</td>
+      <td class="td-mono" style="white-space:nowrap">${fechaCorta(g.creadoEn)}</td>
+      <td style="text-align:right;white-space:nowrap">
+        <a class="btn btn-ghost btn-sm" href="${URL_APP}/detalle-grupo.html?id=${encodeURIComponent(g.id)}" target="_blank" rel="noopener">Ver ↗</a>
+        <button class="btn btn-ghost btn-sm" data-sm="integrantes-grupo" data-id="${esc(g.id)}">Integrantes</button>
+        <button class="btn btn-danger btn-sm" data-sm="eliminar-grupo" data-id="${esc(g.id)}">Eliminar</button></td>
+    </tr>`).join("") : `<tr><td colspan="7"><div class="sm-vacio">${E.grupos.length ? "No hay grupos con esos filtros." : "Todavía no se ha creado ningún grupo."}</div></td></tr>`;
+}
+function verIntegrantesGrupo(id) {
+  const g = E.grupos.find((x) => x.id === id); if (!g) return;
+  const accion = (uid) => uid === g.adminId ? `<span class="badge badge-blue">Admin</span>`
+    : `<button class="btn btn-ghost btn-sm sm-btn-eliminar" data-sm="sacar-integrante" data-grupo="${esc(g.id)}" data-id="${esc(uid)}">Sacar</button>`;
+  modal(`Integrantes · ${esc(g.nombre || "")}`, `<div class="td-mono" style="margin-bottom:12px">${esc(g.deporte || "")} · ${esc(textoNivelEvento(g.nivel))} · ${fmt((g.integrantes || []).length)} integrantes. Al admin no se le puede sacar: si hace falta, elimina el grupo.</div>${listaPersonasHTML(g.integrantes || [], accion)}`,
+    `<button class="btn btn-primary" data-sm="cerrar-modal">Listo</button>`, 500);
+}
+async function sacarIntegrante(gid, uid) {
+  const g = E.grupos.find((x) => x.id === gid); if (!g) return;
+  const ok = await confirmar(`¿Sacar a <b>${esc(nombrePersona(uid))}</b> del grupo <b>${esc(g.nombre || "")}</b>? También sale del chat del grupo.`, "Sacar", true);
+  if (!ok) return verIntegrantesGrupo(gid);
+  try {
+    await updateDoc(doc(db, "grupos", gid), { integrantes: arrayRemove(uid), coAdmins: arrayRemove(uid) });
+    try { await updateDoc(doc(db, "chats", gid), { participantes: arrayRemove(uid) }); } catch (e) {}
+    g.integrantes = (g.integrantes || []).filter((x) => x !== uid); g.coAdmins = (g.coAdmins || []).filter((x) => x !== uid);
+    aviso("Integrante retirado del grupo.", "success");
+    pintarTablaGrupos(); verIntegrantesGrupo(gid);
+  } catch (e) { console.error(e); aviso("No se pudo sacar. Revisa que las reglas de SportMatch estén publicadas.", "error"); }
+}
+async function eliminarGrupo(id) {
+  const g = E.grupos.find((x) => x.id === id); if (!g) return;
+  const ok = await confirmar(`¿Eliminar el grupo <b>${esc(g.nombre || "")}</b>? Sus ${fmt((g.integrantes || []).length)} integrantes, incluido el admin, recibirán un aviso. No se puede deshacer.`, "Eliminar grupo", true);
+  if (!ok) return;
+  try {
+    // Se marca antes de borrar para que el aviso diga que lo eliminó Sports Match
+    await updateDoc(doc(db, "grupos", id), { eliminadoPorEtrazia: true });
+    await deleteDoc(doc(db, "grupos", id));
+    try { await deleteDoc(doc(db, "chats", id)); } catch (e) {}
+    E.grupos = E.grupos.filter((x) => x.id !== id);
+    aviso("Grupo eliminado.", "success");
+    pintar("sm-grupos");
+  } catch (e) { console.error(e); aviso("No se pudo eliminar. Revisa que las reglas de SportMatch estén publicadas.", "error"); }
+}
+
 // ═════════════════════════ PERSONAS ═════════════════════════
 const celular9 = (t) => { const d = String(t || "").replace(/\D/g, "").replace(/^51(?=9\d{8}$)/, ""); return /^9\d{8}$/.test(d) ? d : ""; };
 const celularVisible = (d) => (d ? `${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6)}` : "");
@@ -977,8 +1135,11 @@ const mensajeBienvenida = () => E.mensajes?.bienvenidaWhatsApp || MENSAJE_BIENVE
 // Cada Persona con sus datos de contacto ya resueltos
 function personaCompleta(u) {
   const pr = E.privados[u.id] || {};
-  return { u, cel: celular9(pr.telefono), correo: String(pr.correo || "").trim(), novedades: pr.aceptaNovedades === true, bienvenida: E.seguimiento[u.id]?.bienvenidaEn || null };
+  return { u, cel: celular9(pr.telefono), correo: String(pr.correo || "").trim(), novedades: pr.aceptaNovedades === true, bienvenida: E.seguimiento[u.id]?.bienvenidaEn || null, bienvenidaCorreo: E.seguimiento[u.id]?.bienvenidaCorreoEn || null };
 }
+// "Tenis · Intermedio" por cada deporte (el nivel lo elige cada Persona en la app)
+const textoNiveles = (u, sep = ", ") => (u.deportes || []).filter((d) => ["Tenis", "Pádel"].includes(d) || (u.niveles || {})[d])
+  .map((d) => `${d}${(u.niveles || {})[d] ? " · " + u.niveles[d] : ""}`).join(sep);
 function personasFiltradas() {
   const t = norm($("smUBuscar")?.value.trim()), dis = $("smUDistrito")?.value, est = $("smUEstado")?.value;
   const nov = $("smUNovedades")?.value, bien = $("smUBienvenida")?.value;
@@ -1007,7 +1168,7 @@ function vPersonas() {
     </div>
     <div class="section-sub mb-4" id="smResumenPersonas"></div>
     <div class="card"><div class="table-wrap"><table>
-      <thead><tr><th>Persona</th><th>Contacto</th><th>Distrito</th><th>Deportes</th><th>Actividad</th><th>Novedades</th><th>Bienvenida</th><th>Estado</th><th></th></tr></thead>
+      <thead><tr><th>Persona</th><th>Contacto</th><th>Distrito</th><th>Deportes y nivel</th><th>Actividad</th><th>Novedades</th><th>Bienvenida</th><th>Estado</th><th></th></tr></thead>
       <tbody id="smTablaPersonas"></tbody></table></div></div>
     <div class="section-sub" style="margin-top:12px">Para un correo masivo usa <b>Copiar correos</b> y pégalos en <b>CCO</b> (copia oculta), así nadie ve los correos de los demás. Solo se copian las Personas activas que aceptaron recibir novedades.</div>`;
 }
@@ -1020,7 +1181,7 @@ function pintarTablaPersonas() {
   const conNov = filas.filter((f) => f.novedades && !f.u.suspendido && f.correo).length;
   const pend = filas.filter((f) => !f.bienvenida && !f.u.suspendido).length;
   $("smResumenPersonas").textContent = `${fmt(filas.length)} de ${fmt(E.usuarios.length)} personas · ${fmt(conNov)} aceptan novedades · ${fmt(pend)} sin bienvenida`;
-  tb.innerHTML = filas.length ? filas.map(({ u, cel, correo, novedades, bienvenida }) => {
+  tb.innerHTML = filas.length ? filas.map(({ u, cel, correo, novedades, bienvenida, bienvenidaCorreo }) => {
     const ini = esc(String(u.nombre || "?").trim().charAt(0).toUpperCase());
     const foto = u.foto && /^https:\/\//.test(u.foto) ? `<img class="sm-avatar" src="${esc(u.foto)}" alt="">` : `<span class="sm-avatar">${ini}</span>`;
     const np = partidos[u.id] || 0, nt = torneos[u.id] || 0;
@@ -1031,12 +1192,13 @@ function pintarTablaPersonas() {
         ${correo ? `<a class="sm-contacto-fila" href="mailto:${esc(correo)}" title="Escribir un correo"><span class="sm-ic">${ICONO_MAIL}</span>${esc(correo)}</a>` : `<span class="sm-contacto-fila sm-sin">Sin correo</span>`}
       </div></td>
       <td>${esc(u.distrito || "—")}</td>
-      <td>${esc((u.deportes || []).join(", ") || "—")}</td>
+      <td>${(u.deportes || []).length ? (u.deportes || []).map((d) => `<div style="white-space:nowrap">${esc(d)}${(u.niveles || {})[d] ? ` <span class="td-mono">· ${esc(u.niveles[d])}</span>` : ` <span class="td-mono" style="color:var(--text2)">· sin nivel</span>`}</div>`).join("") : "—"}</td>
       <td class="td-mono" style="white-space:nowrap">${fmt(np)} ${np === 1 ? "partido" : "partidos"}<br>${fmt(nt)} ${nt === 1 ? "torneo" : "torneos"}</td>
       <td>${novedades ? `<span class="badge badge-green">Acepta</span>` : `<span class="badge badge-gray">No</span>`}</td>
       <td>${bienvenida
         ? `<button class="sm-enviada" data-sm="bienvenida" data-id="${esc(u.id)}" title="Volver a enviar">✓ ${fechaCorta(bienvenida)}</button>`
-        : (cel ? `<button class="btn btn-ghost btn-sm sm-btn-wa" data-sm="bienvenida" data-id="${esc(u.id)}"><span class="sm-ic sm-ic-wa">${ICONO_WA}</span>Dar la bienvenida</button>` : `<span class="td-mono">Sin celular</span>`)}</td>
+        : (cel ? `<button class="btn btn-ghost btn-sm sm-btn-wa" data-sm="bienvenida" data-id="${esc(u.id)}"><span class="sm-ic sm-ic-wa">${ICONO_WA}</span>Dar la bienvenida</button>` : `<span class="td-mono">Sin celular</span>`)}
+        <div class="td-mono" style="margin-top:4px;white-space:nowrap" title="Correo automático de bienvenida">${bienvenidaCorreo ? `✉ Correo ✓ ${fechaCorta(bienvenidaCorreo)}` : "✉ Correo: —"}</div></td>
       <td>${u.suspendido ? `<span class="badge badge-red">Suspendida</span>` : `<span class="badge badge-green">Activa</span>`}</td>
       <td><div class="sm-acciones-fila">${u.suspendido
         ? `<button class="btn btn-ghost btn-sm" data-sm="suspender" data-id="${esc(u.id)}" data-valor="no">Reactivar</button>`
@@ -1094,9 +1256,9 @@ function descargarContactos() {
   const f = personasFiltradas();
   if (!f.length) return aviso("No hay personas con esos filtros.", "error");
   descargarCSV(`sportmatch-contactos-${hoyISO()}.csv`,
-    ["Nombre", "Nombres", "Apellidos", "Correo", "Celular", "WhatsApp", "Distrito", "Deportes", "Registro", "Acepta novedades", "Bienvenida", "Estado"],
-    f.map(({ u, cel, correo, novedades, bienvenida }) => [u.nombre || "", u.nombres || "", u.apellidos || "", correo, cel ? celularVisible(cel) : "", cel ? `https://wa.me/51${cel}` : "",
-      u.distrito || "", (u.deportes || []).join(", "), fechaCorta(u.creadoEn), novedades ? "Sí" : "No", bienvenida ? fechaCorta(bienvenida) : "Pendiente", u.suspendido ? "Suspendida" : "Activa"]));
+    ["Nombre", "Nombres", "Apellidos", "Correo", "Celular", "WhatsApp", "Distrito", "Deportes y nivel", "Registro", "Acepta novedades", "Bienvenida WhatsApp", "Correo de bienvenida", "Estado"],
+    f.map(({ u, cel, correo, novedades, bienvenida, bienvenidaCorreo }) => [u.nombre || "", u.nombres || "", u.apellidos || "", correo, cel ? celularVisible(cel) : "", cel ? `https://wa.me/51${cel}` : "",
+      u.distrito || "", textoNiveles(u, "; "), fechaCorta(u.creadoEn), novedades ? "Sí" : "No", bienvenida ? fechaCorta(bienvenida) : "Pendiente", bienvenidaCorreo ? fechaCorta(bienvenidaCorreo) : "No", u.suspendido ? "Suspendida" : "Activa"]));
   aviso(`Se descargaron ${f.length} contactos.`, "success");
 }
 
@@ -1241,6 +1403,12 @@ document.addEventListener("click", async (e) => {
   if (a === "cancelar-torneo") return cancelarTorneo(id);
   if (a === "eliminar-torneo") return eliminarTorneo(id);
   if (a === "tab-torneos") { E.tabTorneos = b.dataset.tab; return pintar("sm-torneos"); }
+  if (a === "tab-partidos") { E.tabPartidos = b.dataset.tab; return pintar("sm-partidos"); }
+  if (a === "jugadores-partido") return verJugadoresPartido(id);
+  if (a === "cancelar-partido") return cancelarPartido(id);
+  if (a === "integrantes-grupo") return verIntegrantesGrupo(id);
+  if (a === "sacar-integrante") return sacarIntegrante(b.dataset.grupo, id);
+  if (a === "eliminar-grupo") return eliminarGrupo(id);
   if (a === "nueva-cancha") return abrirEditorCancha(null);
   if (a === "editar-cancha") return abrirEditorCancha(E.canchas.find((c) => c.id === id));
   if (a === "reporte-cancha") return abrirReporte(E.canchas.find((c) => c.id === id));
@@ -1260,6 +1428,8 @@ document.addEventListener("input", (e) => {
   if (["smFBuscar", "smFDeporte", "smFDistrito", "smFEstado"].includes(e.target.id)) pintarTablaCanchas();
   if (["smUBuscar", "smUDistrito", "smUEstado", "smUNovedades", "smUBienvenida"].includes(e.target.id)) pintarTablaPersonas();
   if (["smTBuscar", "smTOrganiza"].includes(e.target.id)) pintarTablaTorneos();
+  if (["smPBuscar", "smPDeporte", "smPDistrito"].includes(e.target.id)) pintarTablaPartidos();
+  if (["smGBuscar", "smGDeporte", "smGDistrito"].includes(e.target.id)) pintarTablaGrupos();
 });
 document.addEventListener("change", async (e) => {
   if (e.target.id === "smFMes") {
